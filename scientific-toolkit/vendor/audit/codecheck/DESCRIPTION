@@ -1,0 +1,68 @@
+Package: codecheck
+Title: Helper Functions for CODECHECK Project
+Version: 0.31.0.9000
+Authors@R: 
+    c(person(given = "Stephen",
+            family = "Eglen",
+            role = c("aut", "cre"),
+            email = "sje30@cam.ac.uk",
+            comment = c(ORCID = "0000-0001-8607-8025")),
+    person(given = "Daniel",
+           family = "Nuest",
+           role = c("aut"),
+           email = "daniel.nuest@tu-dresden.de",
+           comment = c(ORCID = "0000-0002-0024-5046")),
+    person(given = "Angelina",
+           family = "Momin",
+           role = c("aut"),
+           email = "angelina.momin53@gmail.com",
+           comment = c(ORCID = "0000-0002-6875-1551")),
+    person(given = "Sam",
+           family = "Langton",
+           role = c("aut"),
+           email = "s.h.langton@amsterdamumc.nl",
+           comment = c(ORCID = "0000-0002-1322-1553"))
+       )
+Description: This contains helper functions for codecheckers for conducting CODECHECKs, e.g., authoring CODECHECK certificates (<https://codecheck.org.uk>), and the rendering of the CODECHECK Register (<https://codecheck.org.uk/register/>).
+License: MIT + file LICENSE
+License_is_FOSS: yes
+Depends: R (>= 4.4.0), gh, R.cache, parsedate
+Imports:
+    cli,
+    dplyr,
+    tidyr,
+    yaml,
+    xtable,
+    stringr,
+    rmarkdown (>= 2.32),
+    knitr,
+    jsonlite,
+    assertthat,
+    rorcid,
+    osfr,
+    httr,
+    zen4R,
+    whisker,
+    pdftools,
+    readxl,
+    rsvg,
+    magick,
+    git2r,
+    parallel,
+    tools,
+    xml2
+SystemRequirements: C++17, cmake, pandoc (>= 2.0), Poppler C++ API
+    (libpoppler-cpp-dev), librsvg2 (librsvg2-dev), ImageMagick++
+    (libmagick++-dev), libgit2, libssl, libxml2, libcurl, libicu, libuv,
+    libsecret; LaTeX (e.g. TinyTeX) for rendering certificates;
+    optional: pdfimages (poppler-utils) for extract_pdf_figures()
+Encoding: UTF-8
+LazyData: true
+VignetteBuilder: knitr
+Suggests:
+    tinytest,
+    ttdo,
+    skimr,
+    rprojroot
+URL: http://codecheck.org.uk/codecheck/, https://github.com/codecheckers/codecheck
+Config/roxygen2/version: 8.1.0

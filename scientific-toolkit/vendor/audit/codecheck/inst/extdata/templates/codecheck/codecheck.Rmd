@@ -1,0 +1,221 @@
+---
+output:
+  pdf_document:
+    toc: false
+    includes:
+       in_header: codecheck-preamble.sty
+    latex_engine: xelatex
+---
+
+```{r rsetup,eval=TRUE,include=FALSE}
+require("codecheck")
+require("knitr")
+require("rprojroot")
+require("yaml")
+require("xtable")
+require("tibble")
+require("readr")
+options(width = 60)
+opts_chunk$set(cache = FALSE)
+
+root <- find_root("codecheck.yml")
+```
+
+```{r check_sibling_template, eval=TRUE, include=FALSE}
+## Warn if codecheck.qmd is also present next to this file - having both
+## makes it unclear which one is the canonical certificate source.
+if (file.exists(file.path(root, "codecheck", "codecheck.qmd"))) {
+  warning("Both codecheck.Rmd and codecheck.qmd are present in codecheck/ - ",
+          "remove one so the certificate source is unambiguous.")
+}
+```
+
+```{r validate_yaml_syntax, eval=TRUE, include=FALSE}
+## Validate YAML syntax - will stop rendering if YAML is invalid
+codecheck::validate_yaml_syntax(file.path(root, "codecheck.yml"))
+```
+
+```{r check_certificate_id, eval=TRUE, include=FALSE}
+## Check if certificate identifier is set properly and try to update from GitHub
+## This will check if the certificate is a placeholder and attempt to retrieve
+## the actual certificate ID from GitHub issues matching the author names
+
+# Check if certificate is a placeholder
+yml_path <- file.path(root, "codecheck.yml")
+if (codecheck::is_placeholder_certificate(yml_path)) {
+  message("CERTIFICATE ID NOT SET")
+
+  # Try to automatically retrieve and update certificate from GitHub
+  result <- codecheck::update_certificate_from_github(
+    yml_file = yml_path,
+    issue_state = "open",
+    apply_update = FALSE  # Set to TRUE to automatically update
+  )
+
+  if (!is.null(result$certificate) && result$certificate != "") {
+    message("\n✓ Certificate found! To apply the update, run:")
+    message("\n  codecheck::update_certificate_from_github(apply_update = TRUE)")
+    message("\nOr manually update codecheck.yml with certificate: ", result$certificate)
+  } else {
+    message("\nℹ No matching certificate found in GitHub issues.")
+    message("You may need to manually set the certificate identifier in codecheck.yml")
+  }
+}
+```
+
+```{r codecheck_logo, echo=FALSE,results='asis'}
+codecheck::latex_codecheck_logo()
+```
+
+```{r validate_certificate, echo=FALSE, results='asis'}
+## Validate certificate and display warning if placeholder, or if the
+## report DOI is a Zenodo concept DOI instead of a version-specific DOI
+## Set strict = TRUE to fail rendering if certificate is a placeholder
+## Set display_warning = FALSE to suppress the warning box in PDF output
+codecheck::validate_certificate_for_rendering(
+  yml_file = file.path(root, "codecheck.yml"),
+  strict = FALSE,           # Set to TRUE to fail rendering
+  display_warning = TRUE    # Set to FALSE to hide warning in PDF
+)
+```
+
+```{r manifest, eval=TRUE, include=FALSE}
+metadata <- codecheck::codecheck_metadata(root)
+manifest <- metadata$manifest
+
+dest_dir <- file.path(root, "codecheck", "outputs")
+## Create the outputs directory if missing
+if (!dir.exists(dest_dir) ) {
+  dir.create(dest_dir)
+}
+
+manifest_df <- codecheck::copy_manifest_files(root, metadata,
+                                             dest_dir, keep_full_path = FALSE,
+                                             overwrite = FALSE
+                                             )
+# manifest_df <- codecheck::list_manifest_files(root, metadata, dest_dir)
+```
+
+```{r validate_metadata, eval=TRUE, include=FALSE}
+## Validate metadata against OpenAlex and ORCID metadata - will fail rendering on mismatch
+## Set strict = FALSE or remove this chunk if you want to skip validation
+##
+## ORCID name checks first try the authenticated ORCID API, then automatically
+## fall back to the public, unauthenticated ORCID API for records whose name
+## is publicly visible - so most checks work without any ORCID setup at all.
+## skip_on_auth_error only matters if BOTH lookups fail for a record (e.g. no
+## network access, or the record's name is not public); it is enabled below
+## so a fresh workspace always renders even in that case.
+validation_result <- codecheck::validate_contents_references(
+  yml_file = file.path(root, "codecheck.yml"),
+  strict = TRUE
+  , skip_on_auth_error = TRUE
+)
+```
+
+---
+title: `r paste("CODECHECK certificate", metadata$certificate)`
+subtitle: `r codecheck:::as_latex_url(metadata$report)`
+---
+
+```{r summary_metadata, echo=FALSE, results='asis'}
+codecheck::latex_summary_of_metadata(metadata)
+```
+
+```{r summary_manifest, echo=FALSE, results='asis'}
+codecheck::latex_summary_of_manifest(metadata, manifest_df, root)
+```
+
+\clearpage
+
+# CODECHECKER notes
+
+```{r git_sha, echo=FALSE}
+gitInfo <- codecheck::get_git_info(root)
+```
+
+The GitHub repo ...
+`r gitInfo`
+Code was written in ...
+I went through the following steps ...
+One hard problem was ...
+I added the following files ... using tools/methods ...
+
+This took ... minutes to complete on {a large workstation, my laptop}.
+
+## Recommendations
+
+I suggest to the authors to consider the following suggestions for their next publication or workflow:
+
+- ...
+
+(document here if any of the suggestions were taken up by the authors in the meantime - do not remove any, keep track of contributions via feedback)
+
+\clearpage
+
+# Manifest files
+
+```{r manifest_files, echo=FALSE, results="asis", width=100}
+codecheck::render_manifest_files(manifest_df, metadata = metadata)
+```
+
+```{r figure_comparisons, eval=FALSE, include=FALSE, results="asis"}
+## Optional: show published and reproduced figures together. Create the comparison
+## images once from the R console in this directory; check that the license of the
+## article allows reusing its figures, and pair the figures explicitly, because the
+## order of images in a PDF may differ from the page layout:
+##   figures <- codecheck::extract_pdf_figures("article.pdf", "published", pages = 5:9)
+##   codecheck::compare_figures(figures$file[c(1, 2)], c("outputs/fig1.png", "outputs/fig2.png"),
+##     labels = c("Published (Author et al., YYYY, CC BY 4.0)", "Reproduced (CODECHECK)"))
+## Then set eval=TRUE and include=TRUE, and add a heading such as
+## "# Comparison of figures" above this chunk.
+codecheck::render_figure_comparisons(c("comparison/comparison-1.jpg", "comparison/comparison-2.jpg"),
+  captions = paste("Figure", 1:2, "of the article: published (top) and reproduced (bottom)."))
+```
+
+\clearpage
+
+## Acknowledgements
+
+I would like to thank ... for ... [promptly answering any
+queries/providing updates; assitance with X; ...].
+
+# Citing this document
+
+```{r, results='asis',echo=FALSE}
+codecheck::cite_certificate(metadata)
+```
+
+# About CODECHECK
+
+This certificate confirms that the codechecker could independently
+reproduce the results of a computational analysis given the data and
+code from a third party.  A CODECHECK does not check whether the
+original computation analysis is correct.  However, as all materials
+required for the reproduction are freely available by following the
+links in this document, the reader can then study for themselves the
+code and data.
+
+
+# About this document
+
+This document was created using [R Markdown](https://rmarkdown.rstudio.com/) using the [`codecheck`](https://github.com/codecheckers/codecheck) R package.
+`make codecheck.pdf` will regenerate the report file.
+
+```{r}
+sessionInfo()
+```
+
+```{r, include=FALSE, eval=FALSE}
+# handle Zenodo publication (alternative to codecheck-zenodo.R !)
+library("zen4R")
+zenodo <- ZenodoManager$new(token = zenodoToken) # assumes Zenodo token is configured via .Renviron
+record <- codecheck::get_or_create_zenodo_record(zenodo, codecheck::codecheck_metadata(root))
+record <- codecheck::upload_zenodo_metadata(zenodo, record, codecheck::codecheck_metadata(root))
+codecheck::upload_zenodo_certificate(zenodo = zenodo, record = record$id, certificate = file.path(root, "codecheck", "codecheck.pdf"))
+```
+
+```{r, include=FALSE, eval=FALSE}
+# render this document in RStudio
+rmarkdown::render("codecheck.Rmd", output_format = "pdf_document")
+```

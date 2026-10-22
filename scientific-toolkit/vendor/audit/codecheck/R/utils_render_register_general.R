@@ -1,0 +1,614 @@
+#' Turn the plain Certificate column into a relative markdown link
+#'
+#' `add_cert_links()` leaves `register_table$Certificate` as the plain
+#' identifier; this is the one place that turns it into the markdown link
+#' `[id](path)` that the md/HTML table rendering needs, using a relative path
+#' whose depth depends on the output directory. JSON and CSV exports don't
+#' call this function and keep the plain `Certificate ID`/absolute
+#' `Certificate Link` columns from `add_cert_links()` instead.
+#'
+#' @param register_table The register table with a plain Certificate column
+#' @param table_details List containing output directory and other metadata
+#' @return The adjusted register table with a markdown-linked Certificate column
+#'
+#' @examples
+#' \dontrun{
+#' # For root level (docs/index.html):        2020-001 -> [2020-001](./certs/2020-001/)
+#' # For nested level (docs/venues/.../...): 2020-001 -> [2020-001](../../../certs/2020-001/)
+#' }
+adjust_cert_links_relative <- function(register_table, table_details){
+  # Early return if Certificate column doesn't exist
+  if (!("Certificate" %in% names(register_table))) {
+    return(register_table)
+  }
+
+  # Early return if table_details or output_dir is missing
+  if (is.null(table_details) || !("output_dir" %in% names(table_details))) {
+    warning("table_details or output_dir missing in adjust_cert_links_relative, keeping plain Certificate IDs")
+    return(register_table)
+  }
+
+  # Calculate depth based on output directory
+  output_dir <- table_details[["output_dir"]]
+
+  # Count directory separators to determine depth
+  # Remove leading "docs/" if present
+  rel_path <- gsub("^docs/", "", output_dir)
+
+  # Count slashes to determine how many "../" we need
+  depth <- stringr::str_count(rel_path, "/")
+
+  # Build relative path prefix
+  if (depth == 0) {
+    # At root level (docs/index.html)
+    path_prefix <- "./certs/"
+  } else {
+    # In subdirectory - need to go up
+    path_prefix <- paste0(paste(rep("../", depth), collapse = ""), "certs/")
+  }
+
+  # Build the markdown link from the plain certificate identifier
+  register_table$Certificate <- paste0(
+    "[", register_table$Certificate, "](", path_prefix, register_table$Certificate, "/)"
+  )
+
+  return(register_table)
+}
+
+#' Format Report column for display by creating markdown links with shortened text
+#'
+#' Removes "https://" from the display text to save space while keeping full URLs in links.
+#' This is only called during rendering; the Report column remains as plain URLs in the data.
+#'
+#' @param register_table The register table with Report column containing plain URLs
+#' @return The register table with Report column formatted as markdown links
+#' @export
+add_report_hyperlinks_reg <- function(register_table){
+  if (!("Report" %in% names(register_table))) {
+    return(register_table)
+  }
+
+  formatted_reports <- sapply(register_table$Report, function(report_url) {
+    if (is.na(report_url) || is.null(report_url) || report_url == "") {
+      return(report_url)
+    }
+
+    # Create display text by removing "https://" or "http://" prefix
+    display_text <- gsub("^https?://", "", report_url)
+
+    # Create markdown link: [display_text](full_url)
+    paste0("[", display_text, "](", report_url, ")")
+  }, USE.NAMES = FALSE)
+
+  register_table$Report <- formatted_reports
+  return(register_table)
+}
+
+#' Function for adding clickable links to the codecheck venue pages for each entry in the register table.
+#' Uses relative paths for HTML display (absolute URLs used in JSON/CSV).
+#'
+#' @param register_table The register table
+#' @param table_details List containing output directory for relative path calculation
+#' @return The adjusted register table
+add_venue_hyperlinks_reg <- function(register_table, table_details = NULL){
+  if (!("Venue" %in% names(register_table))) {
+    return(register_table)
+  }
+
+  # Calculate relative path prefix based on output directory depth
+  if (!is.null(table_details) && "output_dir" %in% names(table_details)) {
+    output_dir <- table_details[["output_dir"]]
+    rel_path <- gsub("^docs/", "", output_dir)
+    depth <- stringr::str_count(rel_path, "/")
+
+    if (depth == 0) {
+      # At root level (docs/index.html)
+      venue_hyperlink_base <- "./venues/"
+    } else {
+      # In subdirectory - need to go up
+      venue_hyperlink_base <- paste0(paste(rep("../", depth), collapse = ""), "venues/")
+    }
+  } else {
+    # Fallback to absolute URLs
+    venue_hyperlink_base <- CONFIG$HYPERLINKS[["venues"]]
+  }
+
+  list_hyperlinks <- c()
+
+  # Looping over the entries in the register
+  for (i in seq_len(nrow(register_table))) {
+    venue_name <- register_table[i, ]$Venue
+
+    # Retrieving the venue type which is needed for url construction
+    venue_type <- register_table[i, ]$Type
+    venue_type_plural <- CONFIG$VENUE_SUBCAT_PLURAL[[venue_type]]
+
+    # Generating the venue slug for the hyperlink
+    venue_slug <- gsub(" ", "_", stringr::str_to_lower(venue_name))
+    venue_hyperlink <- paste0("[", venue_name,"](",venue_hyperlink_base, venue_type_plural, "/", venue_slug, ")")
+    list_hyperlinks <- c(list_hyperlinks, venue_hyperlink)
+  }
+
+  # Replace the "Venue" column with the hyperlinks
+  register_table$Venue <- list_hyperlinks
+  return(register_table)
+}
+
+#' Function for adding clickable links to the codecheck venue type pages for each entry in the register table.
+#' Uses relative paths for HTML display (absolute URLs used in JSON/CSV).
+#'
+#' @param register_table The register table
+#' @param table_details List containing output directory for relative path calculation
+#' @return The adjusted register table
+add_venue_type_hyperlinks_reg <- function(register_table, table_details = NULL){
+  if (!("Type" %in% names(register_table))) {
+    return(register_table)
+  }
+
+  # Calculate relative path prefix based on output directory depth
+  if (!is.null(table_details) && "output_dir" %in% names(table_details)) {
+    output_dir <- table_details[["output_dir"]]
+    rel_path <- gsub("^docs/", "", output_dir)
+    depth <- stringr::str_count(rel_path, "/")
+
+    if (depth == 0) {
+      # At root level (docs/index.html)
+      venue_hyperlink_base <- "./venues/"
+    } else {
+      # In subdirectory - need to go up
+      venue_hyperlink_base <- paste0(paste(rep("../", depth), collapse = ""), "venues/")
+    }
+  } else {
+    # Fallback to absolute URLs
+    venue_hyperlink_base <- CONFIG$HYPERLINKS[["venues"]]
+  }
+
+  list_hyperlinks <- c()
+
+  # Looping over the entries in the register
+  for (i in seq_len(nrow(register_table))) {
+    venue_type <- register_table[i, ]$Type
+    venue_type_plural <- CONFIG$VENUE_SUBCAT_PLURAL[[venue_type]]
+
+    venue_type_hyperlink <- paste0("[", stringr::str_to_title(venue_type), "](", venue_hyperlink_base, venue_type_plural, ")")
+    list_hyperlinks <- c(list_hyperlinks, venue_type_hyperlink)
+  }
+
+  # Replace the "Type" column with the hyperlinks
+  register_table$Type <- list_hyperlinks
+  return(register_table)
+}
+
+#' Generates original register files in various output formats.
+#' 
+#' @param register_table The register table.
+#' @param outputs List of the output types (e.g., "csv", "json").
+#' 
+#' The function iterates through the provided output types, generates an output directory,
+#' filters and adjusts the register table, and renders the original register files based on the specified formats.
+create_original_register_files <- function(register_table, outputs){
+  filter <- NA
+  for (output_type in outputs){
+    table_details <- list(is_reg_table = TRUE)
+    table_details[["output_dir"]] <- generate_output_dir(filter, table_details)
+
+    # Announced before the work, not just after it: rendering the whole
+    # register as HTML is a single pandoc run over all entries and the
+    # longest silent stretch of the render if it is not bracketed.
+    cli::cli_alert_info("Rendering main register ({output_type}, {nrow(register_table)} entries)")
+    start_time_output <- Sys.time()
+    render_register(register_table, table_details, filter, output_type, full_register_table = register_table)
+    elapsed_output <- as.numeric(difftime(Sys.time(), start_time_output, units = "secs"))
+    cli::cli_alert_success("Main register ({output_type}) in {sprintf('%.2f', elapsed_output)}s")
+  }
+
+  # Generate full metadata export (addresses register#57)
+  if ("json" %in% outputs) {
+    output_dir <- generate_output_dir(NA, list(is_reg_table = TRUE))
+    render_register_full(register_table, output_dir)
+  }
+}
+
+#' Create Register Files
+#'
+#' This function processes the register table based on different filter types and output formats.
+#' It groups the register data by the specified filters, generates nested tables, and then 
+#' creates markdown, HTML, and JSON files for each individual table.
+#'
+#' @param register_table The original register table
+#' @param filter_by A list specifying the filters to be applied (e.g., "venues", "codecheckers").
+#' @param outputs A list specifying the output formats to generate (e.g., "md", "html", "json").
+#' @param parallel Whether to render the pages of a filter in parallel. Each page
+#'        writes into its own output directory, so the items of one filter are
+#'        independent of each other.
+#' @param ncores Number of workers to use when `parallel` is TRUE, defaults to
+#'        one less than the machine has.
+#'
+#' @return None. The function generates files in the specified formats.
+create_register_files <- function(register_table, filter_by, outputs, parallel = FALSE, ncores = NULL){
+
+  cli::cli_h2("Creating register files")
+  start_time_total <- Sys.time()
+
+  if (is.null(ncores)) {
+    ncores <- max(1, parallel::detectCores() - 1)
+  }
+  # mclapply forks, which Windows has no equivalent for
+  if (.Platform$OS.type == "windows") {
+    ncores <- 1
+  }
+
+  # Creating the original register file
+  create_original_register_files(register_table, outputs)
+
+  # Generating filtered register table files
+  # For each filter type we created the nested register tables first
+  for (filter in filter_by){
+    cli::cli_alert_info("Processing filter: {.val {filter}}")
+    start_time_filter <- Sys.time()
+
+    # Checking if the filter is of a known type
+    if (!(filter %in% names(CONFIG$FILTER_COLUMN_NAMES))){
+      stop(paste("Unknown filter type:", filter))
+    }
+
+    # Each filter groups a possibly-reshaped copy of register_table, never
+    # the outer variable itself - filter_by can list "works" and "persons"
+    # in either order (or without "codecheckers" at all, now that #123
+    # covers what it used to), so a filter must not permanently drop or
+    # explode rows the way a later filter in the same loop still needs them.
+    grouping_table <- register_table
+
+    # For filter by codecheckers we need to unnest the column "codechecker"
+    # As a result of unnesting, a row of data with multiple codecheckers will now
+    # be split into multiple rows, one for each codechecker
+    if (filter == "codecheckers"){
+      grouping_table <- grouping_table %>% tidyr::unnest(Codechecker)
+      grouping_table$Codechecker <- unlist(grouping_table$Codechecker)
+
+      # Deduplicate NA codecheckers: if a certificate has multiple codecheckers
+      # without ORCID (all marked as NA), it should only appear once in the NA list
+      # We keep one row per unique combination of Certificate ID and Codechecker
+      # This ensures each certificate appears only once in the NA codechecker page
+      # even if multiple codecheckers lack ORCID (fixes codecheckers/register#153)
+      grouping_table <- grouping_table %>%
+        distinct(`Certificate ID`, Codechecker, .keep_all = TRUE)
+    }
+
+    # A certificate with no DOI-identified paper simply has no work page
+    # (#150) - dropped here, from the grouping copy only, so it still
+    # appears normally under every other filter.
+    else if (filter == "works") {
+      grouping_table <- grouping_table %>% filter(!is.na(Work))
+    }
+
+    # Explode the Person list column (one list of {orcid, name, role}
+    # records per certificate, see add_person_records()) into one row per
+    # record, keeping only the columns a person page's two role-tables need.
+    # A person who is both author and codechecker on the same certificate
+    # legitimately gets two rows here, one per role.
+    else if (filter == "persons") {
+      grouping_table <- explode_person_records(grouping_table)
+    }
+
+    # Same shape for organisations: one row per (certificate, organisation,
+    # person, role), see add_organisation_records(). A certificate whose
+    # people have no ROR-identified affiliation drops out here, which is
+    # what keeps the pages honest about what the data supports.
+    else if (filter == "organisations") {
+      grouping_table <- explode_organisation_records(grouping_table)
+    }
+
+    # Group the register_table by the filter column and nest the resulting groups
+    filter_col_name <- CONFIG$FILTER_COLUMN_NAMES[[filter]]
+    grouped_registers <- grouping_table %>%
+      group_by(across(all_of(filter_col_name)))
+
+    # Split into a list of data frames
+    filtered_register_list <- grouped_registers %>% group_split()
+
+    # Get the group names (keys) based on the filter names
+    register_keys <- grouped_registers %>% group_keys()
+
+    # Some filters (see CONFIG$FILTERS_WITHOUT_MD) don't get a register.md -
+    # their main content is more than one table, which a single markdown
+    # table can't represent.
+    filter_outputs <- setdiff(outputs, if (filter %in% CONFIG$FILTERS_WITHOUT_MD) "md" else character(0))
+
+    # Size of the job before the first page appears - the progress bar below
+    # only shows on a dynamic terminal, so this line is what a redirected
+    # log (e.g. `make render > render.log`) has to go on.
+    n_items <- length(filtered_register_list)
+    use_parallel <- parallel && ncores > 1 && n_items > 1
+    cli::cli_alert_info(paste0(
+      "Rendering {n_items} {filter} {cli::qty(n_items)}page{?s} x {length(filter_outputs)} output{?s}",
+      if (use_parallel) " on {ncores} cores" else ""
+    ))
+
+    # Looping over each of the output types
+    for (output_type in filter_outputs){
+      render_one_page <- function(i) {
+        register_key <- register_keys[[filter_col_name]][i]
+        filtered_table <- filtered_register_list[[i]]
+
+        table_details <- generate_table_details(register_key, filtered_table, filter)
+
+        start_time_item <- Sys.time()
+        render_register(filtered_table, table_details, filter, output_type, full_register_table = filtered_table)
+
+        list(key = register_key,
+             elapsed = as.numeric(difftime(Sys.time(), start_time_item, units = "secs")))
+      }
+
+      if (use_parallel) {
+        # No progress bar here: a forked worker cannot update the parent's.
+        # The per-page lines are printed afterwards, in item order, so a
+        # verbose log reads the same as it does sequentially.
+        results <- parallel::mclapply(seq_along(filtered_register_list), render_one_page,
+                                      mc.cores = ncores, mc.preschedule = TRUE)
+
+        failed <- Filter(function(r) inherits(r, "try-error"), results)
+        for (f in failed) {
+          cli::cli_alert_danger("Failed to render a {filter} page ({output_type}): {conditionMessage(attr(f, 'condition'))}")
+        }
+
+        if (isTRUE(CONFIG$VERBOSE)) {
+          for (result in Filter(function(r) !inherits(r, "try-error"), results)) {
+            cli::cli_alert_success("Rendered {filter} {.val {result$key}} ({output_type}) in {sprintf('%.2f', result$elapsed)}s")
+          }
+        }
+      } else {
+        cli_pb_id <- cli::cli_progress_bar(
+          format = paste0("{cli::pb_spin} ", filter, " (", output_type,
+                          ") [{cli::pb_current}/{cli::pb_total}] {cli::pb_bar} | {cli::pb_elapsed} {cli::pb_status}"),
+          total = n_items,
+          clear = FALSE
+        )
+
+        for (i in seq_along(filtered_register_list)) {
+          result <- render_one_page(i)
+          cli::cli_progress_update(id = cli_pb_id, status = result$key)
+
+          # One line per page is too much output for a full render, but it is
+          # the only way to spot a single slow page, so it stays behind verbose.
+          if (isTRUE(CONFIG$VERBOSE)) {
+            cli::cli_alert_success("Rendered {filter} {.val {result$key}} ({output_type}) in {sprintf('%.2f', result$elapsed)}s")
+          }
+        }
+
+        cli::cli_progress_done(id = cli_pb_id)
+      }
+    }
+
+    elapsed_filter <- as.numeric(difftime(Sys.time(), start_time_filter, units = "secs"))
+    n_outputs <- length(filter_outputs)
+    cli::cli_alert_success("Completed filter {.val {filter}} ({n_items} items x {n_outputs} outputs) in {sprintf('%.1f', elapsed_filter)}s")
+  }
+
+  elapsed_total <- as.numeric(difftime(Sys.time(), start_time_total, units = "secs"))
+  cli::cli_alert_success("Completed all register files in {sprintf('%.1f', elapsed_total)}s")
+}
+
+#' Filter and Drop Columns from Register Table
+#'
+#' This function filters and drops columns from the register table based on the
+#' specified filter type. Uses hierarchical column configuration from
+#' CONFIG$REGISTER_COLUMNS with filter-specific overrides.
+#'
+#' @param register_table The register table
+#' @param filter A string specifying the filter to apply (e.g., "venues", "codecheckers").
+#'        Use NA for the default/main register.
+#' @param file_type The type of file we need to render the register for.
+#'        The columns to keep depend on the file type and filter
+#'
+#' @return The filtered register table with only the necessary columns retained and ordered.
+filter_and_drop_register_columns <- function(register_table, filter, file_type) {
+
+  # Step 1: Determine which filter configuration to use
+  # If filter is NA or not configured, use "default"
+  filter_key <- if (is.na(filter) || !(filter %in% names(CONFIG$REGISTER_COLUMNS))) {
+    "default"
+  } else {
+    filter
+  }
+
+  # Step 2: Get columns for this filter and file type
+  # Try filter-specific config first, fall back to default if not found
+  columns_to_keep <- NULL
+
+  if (filter_key %in% names(CONFIG$REGISTER_COLUMNS)) {
+    filter_config <- CONFIG$REGISTER_COLUMNS[[filter_key]]
+    if (file_type %in% names(filter_config)) {
+      columns_to_keep <- filter_config[[file_type]]
+    }
+  }
+
+  # Fall back to default if filter-specific config not found
+  if (is.null(columns_to_keep)) {
+    if ("default" %in% names(CONFIG$REGISTER_COLUMNS)) {
+      default_config <- CONFIG$REGISTER_COLUMNS[["default"]]
+      if (file_type %in% names(default_config)) {
+        columns_to_keep <- default_config[[file_type]]
+      }
+    }
+  }
+
+  # If still no config found, return table as-is with warning
+  if (is.null(columns_to_keep)) {
+    warning("No column configuration found for filter '", filter_key, "' and file type '", file_type, "'")
+    return(register_table)
+  }
+
+  # Step 3: Keep only columns that exist in the table (in the specified order)
+  final_columns <- intersect(columns_to_keep, names(register_table))
+
+  # Step 4: Subset and reorder the register table
+  register_table <- register_table[, final_columns, drop = FALSE]
+  return(register_table)
+}
+
+#' Generate Table Details
+#'
+#' This function generates metadata and details for a specific table, including 
+#' the table name, slugified name, subcategory (if applicable), and the output directory. 
+#' It is used when rendering tables in different formats.
+#'
+#' @param table_key The key (name) of the table being processed.
+#' @param table The data frame containing the table data.
+#' @param filter A string specifying the filter applied to the table data.
+#' @param is_reg_table A boolean indicating whether the table is a register table (default is TRUE).
+#'
+#' @return A list of table details including name, slugified name, subcategory (if applicable), and output directory.
+generate_table_details <- function(table_key, table, filter, is_reg_table = TRUE){
+  table_details <- list()
+  # This information is needed when creating the html index section files
+  table_details[["is_reg_table"]] <- is_reg_table
+
+  # Setting the table name
+  table_details[["name"]] <- table_key
+  # Check if identifier is an ORCID (format: NNNN-NNNN-NNNN-NNNX) or GitHub username
+  is_orcid <- grepl("^\\d{4}-\\d{4}-\\d{4}-\\d{3}[0-9X]$", table_key)
+  if (filter == "venues") {
+    # Must match the slug computed by add_venue_type_hyperlinks_non_reg()
+    # (utils_render_table_venues.R), which is what cert pages, the venues
+    # index, and the sitemap link to - otherwise this directory and the
+    # linked-to directory diverge (codecheckers/register#192 - on a
+    # case-sensitive filesystem an uppercase venue name like "AGILEGIS"
+    # created a sibling directory instead of updating the lowercase one
+    # every other page already links to).
+    table_details[["slug_name"]] <- gsub(" ", "_", tolower(table_key))
+  } else if (filter == "works") {
+    # The DOI itself, already lowercased by normalize_work_key() - its own
+    # "/" characters become nested path segments (docs/works/10.1093/
+    # gigascience/giaa026/), which generate_output_dir()'s dir.create(...,
+    # recursive = TRUE) already handles with no change needed there.
+    table_details[["slug_name"]] <- table_key
+    # MD_TITLES$works reads this rather than re-deriving it, since it only
+    # ever receives table_details, not the register table itself - the
+    # column is markdown-hyperlinked ("[title](url)"), so the plain text is
+    # pulled out here.
+    if ("Paper Title" %in% names(table) && nrow(table) > 0) {
+      title_cell <- table[["Paper Title"]][1]
+      table_details[["title"]] <- if (!is.na(title_cell) && grepl("\\[.*\\]\\(.*\\)", title_cell)) {
+        sub("\\[(.*)\\]\\(.*\\)", "\\1", title_cell)
+      } else {
+        title_cell
+      }
+    }
+  } else if (filter == "organisations") {
+    # The ROR id is already a safe directory name (docs/organisations/02e2c7k09/).
+    table_details[["slug_name"]] <- table_key
+    # CONFIG$MD_TITLES$organisations only ever receives table_details, so the
+    # organisation's name is resolved here rather than there.
+    table_details[["title"]] <- get_organisation_metadata(table_key)$name
+  } else if (is_orcid) {
+    table_details[["slug_name"]] <- table_key  # Use ORCID as-is for directory
+    table_details[["is_github_username"]] <- FALSE
+  } else {
+    table_details[["slug_name"]] <- table_key  # Use GitHub username as-is for directory
+    table_details[["is_github_username"]] <- TRUE
+  }
+
+  # Checking if the filter has a subcategory
+  if (filter %in% names(CONFIG$FILTER_SUBCAT_COLUMNS)){
+    subcat_col <- CONFIG$FILTER_SUBCAT_COLUMNS[[filter]]
+    table_details[["subcat"]] <- table[[subcat_col]][1]
+  }
+
+  # Generating the output dir once here instead of multiple times
+  table_details[["output_dir"]] <- generate_output_dir(filter, table_details)
+
+  return(table_details)
+}
+
+#' Render Register in Specified Output Format
+#'
+#' This function renders the register table into different output formats based on the specified type.
+#' It supports rendering the table as Markdown, HTML, or JSON.
+#' All outputs are sorted by certificate identifier for consistency.
+#'
+#' @param register_table The register table that needs to be rendered into different files.
+#' @param table_details A list of details related to the table (e.g., output directory, metadata).
+#' @param filter A string specifying the filter applied to the register data.
+#' @param full_register_table Optional table with all register columns, used for
+#'   outputs that need columns the filtered table does not carry.
+#' @param output_type A string specifying the desired output format "json" for JSON,
+#'        "csv" for CSVs, "md" for MD and "html" for HTMLs.
+#'
+#' @return None. The function generates a file in the specified format.
+render_register <- function(register_table, table_details, filter = NA, output_type, full_register_table = NULL){
+  # Sort by certificate identifier for consistent ordering across all outputs
+  # (addresses codecheckers/register#160). full_register_table is sorted the
+  # same way so its rows still line up positionally with register_table after
+  # filter_and_drop_register_columns() below removes columns like Repository
+  # that some output types still need (e.g. HTML's Schema.org generation).
+  if ("Certificate" %in% names(register_table)) {
+    register_table <- register_table %>% arrange(Certificate)
+  }
+  if (!is.null(full_register_table) && "Certificate" %in% names(full_register_table)) {
+    full_register_table <- full_register_table %>% arrange(Certificate)
+  }
+
+  register_table <- filter_and_drop_register_columns(register_table, filter, output_type)
+
+  switch(output_type,
+    "md" = render_register_md(register_table, table_details, filter),
+    "html" = render_html(register_table, table_details, filter, full_register_table),
+    "json" = render_register_json(register_table, table_details, filter, full_register_table)
+  )
+}
+
+#' Generate Output Directory Path
+#'
+#' Generates the directory path for saving files based on info in the register table
+#' and the filter name. Creates the output directory if it does not already exist
+#'
+#' @param filter The filter name (e.g., "venues", "codecheckers").
+#' @param table_details List containing details such as the table name, subcat name.
+#'
+#' @return A string representing the directory path for saving files.
+generate_output_dir <- function(filter, table_details = list()) {
+  base_dir <- "docs/"
+
+  # We have register tables
+  if (table_details[["is_reg_table"]]){
+    # We have the original register table
+    if (is.na(filter)){
+      output_dir <- base_dir
+    }
+
+    # We have filtered register tables
+    else{
+      table_name <- table_details[["slug_name"]]
+      
+      # The table belongs to a subcat so we need a nested folder
+      if ("subcat" %in% names(table_details)){
+        plural_subcat <- CONFIG$VENUE_SUBCAT_PLURAL[[table_details[["subcat"]]]]
+        output_dir <- paste0(base_dir, filter, "/", plural_subcat, "/", table_name, "/")
+      }
+
+      # The table does not belong to a subcat
+      else{
+        output_dir <- paste0(base_dir, filter, "/", table_name, "/")
+      }
+    }
+  }
+
+  # We have non register tables
+  else{
+    if ("subcat" %in% names(table_details)){
+      plural_subcat <- CONFIG$VENUE_SUBCAT_PLURAL[[table_details[["subcat"]]]]
+      output_dir <- paste0(base_dir, filter, "/", plural_subcat, "/")
+    }
+
+    else{
+      output_dir <- paste0(base_dir, filter, "/")
+    }
+  }
+
+  # Creating the output dir if it does not already exist
+  if (!dir.exists(output_dir)) {
+    dir.create(output_dir, recursive = TRUE, showWarnings = TRUE)
+  }
+  return(output_dir)
+}

@@ -1,0 +1,411 @@
+# SPDX-License-Identifier: Apache-2.0
+
+"""Source registry: everything search_papers / get_paper can query."""
+
+import re
+from datetime import datetime, timezone
+from functools import lru_cache
+
+import requests
+
+from .base import DEFAULT_HEADERS, PaperHit, Source, UnconfiguredError
+from .arxiv import ArxivSource
+from .crossref import CrossrefSource
+from .openalex import OpenAlexSource
+from .pubmed import PubMedSource
+from .semanticscholar import SemanticScholarSource
+
+SOURCES: dict[str, Source] = {
+    s.name: s for s in (
+        ArxivSource(),
+        OpenAlexSource(),
+        CrossrefSource(),
+        SemanticScholarSource(),
+        PubMedSource(),
+    )
+}
+
+# id_type -> owning source for get_paper dispatch
+ID_TYPE_SOURCE = {
+    "doi": "crossref",
+    "arxiv": "arxiv",
+    "pmid": "pubmed",
+    "openalex": "openalex",
+    "s2": "semanticscholar",
+}
+
+# Quirk absorption: map common model casings and punctuation to canonical keys
+_SOURCE_ALIASES: dict[str, str] = {
+    "arxiv": "arxiv",
+    "openalex": "openalex",
+    "open-alex": "openalex",
+    "open_alex": "openalex",
+    "open alex": "openalex",
+    "crossref": "crossref",
+    "cross-ref": "crossref",
+    "cross_ref": "crossref",
+    "cross ref": "crossref",
+    "semanticscholar": "semanticscholar",
+    "semantic-scholar": "semanticscholar",
+    "semantic_scholar": "semanticscholar",
+    "semantic scholar": "semanticscholar",
+    "s2": "semanticscholar",
+    "pubmed": "pubmed",
+    "ncbi": "pubmed",
+    "pmc": "pubmed",
+}
+
+_ID_TYPE_ALIASES: dict[str, str] = {
+    "doi": "doi",
+    "arxiv": "arxiv",
+    "pmid": "pmid",
+    "pubmed": "pmid",
+    "openalex": "openalex",
+    "s2": "s2",
+    "semanticscholar": "s2",
+    "semantic-scholar": "s2",
+    "semantic_scholar": "s2",
+    "semantic scholar": "s2",
+    "auto": "auto",
+    "unknown": "auto",
+}
+
+
+def normalize_source_name(name: str) -> str | None:
+    """Normalize a source name to its canonical key in SOURCES (quirk absorption)."""
+    if not isinstance(name, str) or not name.strip():
+        return None
+    raw = name.strip().lower()
+    if raw in _SOURCE_ALIASES:
+        return _SOURCE_ALIASES[raw]
+    collapsed = re.sub(r"[\s\-_.]", "", raw)
+    if collapsed in _SOURCE_ALIASES:
+        return _SOURCE_ALIASES[collapsed]
+    if collapsed in SOURCES:
+        return collapsed
+    return None
+
+
+def normalize_id_type(id_type: str | None) -> str:
+    """Normalize an id_type to its canonical key in ID_TYPE_SOURCE or 'auto'."""
+    if not id_type:
+        return "auto"
+    if not isinstance(id_type, str):
+        return str(id_type)
+    raw = id_type.strip().lower()
+    if raw in _ID_TYPE_ALIASES:
+        return _ID_TYPE_ALIASES[raw]
+    collapsed = re.sub(r"[\s\-_.]", "", raw)
+    if collapsed in _ID_TYPE_ALIASES:
+        return _ID_TYPE_ALIASES[collapsed]
+    return raw
+
+
+_DOI_RE = re.compile(r"^10\.\d{4,9}/")
+_ARXIV_NEW_RE = re.compile(r"^\d{4}\.\d{4,5}(?:v\d+)?$")
+_ARXIV_OLD_RE = re.compile(r"^[a-z-]+(?:\.[a-z-]+)*/\d{7}(?:v\d+)?$")
+_PMID_RE = re.compile(r"^\d{7,9}$")
+_OPENALEX_ID_RE = re.compile(r"^W\d{8,12}$")
+_S2_UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                         re.IGNORECASE)
+
+
+def guess_id_type(identifier: str) -> str:
+    """Best-effort type guess for get_paper's 'auto' id_type."""
+    s = (identifier or "").strip()
+    low = s.lower()
+    if low.startswith(("https://doi.org/", "http://dx.doi.org/", "doi:")) or _DOI_RE.match(s):
+        return "doi"
+    if "arxiv.org/abs/" in low or "arxiv.org/pdf/" in low:
+        return "arxiv"
+    if low.startswith("openalex:") or "openalex.org/works/" in low or _OPENALEX_ID_RE.match(s):
+        return "openalex"
+    if low.startswith(("s2:", "semanticscholar:")) or "semanticscholar.org/paper/" in low \
+            or _S2_UUID_RE.match(s):
+        return "s2"
+    if low.startswith("pmid:") or "pubmed.ncbi.nlm.nih.gov/" in low:
+        return "pmid"
+    if _ARXIV_NEW_RE.match(s) or _ARXIV_OLD_RE.match(s):
+        return "arxiv"
+    if _PMID_RE.match(s):
+        return "pmid"
+    return "doi"  # most common opaque identifier is a DOI
+
+
+def get_source(name: str) -> Source | None:
+    norm = normalize_source_name(name)
+    return SOURCES.get(norm) if norm else None
+
+
+def list_sources() -> list[dict]:
+    return [s.status() for s in SOURCES.values()]
+
+
+@lru_cache(maxsize=512)
+def _head_resolves(url: str) -> bool | None:
+    """Liveness probe: does the landing page answer 2xx/3xx? True/False when
+    the target answered, None when it was unreachable or blocks HEAD (so we
+    never report a paper as dead on a network error)."""
+    try:
+        resp = requests.head(url, headers=DEFAULT_HEADERS, timeout=8,
+                             allow_redirects=True)
+        if resp.status_code in (404, 410):
+            return False
+        if 200 <= resp.status_code < 500:
+            return True
+        return None
+    except Exception:
+        return None
+
+
+def verify_paper(paper: PaperHit) -> dict:
+    """3-layer verification for a resolved paper: liveness (landing page
+    answers), integrity (OpenAlex retraction flag when the owner source does
+    not track it). Never hard-fails a paper — resolves=None means 'unknown'."""
+    url = None
+    if paper.doi:
+        url = f"https://doi.org/{paper.doi}"
+    elif paper.source == "arxiv" and paper.id:
+        url = f"https://arxiv.org/abs/{paper.id}"
+    elif paper.source == "pubmed" and paper.id:
+        url = f"https://pubmed.ncbi.nlm.nih.gov/{paper.id}"
+
+    resolves, error = None, None
+    if url:
+        resolves = _head_resolves(url)
+        if resolves is None:
+            error = "landing page did not answer HEAD (offline or bot-blocked); status unknown"
+
+    retracted = paper.retracted
+    if retracted is None and paper.doi:
+        try:
+            work = SOURCES["openalex"]._resolve_work(paper.doi, "doi")
+            retracted = bool(work.get("is_retracted")) if work else None
+        except Exception:
+            pass
+    if paper.retracted is None and retracted is not None:
+        paper.retracted = retracted
+
+    verification = {
+        "resolves": resolves,
+        "retracted": retracted,
+        "checked_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }
+    if error:
+        verification["error"] = error
+    return verification
+
+
+def _notify_progress(progress_callback, done: int, total: int,
+                     display_name: str, outcome: str,
+                     remaining: list[str]) -> None:
+    """Fire one human-readable fan-out progress update; never raises.
+
+    Message shape: "arXiv: 12 hits · pending: OpenAlex, PubMed"."""
+    if progress_callback is None:
+        return
+    try:
+        if remaining:
+            pending = ", ".join(SOURCES[n].display_name for n in remaining)
+            message = f"{display_name}: {outcome} · pending: {pending}"
+        else:
+            message = f"{display_name}: {outcome} · all sources done"
+        progress_callback(done, total, message)
+    except Exception:
+        pass
+
+
+import concurrent.futures
+
+SOURCE_TIMEOUT_SECONDS = 10.0
+
+
+def _query_source(name: str, src: Source, query: str, per_source_limit: int,
+                  year_from: int | None, year_to: int | None,
+                  sort: str, open_access_only: bool) -> tuple[str, list[PaperHit], dict | None, str]:
+    if not src.configured():
+        return (name, [], {"source": name, "reason": "key_required", "hint": src.key_hint}, "skipped (API key required)")
+    try:
+        found = src.search(query, per_source_limit, year_from, year_to, sort, open_access_only)
+        return (name, found, None, f"{len(found)} hits")
+    except UnconfiguredError as e:
+        return (name, [], {"source": name, "reason": "key_required", "hint": str(e)}, "skipped (API key required)")
+    except Exception as e:
+        return (name, [], {"source": name, "reason": "error", "detail": str(e)[:200]}, "failed")
+
+
+def search_all(query: str, sources: list[str] | str | None = None, limit: int = 10,
+               year_from: int | None = None, year_to: int | None = None,
+               sort: str = "relevance", open_access_only: bool = False,
+               progress_callback=None) -> dict:
+    """Aggregate search. Returns {hits: [...], skipped: [...]} — skipped lists
+    sources that failed or are unconfigured, so callers can explain.
+
+    progress_callback: optional (done, total, message) callable invoked after
+    each source completes (queried, skipped, or failed). None (the default)
+    keeps the fan-out byte-for-byte on its historical path."""
+    if isinstance(sources, str):
+        sources = [s.strip() for s in sources.split(",") if s.strip()]
+
+    if sources:
+        names: list[str] = []
+        unknown: list[str] = []
+        for s in sources:
+            norm = normalize_source_name(s)
+            if norm and norm in SOURCES:
+                if norm not in names:
+                    names.append(norm)
+            else:
+                unknown.append(str(s))
+        if unknown:
+            raise ValueError(
+                f"unknown source(s): {', '.join(unknown)}. Known: {', '.join(SOURCES)}")
+    else:
+        names = list(SOURCES.keys())
+
+    hits: list[PaperHit] = []
+    skipped: list[dict] = []
+    queried: list[str] = []
+    per_source_limit = max(limit, 1)
+    total = len(names)
+
+    # Gather results by source in the deterministic order of `names`
+    per_source = {name: [] for name in names}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(names), 5)) as executor:
+        future_to_name = {
+            name: executor.submit(
+                _query_source, name, SOURCES[name], query, per_source_limit,
+                year_from, year_to, sort, open_access_only
+            )
+            for name in names
+        }
+        for name in names:
+            future = future_to_name[name]
+            src = SOURCES[name]
+            try:
+                s_name, s_hits, s_skipped, outcome = future.result(timeout=SOURCE_TIMEOUT_SECONDS + 2.0)
+                if src.configured():
+                    queried.append(name)
+                if s_skipped:
+                    skipped.append(s_skipped)
+                for h in s_hits:
+                    per_source.setdefault(h.source, []).append(h)
+            except concurrent.futures.TimeoutError:
+                if src.configured():
+                    queried.append(name)
+                skipped.append({
+                    "source": name,
+                    "reason": "timeout",
+                    "detail": f"source request timed out after {int(SOURCE_TIMEOUT_SECONDS)}s"
+                })
+                outcome = f"timed out ({int(SOURCE_TIMEOUT_SECONDS)}s)"
+            except Exception as e:
+                if src.configured():
+                    queried.append(name)
+                skipped.append({"source": name, "reason": "error", "detail": str(e)[:200]})
+                outcome = "failed"
+
+            _notify_progress(progress_callback, len(queried), total, src.display_name,
+                             outcome, [])
+
+    # Round-robin across sources in input order so one prolific source (e.g. arXiv on CS
+    # topics) cannot monopolize a small result window — cross-source discovery
+    # is the point of a multi-source search.
+    interleaved = []
+    buckets = [bucket for bucket in per_source.values() if bucket]
+    while buckets:
+        nxt = []
+        for bucket in buckets:
+            if bucket:
+                interleaved.append(bucket.pop(0))
+                if bucket:
+                    nxt.append(bucket)
+        buckets = nxt
+    return {
+        "hits": [h.to_dict() for h in interleaved[:limit]],
+        "skipped": skipped,
+        "sources_queried": queried,
+    }
+
+
+def get_paper(identifier: str, id_type: str = "auto",
+              include_references: bool = True,
+              include_citations: bool = True,
+              verify: bool = True) -> dict:
+    """Resolve one paper + its references/citations across sources.
+
+    References/citations come from the owning source when available (Crossref
+    for DOIs, OpenAlex/S2 for their ids); citations additionally fall back to
+    OpenAlex so arXiv/DOI/PMID identifiers still get a citing-works list.
+
+    verify=True (default) adds a verification block: liveness HEAD-check of
+    the landing page plus OpenAlex retraction flag when the owner does not
+    track it. A dead/unknown target never fails the paper — it is reported.
+    """
+    normalized_type = normalize_id_type(id_type)
+    resolved_type = guess_id_type(identifier) if normalized_type == "auto" else normalized_type
+    if resolved_type not in ID_TYPE_SOURCE:
+        return {"error": f"unknown id_type '{id_type}'. "
+                         f"Use one of: auto, {', '.join(ID_TYPE_SOURCE)}",
+                "id_type": id_type}
+
+    owner = SOURCES[ID_TYPE_SOURCE[resolved_type]]
+    paper = owner.get(identifier, resolved_type)
+    if paper is None:
+        # Two-audience brief (papers-not-found-v1): what happened, why a bare
+        # retry is wasted, then numbered recovery steps the model can act on
+        # or forward. Keep the historical first sentence verbatim — the
+        # 'interpreting-errors' skill and the error taxonomy key off it.
+        return {
+            "error": f"paper not found via {owner.display_name} "
+                     f"(id_type={resolved_type}, identifier={identifier}). "
+                     "Retrying the same identifier will not help — this index "
+                     "has no record of it. What to do: "
+                     "(1) check the identifier for typos; "
+                     "(2) if id_type was 'auto', retry once with the correct "
+                     "explicit id_type (doi, arxiv, pmid, openalex, s2); "
+                     "(3) otherwise call search_papers with the paper's title "
+                     "keywords and use the id/doi from the matching hit.",
+            "id_type": resolved_type,
+        }
+
+    references: list[PaperHit] = []
+    citations: list[PaperHit] = []
+    notes: list[str] = []
+
+    if include_references:
+        try:
+            references = owner.references(identifier, resolved_type) or []
+        except Exception as e:
+            notes.append(f"references unavailable: {str(e)[:120]}")
+
+    if include_citations:
+        try:
+            citations = owner.citations(identifier, resolved_type) or []
+        except Exception as e:
+            notes.append(f"citations unavailable: {str(e)[:120]}")
+        if not citations and owner.name != "openalex":
+            # Uniform citations fallback: OpenAlex indexes citing works for
+            # DOI / arXiv / PMID identifiers.
+            try:
+                citations = SOURCES["openalex"].citations(identifier, resolved_type) or []
+            except Exception:
+                pass
+
+    if not references and owner.name in ("arxiv", "pubmed"):
+        notes.append(f"{owner.display_name} does not expose a public reference list")
+    if not citations and owner.name != "openalex":
+        notes.append("citing works not available from this source (OpenAlex fallback "
+                     "applies when the work is indexed there)")
+
+    verification = verify_paper(paper) if verify else None
+    response = {
+        "paper": paper.to_dict(),
+        "references": [r.to_dict() for r in references],
+        "citations": [c.to_dict() for c in citations],
+        "id_type": resolved_type,
+        "notes": notes,
+    }
+    if verification is not None:
+        response["verification"] = verification
+    return response

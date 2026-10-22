@@ -1,0 +1,193 @@
+     {% if errors|length > 0 %}
+     <h2>Warning: there were processing errors on</h2>
+       <p class="processing-error">
+       {% for error in errors %}
+         {{ error|safe }}
+       {% endfor %}
+       <br/>
+       These have been excluded from the output.
+       </p>
+     {% endif %}
+
+
+     <h2>Abstract</h2>
+
+      <p>
+      Here are the results from {{articles|length}} PDFs.
+      {% set non_rct_articles = not_rcts(articles) %}
+      {% if non_rct_articles %}
+      (Note that {{ non_rct_articles|length }} of these were not obviously randomized controlled trials, being
+        {% if non_rct_articles|length == 1 %}
+            the one by {{ short_citation(non_rct_articles[0]) }}
+        {% else %}
+        those by
+          {% for study in non_rct_articles %}
+            {% if loop.last %}and{% endif %}
+              {{ short_citation(study) }}
+              {% if not loop.last %}
+              ,
+              {% endif %}
+          {% endfor %}
+        {% endif %}
+      ).
+      {% endif %}
+      </p>
+
+      <h2>Risk of bias table</h2>
+
+      <table class='bias-table'>
+        <tr class='bias-header-row'>
+          <th class='trial-id-header'>trial</th>
+          <th class='trial-id-header'>design</th>
+          {% for header in headers %}
+          <th class="rotate"><div><span>{{ header }}</span></div></th>
+          {% endfor %}
+        </tr>
+
+        <!-- <p>Len articles = {{ articles|length }}</p> -->
+
+
+        {% for study in articles %}
+           {% set study_is_rct = study.get('rct', {}).get('is_rct') %}
+        <tr>
+          <td class ="risk-studyid">
+          {% if online %}
+          <a target="_parent" href="/#document/{{ report_uuid }}/{{ study['pdf_uuid'] }}?annotation_type=bias_bot" class="annotation-link">
+          {% endif %}
+          {{ short_citation(study) }}
+          {% if online %}
+          </a>
+          {% endif %}
+          </td>
+          <td class = "risk-studyid">
+          {% if study_is_rct %}
+            RCT
+          {% else %}
+            not RCT
+          {% endif %}
+          </td>
+          {% if study_is_rct %}
+            {% for domain in study.get('bias', []) %}
+              <td class="{% if domain['judgement'] == 'low' %}risk-low{% elif domain['judgement'] == 'high/unclear' %}risk-high{% endif %}">{{ '+' if domain['judgement'] == 'low' else '?' }}</td>
+            {% endfor %}
+          {% else %}
+             <td class="risk-na" colspan="{{ headers|length }}">available for RCTs only</td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </table>
+
+
+      <!-- An overview of studies: sample sizes/punchlines. -->
+      <h2>Trial summaries</h2>
+          
+
+          <table class="char-pico-table">
+            <tr>
+              <th class='trial-id-header'>n</th>
+              <th>Participants</th>
+              <th>Interventions</th>
+              <th>Outcomes</th>
+              <th class='trial-id-header'>punchline</th>
+              <th>finding</th>
+            </tr>
+
+            {% for study in articles %}
+            <tr>
+              <td>
+              {{ study.get('sample_size', []) }}
+              </td>
+     
+               <td>{{study.get('pico_span', {}).get('population', [])|join(', ')}}</td>
+               <td>{{study.get('pico_span', {}).get('interventions', [])|join(', ')}}</td>
+               <td>{{study.get('pico_span', {}).get('outcomes', [])|join(', ')}}</td>
+               <td>{{study.get('punchlines', []) }}</td>
+               <td>{{study.get('finding_direction', []) }}</td>
+            </tr>
+            {% endfor %}
+          </table>
+
+      <h2>Characteristics of studies</h2>
+
+      <!-- <img src=" {{ pico_plot_path }} "></img> -->
+      {{ pico_plot|safe }}
+
+
+
+      {% for study in articles %}
+      <h3>{{ short_citation(study) }}</h3>
+
+      <!--
+      <table class="char-pico-table">
+        <tr>
+          <td>Participants</td>
+          <td>{{study.get('pico_span', {}).get('population', [])|join(', ')}}</td>
+        </tr>
+
+              <tr>
+          <td>Interventions</td>
+          <td>{{study.get('pico_span', {}).get('interventions', [])|join(', ')}}</td>
+        </tr>
+
+        <tr>
+          <td>Outcomes</td>
+          <td>{{study.get('pico_span', {}).get('outcomes', [])|join(', ')}}</td>
+        </tr>
+      </table>
+      -->
+
+      <table class="char-pico-table">
+        {% for domain in study.get('pico_text', []) %}
+        <tr>
+          <td>{{ domain['domain'] }}</td>
+          <td>
+            <ol class="judgement">
+            {% for ann in domain['annotations'] %}
+              <li>
+                <span>{{ ann['content'] }}</span>
+                {% if online %}
+                <a data-tooltip="jump to annotation" target="_parent" href="/#document/{{ report_uuid }}/{{ study['pdf_uuid'] }}?annotation_type=pico_bot&uuid={{ ann['uuid'] }}" class="annotation-link"><i class="fa fa-file-pdf-o" aria-hidden="true"></i></a>
+                {% endif %}
+              </li>
+            {% endfor %}
+            </ol>
+          </td>
+        </tr>
+        {% endfor %}
+      </table>
+
+      <table class="char-bias-table">
+        <tr>
+          <th>Bias</th><th>Judgement</th>
+          <th>Support for judgement</th>
+        </tr>
+
+        {% if study.get('rct', {}).get('is_rct') %}
+          {% for domain in study.get('bias', []) %}
+          <tr>
+          <td>{{ domain['domain'] }}</td>
+          <td>{{ domain['judgement'] }}</td>
+          <td>
+            <ol class="judgement">
+            {% for ann in domain['annotations'] %}
+              <li>
+                <span>{{ ann['content'] }}</span>
+                {% if online %}
+                <a data-tooltip="jump to annotation" target="_parent" href="/#document/{{ report_uuid }}/{{ study['pdf_uuid'] }}?annotation_type=bias_bot&uuid={{ ann['uuid'] }}" class="annotation-link"><i class="fa fa-file-pdf-o" aria-hidden="true"></i></a>
+                {% endif %}
+              </li>
+            {% endfor %}
+            </ol>
+          </td>
+        </tr>
+        {% endfor %}
+      {% else %}
+        <tr><td colspan="3">Bias assessment not available for non-RCT study design</td></tr>
+      {% endif %}
+      </table>
+      {% endfor %}
+      <h2>References</h2>
+
+      {% for study in articles %}
+      <p>{{ loop.index }}. {{ long_citation(study) }} PMID: {{ study.get('pmid', 'not found') }}</p>
+      {% endfor %}

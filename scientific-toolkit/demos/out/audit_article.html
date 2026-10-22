@@ -1,0 +1,115 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<title>Rapport d&#x27;audit scientifique</title><style>
+:root{--b:#0f172a;--a:#0ea5e9;--r:#dc2626}
+*{box-sizing:border-box}body{margin:0;padding:2.5rem 1.25rem;background:#f8fafc;color:var(--b);
+font:16px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:980px;margin:0 auto;background:#fff;padding:2.5rem;border-radius:14px;
+box-shadow:0 10px 30px rgba(15,23,42,.08)}
+h1{font-size:1.9rem;margin-top:0}h2{margin-top:2.2rem;font-size:1.35rem;border-bottom:2px solid #e2e8f0;padding-bottom:.35rem}
+h3{font-size:1.05rem}table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.9rem}
+th,td{border:1px solid #e2e8f0;padding:.5rem .6rem;text-align:left;vertical-align:top}
+th{background:#f1f5f9}code{background:#f1f5f9;padding:.1rem .3rem;border-radius:4px;font-size:.85em}
+hr{border:0;border-top:1px solid #e2e8f0;margin:2rem 0}
+ul{padding-left:1.2rem}p{margin:.6rem 0}
+</style></head><body><main><h1>Rapport d&#x27;audit scientifique</h1>
+<p><em>Généré le 2026-10-22T18:30:51+00:00 par <code>scitk</code> — audit reproductible, hors ligne.</em></p>
+<p><strong>Score global : 32/100</strong> · Gravité : <strong>CRITIQUE</strong></p>
+<h2>1. Synthèse</h2>
+<table>
+<tr><th>Indicateur</th><th>Valeur</th></tr>
+<tr><td>Résultats statistiques extraits</td><td>10</td></tr>
+<tr><td>Résultats significatifs (p &lt; .05)</td><td>7</td></tr>
+<tr><td>Incohérences statistique ↔ p (majeures)</td><td>1</td></tr>
+<tr><td>Écarts d&#x27;arrondi stricts</td><td>4</td></tr>
+<tr><td>Erreurs de décision</td><td>2</td></tr>
+<tr><td>Taux d&#x27;incohérence</td><td>10.0%</td></tr>
+<tr><td>Score de cohérence statistique</td><td>76/100</td></tr>
+<tr><td>Score de transparence</td><td>59/100</td></tr>
+</table>
+<h2>2. Constats (par gravité)</h2>
+<table>
+<tr><th>Gravité</th><th>Code</th><th>Source</th><th>Message</th></tr>
+<tr><td>🔴 CRITIQUE</td><td>`claim_contredit`</td><td>t — t(28)</td><td>Le texte qualifie le résultat de significatif, mais p recalculée = 0.0749.</td></tr>
+<tr><td>🔴 CRITIQUE</td><td>`claim_contredit`</td><td>t — t(38)</td><td>Le texte qualifie le résultat de significatif, mais p recalculée = 0.0550.</td></tr>
+<tr><td>🔴 CRITIQUE</td><td>`erreur_decision`</td><td>t — t(28)</td><td>La décision change : p rapportée = 0.0420 mais p recalculée = 0.0749 (seuil 0.05).</td></tr>
+<tr><td>🔴 CRITIQUE</td><td>`grim_impossible`</td><td>descriptif Groupe contrôle — score lecture</td><td>M = 3.11 est impossible avec n = 60 et 1 item(s) entier(s) (la somme devrait être 186.600, donc un multiple de 1) ; la moyenne réalisable la plus proche est 3.1</td></tr>
+<tr><td>🔴 CRITIQUE</td><td>`grim_impossible`</td><td>descriptif Sous-groupe A — satisfaction</td><td>M = 4.37 est impossible avec n = 25 et 1 item(s) entier(s) (la somme devrait être 109.250, donc un multiple de 1) ; la moyenne réalisable la plus proche est 4.36</td></tr>
+<tr><td>🔴 CRITIQUE</td><td>`grim_impossible`</td><td>descriptif Sous-groupe B — satisfaction</td><td>M = 5.19 est impossible avec n = 18 et 1 item(s) entier(s) (la somme devrait être 93.420, donc un multiple de 1) ; la moyenne réalisable la plus proche est 5.17</td></tr>
+<tr><td>🔴 CRITIQUE</td><td>`grimmer_impossible`</td><td>descriptif Groupe programme — score lecture</td><td>(M = 3.77, SD = 0.31) est impossible avec n = 60 entiers : aucune somme de carrés compatible.</td></tr>
+<tr><td>🔴 CRITIQUE</td><td>`grimmer_impossible`</td><td>descriptif Échantillon total — motivation</td><td>(M = 4.9, SD = 0.05) est impossible avec n = 40 entiers : aucune somme de carrés compatible.</td></tr>
+<tr><td>🔴 CRITIQUE</td><td>`retractee`</td><td>bibliographie — wakefield1998</td><td>Référence rétractée : Ileal-lymphoid-nodular hyperplasia non-specific colitis and pervasive developmental disorder in children (1998) — Retraction Watch (cas emblématique)</td></tr>
+<tr><td>🔴 CRITIQUE</td><td>`sprite_impossible`</td><td>descriptif Groupe programme — score lecture</td><td>SD = 0.31 est hors des bornes atteignables [0.427 ; 1.845] pour n = 60 entiers dans [1, 5] avec M = 3.77.</td></tr>
+<tr><td>🔴 CRITIQUE</td><td>`sprite_impossible`</td><td>descriptif Échantillon total — motivation</td><td>SD = 0.05 est hors des bornes atteignables [0.304 ; 0.632] pour n = 40 entiers dans [1, 5] avec M = 4.9.</td></tr>
+<tr><td>🟠 MAJEUR</td><td>`annee_aberrante`</td><td>bibliographie — futur</td><td>Année 2039 invraisemblable (bornes 1500–2027).</td></tr>
+<tr><td>🟠 MAJEUR</td><td>`doi_invalide`</td><td>bibliographie — doimalforme</td><td>DOI mal formé : doi-invalide-2019</td></tr>
+<tr><td>🟠 MAJEUR</td><td>`doublon_doi`</td><td>bibliographie — 10.1000/rpe.2021.015</td><td>DOI présent 2 fois dans la bibliographie.</td></tr>
+<tr><td>🟠 MAJEUR</td><td>`doublon_titre`</td><td>bibliographie — dupont2021 ≈ dupont2021bis</td><td>Titres quasi identiques (100%) : doublon probable ou preprint + version publiée.</td></tr>
+<tr><td>🟠 MAJEUR</td><td>`incoherence`</td><td>t — t(28)</td><td>p recalculée = 0.0749 (intervalle 0.0742–0.0756) incompatible avec p rapportée = 0.0420.</td></tr>
+<tr><td>🟡 MINEUR</td><td>`doi_absent`</td><td>bibliographie — futur</td><td>Pas de DOI : vérification d&#x27;existence et de rétractation impossible.</td></tr>
+<tr><td>🟡 MINEUR</td><td>`doi_absent`</td><td>bibliographie — sansdoi</td><td>Pas de DOI : vérification d&#x27;existence et de rétractation impossible.</td></tr>
+<tr><td>🟡 MINEUR</td><td>`incoherence`</td><td>F — F(2, 45)</td><td>Écart faible mais réel : p recalculée = 0.0498 (intervalle 0.0495–0.0500) vs p rapportée = 0.0490.</td></tr>
+<tr><td>🟡 MINEUR</td><td>`incoherence`</td><td>t — t(138)</td><td>Écart faible mais réel : p recalculée = 0.0173 (intervalle 0.0170–0.0175) vs p rapportée = 0.0190.</td></tr>
+<tr><td>🟡 MINEUR</td><td>`incoherence`</td><td>t — t(38)</td><td>Écart faible mais réel : p recalculée = 0.0380 (intervalle 0.0376–0.0384) vs p rapportée = 0.0340.</td></tr>
+<tr><td>🟡 MINEUR</td><td>`incoherence`</td><td>r — r(28)</td><td>Écart faible mais réel : p recalculée = 0.0244 (intervalle 0.0226–0.0264) vs p rapportée = 0.0210.</td></tr>
+<tr><td>🟡 MINEUR</td><td>`p_zero`</td><td>texte</td><td>p = .000 apparaît dans le texte (impossible).</td></tr>
+</table>
+<h2>3. Recalcul des résultats</h2>
+<table>
+<tr><th>Type</th><th>Test</th><th>p rapportée</th><th>p recalculée</th><th>Écart</th><th>Constats</th></tr>
+<tr><td>F</td><td>`F(2, 45) = 3.21`</td><td>0.0490</td><td>0.0498</td><td>0.0008</td><td>`incoherence`</td></tr>
+<tr><td>F</td><td>`F(3, 96) = 4.02`</td><td>0.0100</td><td>0.0097</td><td>0.0003</td><td>—</td></tr>
+<tr><td>chi2</td><td>`chi2(1) = 4.5`</td><td>0.0340</td><td>0.0339</td><td>0.0001</td><td>—</td></tr>
+<tr><td>t</td><td>`t(138) = 2.41`</td><td>0.0190</td><td>0.0173</td><td>0.0017</td><td>`incoherence`</td></tr>
+<tr><td>t</td><td>`t(28) = 1.85`</td><td>0.0420</td><td>0.0749</td><td>0.0329</td><td>`erreur_decision`, `incoherence`, `claim_contredit`</td></tr>
+<tr><td>t</td><td>`t(38) = 2.15`</td><td>0.0340</td><td>0.0380</td><td>0.0040</td><td>`incoherence`</td></tr>
+<tr><td>t</td><td>`t(38) = 1.98`</td><td>0.0550</td><td>0.0550</td><td>0.0000</td><td>`claim_contredit`</td></tr>
+<tr><td>t</td><td>`t(58) = 2.41`</td><td>0.0190</td><td>0.0191</td><td>0.0001</td><td>—</td></tr>
+<tr><td>r</td><td>`r(28) = 0.41`</td><td>0.0210</td><td>0.0244</td><td>0.0034</td><td>`incoherence`</td></tr>
+<tr><td>r</td><td>`r(45) = 0.12`</td><td>0.4220</td><td>0.4217</td><td>0.0003</td><td>—</td></tr>
+</table>
+<h2>4. Transparence</h2>
+<table>
+<tr><th>Indicateur</th><th>Présence</th><th>Qualité</th></tr>
+<tr><td>Disponibilité des données</td><td>✅</td><td>fort</td></tr>
+<tr><td>Disponibilité du code / des analyses</td><td>❌</td><td>absent</td></tr>
+<tr><td>Préenregistrement / rapport enregistré</td><td>✅</td><td>fort</td></tr>
+<tr><td>Financement déclaré</td><td>❌</td><td>absent</td></tr>
+<tr><td>Conflits d&#x27;intérêts</td><td>✅</td><td>fort</td></tr>
+<tr><td>Approbation éthique / consentement</td><td>❌</td><td>absent</td></tr>
+<tr><td>Justification de la taille d&#x27;échantillon</td><td>❌</td><td>absent</td></tr>
+<tr><td>Protocole disponible</td><td>✅</td><td>fort</td></tr>
+<tr><td>Limites discutées</td><td>✅</td><td>fort</td></tr>
+<tr><td>Matériel supplémentaire</td><td>✅</td><td>fort</td></tr>
+</table>
+<p><strong>Éléments absents :</strong> Disponibilité du code / des analyses, Financement déclaré, Approbation éthique / consentement, Justification de la taille d&#x27;échantillon</p>
+<h2>5. Distribution des p-values</h2>
+<ul>
+<li>p-curve : 50% des p &lt; .05 sont &lt; .025 (test binomial p = 0.636719) → distribution plate ou en hausse près de .05 : compatible avec une sélection de résultats / un fichier tiroir — n faible, résultat indicatif</li>
+<li>Excès de significativité : 8/10 observés vs 5.0 attendus (z = 1.897, p = 0.05778)</li>
+<li>Variance des p : 0.01546 (attendu ≈ 0.0833), p = 0.004319</li>
+</ul>
+<h2>6. Tests GRIM / GRIMMER</h2>
+<table>
+<tr><th>Descriptif</th><th>n</th><th>M</th><th>SD</th><th>Résultat</th></tr>
+<tr><td>Groupe programme — score lecture</td><td>60</td><td>3.77</td><td>0.31</td><td>✅</td></tr>
+<tr><td>Groupe contrôle — score lecture</td><td>60</td><td>3.11</td><td>0.44</td><td>❌ impossible</td></tr>
+<tr><td>Sous-groupe A — satisfaction</td><td>25</td><td>4.37</td><td>0.42</td><td>❌ impossible</td></tr>
+<tr><td>Sous-groupe B — satisfaction</td><td>18</td><td>5.19</td><td>0.28</td><td>❌ impossible</td></tr>
+<tr><td>Échantillon total — motivation</td><td>40</td><td>4.9</td><td>0.05</td><td>✅</td></tr>
+</table>
+<h2>7. Bibliographie</h2>
+<ul>
+<li>Références analysées : <strong>8</strong></li>
+<li>Constats : <strong>7</strong></li>
+<li>Sans DOI : <strong>2</strong> (25%)</li>
+<li>Doublons détectés : <strong>2</strong></li>
+<li>Références rétractées : <strong>1</strong></li>
+</ul>
+<table>
+<tr><th>DOI</th><th>Titre</th><th>Motif</th></tr>
+<tr><td>10.1016/s0140-6736(97)11096-0</td><td>Ileal-lymphoid-nodular hyperplasia non-specific colitis and pervasive developmental disorder in children</td><td>Fabrication/Falsification des données ; conflits d&#x27;intérêts non déclarés</td></tr>
+</table>
+<hr>
+<h3>Portée et limites</h3>
+<p>Cet audit est <strong>automatique et non décisionnel</strong> : il signale des divergences arithmétiques et des déclarations manquantes, pas une fraude. Chaque constat doit être vérifié sur le manuscrit, les données et le code. Les erreurs de recalcul peuvent venir de la mise en forme (arrondis, tests unilatéraux, corrections).</p>
+<p>Tests appliqués : recalcul APA (t, F, χ², r, z), GRIM/GRIMMER/SPRITE, p-curve, excès de significativité, variance insuffisante, distribution des décimales, Benford, doublons de texte, indicateurs de transparence, rétractations.</p></main></body></html>

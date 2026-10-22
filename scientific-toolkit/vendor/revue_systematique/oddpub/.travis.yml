@@ -1,0 +1,22 @@
+language: r
+cache: packages
+warnings_are_errors: true
+
+r:
+  - release
+
+# do not check examples for the CI
+r_check_args: --no-examples
+
+# for codecov
+r_packages:
+  - covr
+
+# only report coverage after build is successful
+after_success:
+  - Rscript -e 'covr::codecov()'
+
+notifications:
+  email:
+    on_success: change
+    on_failure: change

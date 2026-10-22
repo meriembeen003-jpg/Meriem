@@ -1,0 +1,41 @@
+Effets d'un programme de remédiation sur les performances en lecture :
+une étude contrôlée randomisée
+
+RÉSUMÉ — Cette étude évalue un programme de remédiation en lecture auprès de
+140 élèves. Nous rapportons un effet principal du programme, t(138) = 2.41,
+p = .019, ainsi qu'une interaction entre le programme et le niveau initial,
+F(2, 45) = 3.21, p = .049. Les analyses de médiation indiquent une relation
+positive entre motivation et score final, r(28) = .41, p = .021.
+
+MÉTHODE — Les participants (N = 140) ont été répartis aléatoirement entre le
+groupe programme et le groupe contrôle. La moyenne d'âge était de 9.43 ans
+(DT = 1.28). Les scores de lecture ont été mesurés à l'aide d'une échelle de
+Likert en 5 points (1 = très faible, 5 = très élevé). La fidélité interne était acceptable (α = .87). La taille
+d'échantillon a été fixée à 60 élèves par groupe.
+
+RÉSULTATS — Le score moyen du groupe programme était de 3.77 (DT = 0.31),
+contre 3.11 (DT = 0.44) pour le groupe contrôle, une différence statistiquement
+significative, t(28) = 1.85, p = .042. L'effet était modéré. Une analyse
+secondaire a montré une différence significative entre les deux conditions sur
+la fluence, t(38) = 2.15, p = .034. Une autre comparaison sur la compréhension
+n'était pas significative, t(38) = 1.98, p = .055.
+
+Le test du chi-deux sur la répartition des sexes était significatif,
+χ²(1, N = 140) = 4.50, p = .034 ; la répartition observée était de 52 % de
+filles et de 52 % de garçons. Le modèle complet expliquait 31 % de la variance,
+F(3, 96) = 4.02, p = .010, et l'effet principal du programme restait significatif
+après ajustement, t(58) = 2.41, p = .019. Les analyses exploratoires, elles,
+n'atteignaient pas le seuil, et nous rapportons p = .000 pour le modèle nul,
+ce qui indique une absence totale de relation.
+
+Bien que la différence entre les groupes soit significative, la relation entre
+temps de devoirs et performance était r(45) = .12, p = .422.
+
+DISCUSSION — Les résultats sont cohérents avec la littérature récente. Cette
+étude présente néanmoins des limites : la durée du suivi est courte et
+l'échantillon est issu d'une seule académie. Les données sont disponibles sur
+demande raisonnable auprès de l'auteur correspondant. Il n'y a pas de conflit
+d'intérêts à déclarer.
+
+MATÉRIEL SUPPLÉMENTAIRE — Le matériel supplémentaire (tableaux descriptifs)
+est disponible en ligne. Le protocole a été enregistré avant la collecte.

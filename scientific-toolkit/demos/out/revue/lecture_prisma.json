@@ -1,0 +1,20 @@
+{
+  "question": "Quelle est l'efficacité des programmes de remédiation en lecture au primaire ?",
+  "identifies": 12,
+  "par_source": {
+    "crossref": 4,
+    "openalex": 6,
+    "europepmc": 2
+  },
+  "doublons": 5,
+  "cribles": 7,
+  "exclus_titre": 2,
+  "motifs_exclusion": {
+    "aucun critère d'inclusion": 1,
+    "exclusion : rodent|animal": 1
+  },
+  "textes_recherches": 5,
+  "non_disponibles": 1,
+  "inclus": 5,
+  "inclus_meta": 0
+}

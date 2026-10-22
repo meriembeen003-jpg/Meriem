@@ -1,0 +1,40 @@
+Package: rtransparent
+Type: Package
+Title: Identifies indicators of transparency
+Version: 0.2.6
+Authors@R: c(person("Stylianos", "Serghiou", role = c("aut", "cre"),
+                     email = "stelios.serghiou@gmail.com"),
+             person("Nachev", "Vladislav", role = c("aut"),
+                     email = "vladislav.nachev@charite.de")
+                     )
+Description: Use this package to identify indicators of transparency within the
+    published literature. It can identify and extract text related to
+    indicators of transparency from specifically formatted TXT files and from
+    PMC XML files (i.e. XML files downloaed from the PubMed Central).
+License: GPL-3 + file LICENSE
+Encoding: UTF-8
+LazyData: true
+URL: http://github.com/serghiou/rtransparent
+BugReports: http://github.com/serghiou/rtransparent/issues
+Imports: 
+    dplyr,
+    magrittr,
+    oddpub,
+    purrr,
+    readr,
+    rlang,
+    stringr,
+    tibble,
+    tidyselect,
+    tokenizers,
+    utf8,
+    xml2
+RoxygenNote: 7.1.1
+Suggests: 
+    knitr,
+    metareadr,
+    rmarkdown
+VignetteBuilder: 
+    knitr,
+    metareadr
+    

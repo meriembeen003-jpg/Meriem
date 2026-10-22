@@ -1,0 +1,19 @@
+{
+  "name": "find-research-papers-mcp",
+  "owner": {
+    "name": "Surendran B",
+    "url": "https://github.com/surendranb"
+  },
+  "metadata": {
+    "description": "Scientific literature grounding MCP server for AI agents: unified search across 250M+ scholarly papers on arXiv, PubMed, OpenAlex, CrossRef, and Semantic Scholar.",
+    "version": "0.4.2"
+  },
+  "plugins": [
+    {
+      "name": "find-research-papers-mcp",
+      "source": "./",
+      "description": "Scientific literature grounding MCP server for AI agents: unified search across 250M+ scholarly papers on arXiv, PubMed, OpenAlex, CrossRef, and Semantic Scholar.",
+      "strict": false
+    }
+  ]
+}

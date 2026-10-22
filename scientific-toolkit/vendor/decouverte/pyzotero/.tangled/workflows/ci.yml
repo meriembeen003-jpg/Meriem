@@ -1,0 +1,59 @@
+# Spindle CI workflow for pyzotero testing
+# Runs on push and pull request events
+
+when:
+  - event: ["push", "manual"]
+    branch: ["main", "ci_update"]
+  - event: ["pull_request"]
+    branch: ["main"]
+
+engine: nixery
+
+dependencies:
+  nixpkgs:
+    - glibc
+    - tzdata
+    - uv
+    - ruff
+
+environment:
+  TZDIR: "/etc/zoneinfo"
+
+steps:
+  # Linting
+  - name: "Run Ruff linter"
+    command: "ruff check --verbose"
+  
+  # Test with Python 3.9
+  - name: "Test with Python 3.9"
+    command: |
+      uv sync --python 3.9 --all-extras --dev
+      uv run --python 3.9 pytest
+  
+  # Test with Python 3.10
+  - name: "Test with Python 3.10"
+    command: |
+      uv sync --python 3.10 --all-extras --dev
+      uv run --python 3.10 pytest
+  
+  # Test with Python 3.11
+  - name: "Test with Python 3.11"
+    command: |
+      uv sync --python 3.11 --all-extras --dev
+      uv run --python 3.11 pytest
+  
+  # Test with Python 3.12
+  - name: "Test with Python 3.12"
+    command: |
+      uv sync --python 3.12 --all-extras --dev
+      uv run --python 3.12 pytest
+  
+  # Test with Python 3.13
+  - name: "Test with Python 3.13"
+    command: |
+      uv sync --python 3.13 --all-extras --dev
+      uv run --python 3.13 pytest
+  
+  # Build wheel to verify packaging
+  - name: "Build wheel"
+    command: "uv build --python 3.13 --no-sources --wheel -o dist"

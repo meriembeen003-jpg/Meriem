@@ -1,0 +1,422 @@
+# Scholarly Research MCP Server
+
+A powerful, consolidated research tool that helps you find and analyze academic research papers from PubMed, Google Scholar, and ArXiv, plus optional Firecrawl web search, through five MCP tools.
+
+[![NPM](https://img.shields.io/badge/npm-published-orange)](https://www.npmjs.com/package/scholarly-research-mcp)
+[![GitHub](https://img.shields.io/badge/github-repo-blue)](https://github.com/aringadre76/mcp-for-research)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
+## What This Tool Does
+
+This tool helps you:
+- **Find research papers** on any topic from multiple academic databases
+- **Read full papers** when PubMed Central text is available (plus abstract-only for other sources)
+- **Get citations** in common bibliographic formats
+- **Search within excerpts** using optional text filters on PMC-derived text
+- **Organize research** with customizable preferences
+
+## Key Features
+
+- **5 Consolidated Tools**: Powerful, multi-functional tools instead of 24 separate ones
+- **Multi-Source Search**: PubMed, Google Scholar, and ArXiv
+- **User Preferences**: Customizable search and display settings
+- **Content Extraction**: Full-text paper access and analysis
+- **Citation Management**: Multiple citation format support
+- **Error Handling**: Robust fallback mechanisms
+- **Web research (Firecrawl)**: When `FIRECRAWL_API_KEY` is set in the environment (or a Firecrawl client is provided), the `web_research` tool can scrape URLs and run web search. See [Configuration](#configuration) and copy `.env.example` to `.env` to set your key. Get an API key at [firecrawl.dev](https://firecrawl.dev).
+
+## Configuration Overview
+
+Configuration for environment variables and API keys is documented in more detail in the `docs/` folder and `.env.example`. At a high level, you configure API keys via environment variables and should avoid committing any secret values.
+
+## Project Structure
+
+### **Core Components**
+```
+src/
+├── index.ts                           # Main server entry point (consolidated)
+├── adapters/                          # Data source connectors
+│   ├── pubmed.ts                      # PubMed API integration
+│   ├── google-scholar.ts              # Google Scholar web scraping
+│   ├── google-scholar-firecrawl.ts    # Firecrawl integration
+│   ├── arxiv.ts                       # ArXiv integration
+│   ├── unified-search.ts              # Basic multi-source search
+│   ├── enhanced-unified-search.ts     # Advanced multi-source search
+│   └── preference-aware-unified-search.ts # User preference integration
+├── preferences/                       # User preference management
+│   └── user-preferences.ts            # Preference storage and retrieval
+└── models/                            # Data structures and interfaces
+    ├── paper.ts                       # Paper data models
+    ├── search.ts                      # Search parameter models
+    └── preferences.ts                 # Preference models
+```
+
+### **Documentation**
+```
+docs/
+├── README.md                          # Documentation index and overview
+├── CONSOLIDATION_GUIDE.md             # Complete consolidation guide
+├── TOOL_CONSOLIDATION.md              # Quick tool mapping reference
+├── PROJECT_STRUCTURE.md               # Clean project organization
+├── API_REFERENCE.md                   # Complete API documentation
+├── ARCHITECTURE.md                    # Technical system design
+├── DATA_MODELS.md                     # Data structure definitions
+└── DEVELOPMENT.md                     # Developer setup guide
+```
+
+### **Testing**
+```
+tests/
+├── test-preferences.js                # Preference system tests
+├── test-all-tools-simple.sh           # Bash test runner (recommended)
+├── test_all_tools.py                  # Python test runner
+└── test-all-tools.js                  # JavaScript test runner
+```
+
+### **Configuration**
+```
+├── package.json                       # Project dependencies and scripts
+├── tsconfig.json                      # TypeScript configuration
+├── .env.example                       # Environment variables template
+└── README.md                          # This file
+```
+
+## Quick Start
+
+Install in one click where the client actually supports a desktop handoff:
+
+[![Add to Cursor](https://img.shields.io/badge/Add_to_Cursor-black?style=for-the-badge)](https://cursor.com/en/install-mcp?name=scholarly-research-mcp&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsInNjaG9sYXJseS1yZXNlYXJjaC1tY3AiXX0%3D)
+[![Add to VS Code](https://img.shields.io/badge/Add_to_VS_Code-black?style=for-the-badge&logo=visualstudiocode&logoColor=007ACC)](vscode:mcp/install?%7B%22name%22%3A%22scholarly-research-mcp%22%2C%22type%22%3A%22stdio%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22scholarly-research-mcp%22%5D%7D)
+
+> **Cursor** uses Cursor's install page to hand off to the desktop app and open the MCP install prompt. If your system does not register the Cursor URL handler, use the manual config below instead.
+>
+> If Cursor adds the server but startup fails with `npm error could not determine executable to run`, the npm `latest` release is stale. In that case, clone this repo and use the local `node dist/index.js` command below until the refreshed npm publish is live.
+>
+> **VS Code** uses the `vscode:mcp/install` deep link to open VS Code and prompt to add the MCP server to your configuration.
+
+Other clients are documented below, but they do **not** currently support the same kind of reliable README click -> open desktop app -> install server flow for this project:
+
+- **Claude Desktop**: supports `.mcpb` desktop extensions, but this repo does not currently ship a bundled `.mcpb`
+- **ChatGPT**: requires a public HTTPS MCP endpoint rather than a local stdio command
+- **Codex**: configured through `codex mcp add` or `config.toml`
+- **Gemini**: configured through `settings.json` or Gemini CLI MCP commands
+
+<a id="claude-desktop-copy-configuration"></a>
+### Claude Desktop – Copy configuration
+
+Add this to your `claude_desktop_config.json` under `mcpServers`:
+
+```json
+{
+  "mcpServers": {
+    "scholarly-research-mcp": {
+      "command": "npx",
+      "args": ["-y", "scholarly-research-mcp"]
+    }
+  }
+}
+```
+
+Then fully restart Claude Desktop.  
+Config file locations:
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%/Claude/claude_desktop_config.json`
+- **Linux**: `~/.config/Claude/claude_desktop_config.json`
+
+### Cursor IDE – One‑click install
+
+If you use Cursor, you can install this MCP server with a single click:
+
+[**One‑Click – Add to Cursor**](https://cursor.com/en/install-mcp?name=scholarly-research-mcp&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsInNjaG9sYXJseS1yZXNlYXJjaC1tY3AiXX0%3D)
+
+This opens Cursor's install handoff page, then launches the Cursor desktop app with an MCP install prompt for `npx -y scholarly-research-mcp`. You’ll need Node.js and npm available on your system.
+
+If startup fails with `npm error could not determine executable to run`, the currently published npm package is missing its executable metadata. Until the refreshed npm release is published, use the local clone/build path below:
+
+```bash
+git clone https://github.com/aringadre76/mcp-for-research
+cd mcp-for-research
+npm install
+npm run build
+node dist/index.js
+```
+
+<a id="vs-code-copy-configuration"></a>
+### VS Code – Copy configuration
+
+Create `.vscode/mcp.json` in your project (or edit your global MCP config) and add:
+
+```json
+{
+  "servers": {
+    "scholarly-research-mcp": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "scholarly-research-mcp"]
+    }
+  }
+}
+```
+
+Then reload VS Code so the Copilot / MCP integration picks it up.
+
+<a id="claude-code-cli-configuration"></a>
+### Claude Code – CLI
+
+Run:
+
+```bash
+claude mcp add scholarly-research-mcp -- npx -y scholarly-research-mcp
+```
+
+Claude Code can also read project-scoped MCP config from a `.mcp.json` file in your repo if you prefer to commit the setup.
+
+<a id="gemini-cli-configuration"></a>
+### Gemini – CLI
+
+Add this to your Gemini CLI settings file:
+
+- User scope: `~/.gemini/settings.json`
+- Project scope: `.gemini/settings.json`
+
+```json
+{
+  "mcpServers": {
+    "scholarly-research-mcp": {
+      "command": "npx",
+      "args": ["-y", "scholarly-research-mcp"]
+    }
+  }
+}
+```
+
+Gemini CLI also supports adding MCP servers through its built-in `mcp` commands if you prefer not to edit JSON manually.
+
+<a id="codex-cli-configuration"></a>
+### Codex – CLI
+
+Run:
+
+```bash
+codex mcp add scholarly-research-mcp -- npx -y scholarly-research-mcp
+```
+
+Codex stores MCP configuration in `~/.codex/config.toml` by default, and the Codex IDE extension shares that same MCP config.
+
+<a id="chatgpt-remote-connector"></a>
+### ChatGPT – Remote connector
+
+ChatGPT does not run local stdio MCP servers directly from a command like `npx -y scholarly-research-mcp`.
+
+To use this server with ChatGPT, you need to expose it through a public HTTPS MCP endpoint, then add that endpoint in ChatGPT under `Settings -> Apps & Connectors -> Create`.
+
+If you want a local desktop setup instead of deploying a remote endpoint, use Cursor, Claude Desktop, VS Code, Claude Code, Gemini CLI, or Codex instead.
+
+### Manual – Copy configuration JSON
+
+For any MCP-compatible assistant that accepts a JSON config (similar to `mcp.json`), use:
+
+```json
+{
+  "mcpServers": {
+    "scholarly-research-mcp": {
+      "command": "npx",
+      "args": ["-y", "scholarly-research-mcp"]
+    }
+  }
+}
+```
+
+Paste this into the assistant’s MCP configuration and adjust paths/env vars if needed.
+
+## Requirements
+
+- **Node.js >= 18.17** (LTS recommended). Check with `node -v`.
+- **npm** (comes with Node.js).
+- **Google Chrome or Chromium** (optional) – only needed for Google Scholar scraping and ArXiv full-text extraction. If you only use PubMed, ArXiv API search, or Firecrawl-based features, no browser is required. You can point to a custom binary with `PUPPETEER_EXECUTABLE_PATH` or `CHROME_PATH`.
+
+## Local MCP Setup
+
+1. **Download the tool**
+   ```bash
+   git clone https://github.com/aringadre76/mcp-for-research.git
+   cd mcp-for-research
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Build the tool**
+   ```bash
+   npm run build
+   ```
+
+4. **Configure your AI assistant**
+   - Find "MCP Servers" or "Tools" in your AI assistant's settings
+   - Add a new MCP server
+   - Set the command to: `node dist/index.js`
+   - Set the working directory to your project folder
+
+5. **Test the setup**
+   ```bash
+   npm run test:all-tools-bash
+   ```
+
+6. **Connect from your AI assistant**
+   - Open your assistant's settings and find the section for MCP servers or tools.
+   - Add a new MCP server that runs the command `node dist/index.js` in the `mcp-for-research` folder.
+   - Save the configuration and ask the assistant to list or use the `research_search` tool to confirm it is working.
+
+## Available Tools
+
+The server provides **5 consolidated MCP tools** that replace the previous 24 individual tools:
+
+### 1. **`research_search`**
+Search across PubMed, Google Scholar, and ArXiv. Uses the preference-aware adapter: when Firecrawl is configured and the preference is set, Google Scholar can use Firecrawl instead of Puppeteer. Requested sources are honored from the tool even if disabled in saved preferences. Failed sources surface warnings when adapters throw. Optional in-memory search cache follows `research_preferences` cache settings.
+
+**Parameters**: Query, sources (`pubmed`, `google-scholar`, `arxiv`), maxResults, startDate, endDate, journal, author, includeAbstracts, sortBy
+
+### 2. **`paper_analysis`**
+Metadata plus optional PubMed PMC full-text excerpts (heuristic sections or plain excerpt), with optional `textContains` filtering. Non-PubMed records use abstract-only text when analysis type is `full-text`.
+
+**Parameters**: Identifier (PMID, PMCID, DOI, ArXiv), `analysisType` (`basic` or `full-text`), `maxSectionLength`, `maxFullTextChars`, `textContains`
+
+### 3. **`citation_manager`**
+Formatted citations (APA, MLA, BibTeX, RIS, EndNote tagged) and PubMed citation counts when a PMID exists. No related-paper discovery in this release.
+
+**Parameters**: Identifier, action (`generate`, `count`, `all`), `format` when needed
+
+### 4. **`research_preferences`**
+Persisted preferences (sources, search defaults, display formatting for adapters, cache TTL for in-process `research_search` caching).
+
+**Parameters**: Action, category, values for updates; import accepts JSON string or object
+
+### 5. **`web_research`**
+Firecrawl-backed **scrape** (single URL) and **search** (open web). Requires `FIRECRAWL_API_KEY`.
+
+**Parameters**: `action` (`scrape` | `search`), `url` or `query`, optional `maxResults`, `formats`, `onlyMainContent`, `waitFor`, `actions`
+
+## Usage Examples
+
+### Search for Papers
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "research_search",
+    "arguments": {
+      "query": "machine learning",
+      "sources": ["pubmed", "arxiv"],
+      "maxResults": 15,
+      "startDate": "2020/01/01"
+    }
+  }
+}
+```
+
+### Analyze a Paper
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "paper_analysis",
+    "arguments": {
+      "identifier": "12345678",
+      "analysisType": "full-text",
+      "maxFullTextChars": 4000
+    }
+  }
+}
+```
+
+### Get Citations
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "citation_manager",
+    "arguments": {
+      "identifier": "12345678",
+      "action": "all",
+      "format": "apa"
+    }
+  }
+}
+```
+
+## Migration from Previous Version
+
+The consolidated tools are **backward compatible** - you can still access the same functionality, just through fewer, more powerful tools. Each consolidated tool accepts parameters that let you specify exactly what you want to do.
+
+| Old Tool | New Tool | Notes |
+|----------|----------|-------|
+| `search_papers` | `research_search` | Use `sources: ["pubmed"]` |
+| `get_paper_by_id` | `paper_analysis` | Use `analysisType: "basic"` |
+| `get_full_text` | `paper_analysis` | Use `analysisType: "full-text"` |
+| `get_citation` | `citation_manager` | Use `action: "generate"` |
+| `set_source_preference` | `research_preferences` | Use `action: "set", category: "source"` |
+
+## Troubleshooting
+
+### Common Issues
+
+**Q: The tool doesn't start**
+A: Make sure you have Node.js >= 18.17 installed (`node -v`). If running from a clone, run `npm install && npm run build` first.
+
+**Q: My AI assistant can't find the tools**
+A: Check that the MCP server path is correct in your AI assistant's settings. After adding the config, fully restart the assistant.
+
+**Q: Google Scholar or ArXiv full-text features fail with a Chrome error**
+A: These features need a local Chrome or Chromium binary. Install Google Chrome, or set `PUPPETEER_EXECUTABLE_PATH=/path/to/chrome`. PubMed, ArXiv API search, and Firecrawl features work without a browser.
+
+**Q: Searches return no results**
+A: Try different search terms or check if your sources are enabled in preferences.
+
+**Q: How do I get papers in a specific format?**
+A: Use the citation tools to get the paper in the format you need (APA, MLA, etc.).
+
+## Development
+
+### Running Tests
+```bash
+npm run test:all-tools-bash
+```
+
+### Building
+```bash
+npm run build
+```
+
+### Development Mode
+```bash
+npm run dev
+```
+
+## Contributing
+
+We welcome contributions! Please see our contributing guidelines and feel free to submit issues or pull requests.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Documentation
+
+For comprehensive documentation, guides, and technical details, see the [`docs/`](./docs/) directory:
+
+- **[Documentation Overview](./docs/README.md)** - Complete documentation index
+- **[Consolidation Guide](./docs/CONSOLIDATION_GUIDE.md)** - Detailed explanation of the new approach
+- **[Tool Reference](./docs/TOOL_CONSOLIDATION.md)** - Quick mapping from old to new tools
+- **[API Reference](./docs/API_REFERENCE.md)** - Complete tool documentation
+- **[Project Structure](./docs/PROJECT_STRUCTURE.md)** - Clean project organization
+
+## Version History
+
+- **v2.0.2**: One-click install buttons, switched to puppeteer-core (no Chromium download), pinned cheerio for Node 18 compatibility, added engines field, security fix for .env in npm package
+- **v2.0.1**: Firecrawl web research and Google Scholar integration improvements, documentation cleanup
+- **v2.0.0**: Consolidated 24 tools into 5 powerful tools
+- **v1.4.x**: Previous version with 24 individual tools
+- **v1.0.x**: Initial release
+

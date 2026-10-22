@@ -1,0 +1,42 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      user-agent:
+      - python-requests/2.31.0,pygbif/0.6.5
+    method: GET
+    uri: https://api.gbif.org/v2/species/match?class=Insecta&checklistKey=7ddf754f-d193-4cc9-b351-99906754a03b
+  response:
+    body:
+      string: '{"usage":{"key":"H6","name":"Insecta","canonicalName":"Insecta","rank":"CLASS","status":"ACCEPTED","type":"SCIENTIFIC","formattedName":"<i>Insecta</i>"},"classification":[{"key":"CS5HF","name":"Eukaryota","rank":"DOMAIN"},{"key":"N","name":"Animalia","rank":"KINGDOM"},{"key":"RT","name":"Arthropoda","rank":"PHYLUM"},{"key":"L2655","name":"Hexapoda","rank":"SUBPHYLUM"},{"key":"H6","name":"Insecta","rank":"CLASS"}],"diagnostics":{"matchType":"EXACT","confidence":100,"timeTaken":34,"timings":{"nameNRank":0,"sciNameMatch":34,"nameParse":0,"luceneMatch":34}},"synonym":false}'
+    headers:
+      Accept-Ranges:
+      - bytes
+      Age:
+      - '22'
+      Cache-Control:
+      - public, max-age=3601
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '576'
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Aug 2026 11:09:38 GMT
+      Vary:
+      - Origin, Access-Control-Request-Method, Access-Control-Request-Headers
+      Via:
+      - 1.1 prodapicache2-vh.gbif.org (Varnish/9.0)
+      X-Varnish:
+      - 113028473570 113131291177
+    status:
+      code: 200
+      message: OK
+version: 1

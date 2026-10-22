@@ -1,0 +1,24 @@
+# À installer seulement si nécessaire (volumineux)
+# pip install -r requirements-outils-lourds.txt
+
+# Extraction de documents
+marker-pdf>=1.0
+docling>=2.0
+unstructured[pdf]>=0.15
+nougat-ocr>=0.1.17
+surya-ocr>=0.6
+
+# Agents et RAG scientifiques
+paper-qa>=5.0
+graphrag>=2.0
+lightrag-hku>=1.0
+haystack-ai>=2.0
+
+# Revue systématique
+asreview>=2.0
+
+# Scientométrie Python
+pybibx>=1.0
+
+# OCR système (Ubuntu) :
+#   sudo apt install tesseract-ocr tesseract-ocr-fra poppler-utils ghostscript

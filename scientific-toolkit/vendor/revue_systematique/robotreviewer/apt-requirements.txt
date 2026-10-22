@@ -1,0 +1,13 @@
+software-properties-common
+aria2
+curl
+openssl
+ca-certificates
+libxml2
+wget
+libsm6
+libxrender1
+libfontconfig1
+git
+sudo
+cron

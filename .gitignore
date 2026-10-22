@@ -1,0 +1,27 @@
+# dépendances & builds
+node_modules/
+.next/
+/out/
+/build/
+/dist/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# système / éditeurs
+.DS_Store
+Thumbs.db
+*.log
+.env
+.env.local
+
+# caches de données
+.scitk-cache/
+*.sqlite
+
+# artefacts TypeScript
+*.tsbuildinfo

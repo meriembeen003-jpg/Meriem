@@ -1,0 +1,109 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      user-agent:
+      - python-requests/2.31.0,pygbif/0.6.4
+    method: GET
+    uri: https://api.gbif.org/v1/network?limit=5
+  response:
+    body:
+      string: "{\"offset\":0,\"limit\":5,\"endOfRecords\":false,\"count\":13,\"results\":[{\"key\":\"a6cdb5d1-d358-4ac0-b75c-2c33cf6c8936\",\"title\":\"Long-term
+        Ecological Research Program - PELD/CNPq, Brazil\",\"description\":\"The PELD
+        program, held for 23 years by the National Council for Scientific and Technological
+        Development (CNPq) is maintained by ongoing Public Calls. The PELD network
+        currently has 34 reference sites distributed in all biomes from Brazil, operating
+        in dozens of protected areas and areas subject to anthropic impacts. The Program
+        has a well-established and active management structure, in which the Management
+        and Scientific Committees act in an integrated manner for strategic decisions
+        in order to improve the Program. It is a member of the International Network
+        for Long Term Ecological Research - ILTER, which brings together 44 member
+        countries and their networks of long-term research sites. The program has
+        been pooling efforts to foster a national culture devoted to long-term ecological
+        research that can address environmental issues and point to solutions and
+        practices for sustainable use of natural resources and ecosystem services,
+        with important contributions to the proposition of public policies, promoting
+        biodiversity conservation and human welfare.\\n\\nhttps://www.gov.br/cnpq/pt-br/acesso-a-informacao/acoes-e-programas/programas/peld\",\"language\":\"eng\",\"numConstituents\":44,\"email\":[],\"phone\":[],\"homepage\":[],\"address\":[],\"createdBy\":\"andrea\",\"modifiedBy\":\"andrea\",\"created\":\"2024-03-11T14:48:10.451+00:00\",\"modified\":\"2024-03-11T14:54:56.037+00:00\",\"contacts\":[{\"key\":5179449,\"type\":\"ADMINISTRATIVE_POINT_OF_CONTACT\",\"primary\":false,\"userId\":[],\"firstName\":\"Conselho
+        Nacional de Desenvolvimento Cient\xEDfico e Tecnol\xF3gico (CNPq/MCTI)\",\"position\":[],\"email\":[\"peld@cnpq.br\"],\"phone\":[],\"homepage\":[],\"address\":[],\"createdBy\":\"andrea\",\"modifiedBy\":\"andrea\",\"created\":\"2024-03-11T14:48:56.732+00:00\",\"modified\":\"2024-03-11T14:53:54.442+00:00\"},{\"key\":5179450,\"type\":\"ADMINISTRATIVE_POINT_OF_CONTACT\",\"primary\":false,\"userId\":[],\"firstName\":\"Sistema
+        de Informa\xE7\xE3o sobre a biodiversidade Brasileira (SiBBr)\",\"position\":[],\"email\":[\"atendimento_sibbr@rnp.br\"],\"phone\":[],\"homepage\":[],\"address\":[],\"createdBy\":\"andrea\",\"modifiedBy\":\"andrea\",\"created\":\"2024-03-11T14:49:36.777+00:00\",\"modified\":\"2024-03-11T14:54:04.531+00:00\"}],\"endpoints\":[],\"machineTags\":[],\"tags\":[],\"identifiers\":[],\"comments\":[]},{\"key\":\"0b00b924-016b-4954-96a7-2d9264b5d0ba\",\"title\":\"SwissBIF
+        (swissbif.ch) : Swiss Biodiversity Information Facility [Daten Biodiversit\xE4t
+        Schweiz \u2013 Donn\xE9es Biodiversit\xE9 Suisse]\",\"description\":\"The
+        Swiss Biodiversity Information Facility (SwissBIF) operates a network of partners
+        who contribute at responding to the Swiss Federal Council\u2019s commitment
+        of sharing standardized biodiversity data with the global initiative (Global
+        Biodiversity Information Facility). Under the auspices of the Swiss Federal
+        Office for the Environment, SwissBIF brings together active actors that strengthen
+        the international exchange of primary information on biodiversity, assists
+        the mobilization and reuse of relevant data that support conservation activities
+        and increase biodiversity-based knowledge. This collaborative network associates
+        national centers of biodiversity records, scientific collections, research
+        contributions, cantonal agencies for conservation, administrations of protected
+        areas, federal offices. Participants to the network work under common procedures,
+        an agreed ethical framework and coordinated data flow that ease providing
+        access to multidimensional and coherent data.\",\"language\":\"eng\",\"numConstituents\":12,\"email\":[],\"phone\":[],\"homepage\":[],\"address\":[],\"createdBy\":\"andrea\",\"modifiedBy\":\"andrea\",\"created\":\"2024-03-01T14:17:44.135+00:00\",\"modified\":\"2024-03-01T14:17:44.135+00:00\",\"contacts\":[],\"endpoints\":[],\"machineTags\":[],\"tags\":[],\"identifiers\":[],\"comments\":[]},{\"key\":\"2ee1bff7-0b34-4fa3-9433-feaa7c6ee08b\",\"title\":\"Biodiversidad
+        y Desarrollo Colombia\",\"description\":\"Biodiversidad y Desarrollo es una
+        plataforma para promover y amplificar la gesti\xF3n empresarial en biodiversidad.
+        Inicia en el a\xF1o 2014 en la Asociaci\xF3n Nacional de Empresarios de Colombia
+        (ANDI). Para el a\xF1o 2020, con la mediaci\xF3n del Centro Nacional del Agua
+        y Biodiversidad (CNAB), el Sistema de Informaci\xF3n sobre Biodiversidad de
+        Colombia (SiB Colombia) y la Infraestructura Mundial de Informaci\xF3n en
+        Biodiversidad (GBIF), se consolida como una comunidad colombiana de publicadores
+        de datos que impactan de manera colectiva y positiva mediante acciones empresariales
+        y la gesti\xF3n de la biodiversidad para contribuir al desarrollo sostenible
+        de los territorios. \\n\\n\\nEsta comunidad busca elevar la contribuci\xF3n
+        del sector empresarial al conocimiento de la biodiversidad; convocando, facilitando
+        e integrando su participaci\xF3n como sector productivo. Es una gran oportunidad
+        para garantizar la participaci\xF3n del sector empresarial a nivel nacional
+        e internacional, acelerando la generaci\xF3n de conocimiento de la biodiversidad
+        a partir de la publicaci\xF3n de datos a trav\xE9s del SiB Colombia y GBIF,
+        de una manera organizada y sistem\xE1tica.\",\"language\":\"spa\",\"numConstituents\":443,\"email\":[],\"phone\":[],\"homepage\":[],\"address\":[],\"createdBy\":\"andrea\",\"modifiedBy\":\"andrea\",\"created\":\"2023-05-15T07:13:37.374+00:00\",\"modified\":\"2023-05-15T07:13:37.374+00:00\",\"contacts\":[],\"endpoints\":[],\"machineTags\":[],\"tags\":[],\"identifiers\":[],\"comments\":[]},{\"key\":\"8534dd20-c368-4a1f-bdaf-e6b390710f89\",\"title\":\"SCAR
+        Scientific Committee on Antarctic Research\",\"language\":\"eng\",\"numConstituents\":240,\"email\":[],\"phone\":[],\"homepage\":[],\"address\":[],\"createdBy\":\"andrea\",\"modifiedBy\":\"andrea\",\"created\":\"2022-02-18T13:27:40.670+00:00\",\"modified\":\"2022-02-18T14:56:04.788+00:00\",\"contacts\":[{\"key\":3394109,\"type\":\"ADMINISTRATIVE_POINT_OF_CONTACT\",\"primary\":false,\"userId\":[],\"firstName\":\"Anton\",\"lastName\":\"Van
+        de Putte\",\"position\":[],\"email\":[\"antonarctica@gmail.com\",\"avandeputte@naturalsciences.be\"],\"phone\":[],\"homepage\":[],\"organization\":\"Royal
+        Belgian Institute of Natural Sciences\",\"address\":[\"Vautierstraat 29\"],\"city\":\"Brussels\",\"country\":\"BE\",\"postalCode\":\"1000\",\"createdBy\":\"andrea\",\"modifiedBy\":\"andrea\",\"created\":\"2022-03-01T14:06:23.259+00:00\",\"modified\":\"2022-03-01T14:06:23.259+00:00\"},{\"key\":3394209,\"type\":\"POINT_OF_CONTACT\",\"primary\":false,\"userId\":[],\"firstName\":\"Yi
+        Ming\",\"lastName\":\"Gan\",\"position\":[],\"email\":[\"ymgan@naturalsciences.be\"],\"phone\":[],\"homepage\":[],\"organization\":\"Royal
+        Belgian Institute of Natural Sciences\",\"address\":[\"Vautierstraat 29\"],\"city\":\"Brussels\",\"country\":\"BE\",\"postalCode\":\"1000\",\"createdBy\":\"andrea\",\"modifiedBy\":\"andrea\",\"created\":\"2022-03-01T14:07:17.856+00:00\",\"modified\":\"2022-03-01T14:07:17.856+00:00\"},{\"key\":3394210,\"type\":\"POINT_OF_CONTACT\",\"primary\":false,\"userId\":[],\"firstName\":\"Huw\",\"lastName\":\"Griffiths\",\"position\":[\"Additional
+        delegate\"],\"email\":[\"hjg@bas.ac.uk\"],\"phone\":[],\"homepage\":[],\"organization\":\"British
+        Antarctic Survey\",\"address\":[\"High Cross, Madingley Road \"],\"city\":\"Cambridge\",\"country\":\"GB\",\"postalCode\":\"CB3
+        0ET\",\"createdBy\":\"andrea\",\"modifiedBy\":\"andrea\",\"created\":\"2022-03-01T14:08:49.658+00:00\",\"modified\":\"2022-03-01T14:08:49.658+00:00\"}],\"endpoints\":[],\"machineTags\":[{\"key\":11982375,\"namespace\":\"registry.gbif.org\",\"name\":\"visibleOnDatasetPage\",\"value\":\"true\",\"createdBy\":\"andrea\",\"created\":\"2022-07-21T07:32:59.808+00:00\"}],\"tags\":[],\"identifiers\":[],\"comments\":[]},{\"key\":\"4b0d8edb-7504-42c4-9349-63e86c01bf97\",\"title\":\"The
+        Virtual Herbarium Reflora\",\"language\":\"eng\",\"numConstituents\":66,\"email\":[],\"phone\":[],\"homepage\":[],\"address\":[],\"createdBy\":\"andrea\",\"modifiedBy\":\"andrea\",\"created\":\"2021-11-09T10:25:07.055+00:00\",\"modified\":\"2021-11-09T10:25:07.055+00:00\",\"contacts\":[{\"key\":3402098,\"type\":\"ADMINISTRATIVE_POINT_OF_CONTACT\",\"primary\":false,\"userId\":[],\"firstName\":\"Reflora\",\"position\":[],\"email\":[\"reflora@jbrj.gov.br\"],\"phone\":[],\"homepage\":[],\"address\":[],\"createdBy\":\"andrea\",\"modifiedBy\":\"andrea\",\"created\":\"2022-03-10T09:48:04.909+00:00\",\"modified\":\"2022-03-10T09:48:04.909+00:00\"}],\"endpoints\":[],\"machineTags\":[{\"key\":10781268,\"namespace\":\"registry.gbif.org\",\"name\":\"visibleOnDatasetPage\",\"value\":\"true\",\"createdBy\":\"andrea\",\"created\":\"2022-03-09T09:06:18.608+00:00\"}],\"tags\":[],\"identifiers\":[],\"comments\":[]}]}"
+    headers:
+      Accept-Ranges:
+      - bytes
+      Age:
+      - '0'
+      Cache-Control:
+      - public, max-age=3601
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 04 Oct 2024 07:00:28 GMT
+      Expires:
+      - '0'
+      Pragma:
+      - no-cache
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin, Access-Control-Request-Method, Access-Control-Request-Headers
+      Via:
+      - 1.1 varnish (Varnish/6.0)
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+      X-Varnish:
+      - '676102571'
+      X-XSS-Protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+version: 1

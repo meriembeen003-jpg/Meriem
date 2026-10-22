@@ -1,0 +1,43 @@
+<link rel="shortcut icon" type="image/png" href="{{base_path}}favicon.png">
+
+<link rel="stylesheet" href="{{base_path}}assets/codecheck-register.css">
+
+<meta property="og:title" content="{{{og_title}}}">
+<meta name="author" content="{{{page_author}}}">
+<meta name="generator" content="{{meta_generator}}">
+
+<meta property="og:url" content="{{{og_url}}}">
+<meta property="og:site_name" content="CODECHECK Register">
+<meta property="og:description" content="{{{og_description}}}">
+<meta property="og:type" content="{{og_type}}">
+{{#has_og_image}}
+<meta property="og:image" content="{{{og_image}}}">
+<meta name="twitter:card" content="summary_large_image">
+{{/has_og_image}}
+{{^has_og_image}}
+<meta name="twitter:card" content="summary">
+{{/has_og_image}}
+{{#has_citation_meta}}
+
+<!-- Highwire Press citation metadata, for Google Scholar and Zotero (register#52) -->
+{{{citation_meta}}}
+{{/has_citation_meta}}
+{{#has_signposting}}
+
+<!-- FAIR Signposting Level 1, as HTML link elements: GitHub Pages cannot set
+     HTTP Link headers (register#55) -->
+{{{signposting}}}
+{{/has_signposting}}
+
+{{#has_schema_org_jsonld}}
+<!-- Schema.org metadata for CODECHECK certificate -->
+<script type="application/ld+json">{{{schema_org_jsonld}}}</script>
+{{/has_schema_org_jsonld}}
+{{^has_schema_org_jsonld}}
+<!-- Generic Schema.org metadata for CODECHECK website -->
+<script type="application/ld+json"> {"description":"CODECHECK is a process for independent execution of computations underlying scholarly research articles.","headline":"CODECHECK","@type":"WebSite","url":"https://codecheck.org.uk/","name":"CODECHECK","author":{"@type":"Person","name":"Stephen Eglen & Daniel Nüst"},"@context":"https://schema.org"}</script>
+{{/has_schema_org_jsonld}}
+
+<!-- Icon fonts -->
+<link rel="stylesheet" href="{{base_path}}libs/academicons/css/academicons.min.css">
+<link rel="stylesheet" href="{{base_path}}libs/font-awesome/css/font-awesome.min.css">

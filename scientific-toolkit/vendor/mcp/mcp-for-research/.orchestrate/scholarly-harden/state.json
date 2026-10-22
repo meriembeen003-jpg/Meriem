@@ -1,0 +1,65 @@
+{
+  "rootSlug": "scholarly-harden",
+  "tasks": [
+    {
+      "name": "phase-a-truth-contracts",
+      "type": "worker",
+      "branch": "orch/scholarly-harden/phase-a-truth-contracts",
+      "startingRef": "main",
+      "dependsOn": [],
+      "agentId": "bc-e1c77e13-6e18-4f6d-a561-53d6e5932e42",
+      "runId": "run-ac2a1090-f6a2-41a9-b851-f8a05b274203",
+      "parentAgentId": null,
+      "status": "handed-off",
+      "resultStatus": "finished",
+      "handoffPath": "handoffs/phase-a-truth-contracts.md",
+      "startedAt": "2026-05-12T02:50:08.152Z",
+      "finishedAt": "2026-05-12T02:58:47.311Z",
+      "lastUpdate": "2026-05-12T02:58:51.004Z",
+      "note": "respawned by local-cli (was error; attempts=1)",
+      "attempts": 2,
+      "slackTs": null,
+      "prNumber": 2,
+      "failureMode": null,
+      "verification": "unit-test-verified"
+    },
+    {
+      "name": "verify-phase-a",
+      "type": "verifier",
+      "branch": "`orch/scholarly-harden/phase-a-truth-contracts` (verifier harness committed at `935bbfa`)",
+      "startingRef": "orch/scholarly-harden/phase-a-truth-contracts",
+      "dependsOn": [
+        "phase-a-truth-contracts"
+      ],
+      "agentId": "bc-7f8ef2c9-e231-40c2-be03-0271308d8569",
+      "runId": "run-f87ef7e0-39cb-4df8-a014-f0e88f7913da",
+      "parentAgentId": null,
+      "status": "handed-off",
+      "resultStatus": "finished",
+      "handoffPath": "handoffs/verify-phase-a.md",
+      "startedAt": "2026-05-12T02:58:53.259Z",
+      "finishedAt": "2026-05-12T03:02:51.683Z",
+      "lastUpdate": "2026-05-12T03:02:51.683Z",
+      "note": null,
+      "slackTs": null,
+      "prNumber": null,
+      "failureMode": null,
+      "verification": null,
+      "attempts": 1
+    }
+  ],
+  "attention": [
+    {
+      "at": "2026-05-12T02:49:04.910Z",
+      "message": "phase-a-truth-contracts: spawn failed after 3 transient sub-attempts: l: [invalid_model] Model 'gpt-5.5' does not match a known variant. Call GET /v1/models to list valid id+params combinations. run `bun cli.ts models --check` to re-probe the catalog against /v1/agents."
+    },
+    {
+      "at": "2026-05-12T02:50:07.797Z",
+      "message": "phase-a-truth-contracts: respawned by local-cli (was error)"
+    },
+    {
+      "at": "2026-05-12T02:58:51.004Z",
+      "message": "phase-a-truth-contracts: verification self-reported (unit-test-verified)"
+    }
+  ]
+}

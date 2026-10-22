@@ -1,0 +1,12 @@
+setuptools
+lxml
+lxml_html_clean
+requests
+habanero
+tabulate
+cssselect
+unidecode
+docopt
+coloredlogs
+python-Levenshtein
+brotli

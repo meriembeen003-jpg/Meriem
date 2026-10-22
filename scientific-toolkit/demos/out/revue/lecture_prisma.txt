@@ -1,0 +1,18 @@
+Identification
+  Enregistrements identifiés par source : 12
+    · crossref : 4
+    · openalex : 6
+    · europepmc : 2
+  Doublons supprimés : 5
+
+Sélection
+  Enregistrements criblés (titre/résumé) : 7
+  Exclus sur titre/résumé : 2
+    · aucun critère d'inclusion : 1
+    · exclusion : rodent|animal : 1
+  Textes intégraux recherchés : 5
+  Textes intégraux non disponibles : 1
+
+Inclusion
+  Études incluses dans la synthèse : 5
+  Études incluses dans la méta-analyse : 0

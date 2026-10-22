@@ -1,0 +1,96 @@
+# File: azure-template-tox-job.yml
+# Date: 30-May-2024
+#
+##
+parameters:
+  tox: ""
+  python: ""
+  os: "linux"
+  fixtures: ""
+
+jobs:
+- job: ${{ format('build_test_{0}_{1}', parameters.tox, parameters.os) }}
+  timeoutInMinutes: 0
+  pool:
+    ${{ if eq(parameters.os, 'macos') }}:
+      vmImage: 'macOS-15'
+    ${{ if eq(parameters.os, 'linux') }}:
+      vmImage: 'ubuntu-latest'
+    ${{ if eq(parameters.os, 'windows') }}:
+      vmImage: 'windows-latest'
+
+  variables:
+    - group: py-shared-variables
+
+  steps:
+    #
+    # ensure the required Python versions are available
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: ${{ parameters.python }}
+        addToPath: true
+      displayName: setup python
+    #
+    - checkout: self
+      submodules: true
+    #
+    - ${{ if startsWith(parameters.os, 'macos') }}:
+      - bash: |
+          set -e
+          ls -la /Applications/Xcode*
+          sudo xcode-select --switch /Applications/Xcode_16.app/Contents/Developer
+          which g++
+          c++ --version
+        displayName: "setup Xcode"
+    # ----------------------------------------------
+    - ${{ if startsWith(parameters.os, 'linux') }}:
+      - script: which apt
+        displayName: 'Installing OS dependencies'
+      - script: apt-cache policy | grep http | awk '{print $2 $3}' | sort -u
+        displayName: 'Checking for repos'
+    #
+    - ${{ if startsWith(parameters.os, 'windows') }}:
+      - script: python -c "import platform; print('Running on', platform.system())"
+        displayName: "Confirm Windows OS"
+    #
+    - script: "python -c \"import sys; print(sys.version); print(sys.executable)\""
+      displayName: show python information
+    #
+    - script: python -m pip install --upgrade pip tox build
+      displayName: 'Install tools'
+      #
+    - script: pip install .[tests]
+      displayName: 'Install dependencies'
+    #
+    - ${{ if startsWith(parameters.tox, 'py') }}:
+      - script: |
+          ${{ format('python -m tox -e {0}', parameters.tox) }}
+        displayName: 'Running tox task'
+    - ${{ if and(not(startsWith(parameters.tox, 'py')), startsWith(parameters.python, '3.14')) }}:
+      - script: |
+          ${{ format('python -m tox -e {0}-py314', parameters.tox) }}
+        displayName: 'Running tox task'
+    - ${{ if and(not(startsWith(parameters.tox, 'py')), startsWith(parameters.python, '3.13')) }}:
+      - script: |
+          ${{ format('python -m tox -e {0}-py313', parameters.tox) }}
+        displayName: 'Running tox task'
+    - ${{ if and(not(startsWith(parameters.tox, 'py')), startsWith(parameters.python, '3.9')) }}:
+      - script: |
+          ${{ format('python -m tox -e {0}-py39', parameters.tox) }}
+        displayName: 'Running tox task'
+    #
+    #  Build artifacts if this is a test target (i.e. labeled as py##)
+    #
+    - ${{ if startsWith(parameters.tox, 'py') }}:
+      - script: pip install --upgrade pip build twine hatch
+        displayName: "Acquire build tools"
+      - script: python -m build --sdist --wheel --outdir "$(System.DefaultWorkingDirectory)/dist"
+        displayName: "Build source and wheel distributions"
+      #
+      # Check the install artifacts
+      - script: ls -lR "$(System.DefaultWorkingDirectory)/dist"
+        displayName: "Listing of installed software"
+      #
+      - publish: $(System.DefaultWorkingDirectory)/dist
+        artifact: ${{ format('sw_{0}_{1}', parameters.tox, parameters.os) }}
+      #

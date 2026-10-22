@@ -1,0 +1,520 @@
+[
+ {
+  "repo": "IQSS/dataverse-client-python",
+  "statut": "ok",
+  "chemin": "vendor/donnees/dataverse-client-python",
+  "octets": 59137,
+  "fichiers": 22
+ },
+ {
+  "repo": "J535D165/pyalex",
+  "statut": "ok",
+  "chemin": "vendor/decouverte/pyalex",
+  "octets": 110009,
+  "fichiers": 15
+ },
+ {
+  "repo": "J535D165/recordlinkage",
+  "statut": "ok",
+  "chemin": "vendor/decouverte/recordlinkage",
+  "octets": 2836475,
+  "fichiers": 105
+ },
+ {
+  "repo": "JackKuo666/PubMed-MCP-Server",
+  "statut": "ok",
+  "chemin": "vendor/mcp/PubMed-MCP-Server",
+  "octets": 23344,
+  "fichiers": 10
+ },
+ {
+  "repo": "JackKuo666/paperscraper-MCP-Server",
+  "statut": "ok",
+  "chemin": "vendor/mcp/paperscraper-MCP-Server",
+  "octets": 146,
+  "fichiers": 1
+ },
+ {
+  "repo": "JesseRWeigel/retraction-check",
+  "statut": "ok",
+  "chemin": "vendor/audit/retraction-check",
+  "octets": 123078,
+  "fichiers": 34
+ },
+ {
+  "repo": "Kryzo/mcp-bibliotheque_nationale_de_France",
+  "statut": "ok",
+  "chemin": "vendor/decouverte/mcp-bibliotheque_nationale_de_France",
+  "octets": 56446,
+  "fichiers": 9
+ },
+ {
+  "repo": "Kwirtz/novelpy",
+  "statut": "ok",
+  "chemin": "vendor/decouverte/novelpy",
+  "octets": 1328455,
+  "fichiers": 68
+ },
+ {
+  "repo": "MicheleNuijten/statcheck",
+  "statut": "ok",
+  "chemin": "vendor/audit/statcheck",
+  "octets": 1331777,
+  "fichiers": 79
+ },
+ {
+  "repo": "MicheleNuijten/statcheck-web",
+  "statut": "ok",
+  "chemin": "vendor/audit/statcheck-web",
+  "octets": 4826944,
+  "fichiers": 40
+ },
+ {
+  "repo": "NLeSC/litstudy",
+  "statut": "ok",
+  "chemin": "vendor/decouverte/litstudy",
+  "octets": 7841773,
+  "fichiers": 113
+ },
+ {
+  "repo": "Open-Models/core_api_pylib",
+  "statut": "ok",
+  "chemin": "vendor/decouverte/core_api_pylib",
+  "octets": 40734,
+  "fichiers": 5
+ },
+ {
+  "repo": "SisonkeBiotik-Africa/Systematic-Review-Automation",
+  "statut": "ok",
+  "chemin": "vendor/revue_systematique/Systematic-Review-Automation",
+  "octets": 3411131,
+  "fichiers": 11
+ },
+ {
+  "repo": "Tishacy/SciDownl",
+  "statut": "ok",
+  "chemin": "vendor/fulltext/SciDownl",
+  "octets": 76520,
+  "fichiers": 46
+ },
+ {
+  "repo": "UWNETLAB/metaknowledge",
+  "statut": "ok",
+  "chemin": "vendor/decouverte/metaknowledge",
+  "octets": 10062963,
+  "fichiers": 181
+ },
+ {
+  "repo": "Valdecy/pybibx",
+  "statut": "ok",
+  "chemin": "vendor/decouverte/pybibx",
+  "octets": 34729312,
+  "fichiers": 54
+ },
+ {
+  "repo": "allenai/scibert",
+  "statut": "ok",
+  "chemin": "vendor/synthese/scibert",
+  "octets": 123880826,
+  "fichiers": 93
+ },
+ {
+  "repo": "allenai/science-parse",
+  "statut": "ok",
+  "chemin": "vendor/parsing/science-parse",
+  "octets": 85734156,
+  "fichiers": 169
+ },
+ {
+  "repo": "allenai/scifact",
+  "statut": "ok",
+  "chemin": "vendor/synthese/scifact",
+  "octets": 129954,
+  "fichiers": 46
+ },
+ {
+  "repo": "allenai/scirepeval",
+  "statut": "ok",
+  "chemin": "vendor/synthese/scirepeval",
+  "octets": 3837793,
+  "fichiers": 47
+ },
+ {
+  "repo": "allenai/specter2",
+  "statut": "ok",
+  "chemin": "vendor/synthese/specter2",
+  "octets": 186536,
+  "fichiers": 14
+ },
+ {
+  "repo": "aringadre76/mcp-for-research",
+  "statut": "ok",
+  "chemin": "vendor/mcp/mcp-for-research",
+  "octets": 641437,
+  "fichiers": 64
+ },
+ {
+  "repo": "blazickjp/arxiv-mcp-server",
+  "statut": "ok",
+  "chemin": "vendor/mcp/arxiv-mcp-server",
+  "octets": 1667881,
+  "fichiers": 115
+ },
+ {
+  "repo": "byigitt/doi2pdf",
+  "statut": "ok",
+  "chemin": "vendor/fulltext/doi2pdf",
+  "octets": 64700,
+  "fichiers": 7
+ },
+ {
+  "repo": "codecheckers/codecheck",
+  "statut": "ok",
+  "chemin": "vendor/audit/codecheck",
+  "octets": 5909136,
+  "fichiers": 785
+ },
+ {
+  "repo": "computron/fulltext-article-downloader",
+  "statut": "ok",
+  "chemin": "vendor/fulltext/fulltext-article-downloader",
+  "octets": 246773,
+  "fichiers": 37
+ },
+ {
+  "repo": "danielnsilva/semanticscholar",
+  "statut": "ok",
+  "chemin": "vendor/decouverte/semanticscholar",
+  "octets": 5839724,
+  "fichiers": 117
+ },
+ {
+  "repo": "dpagliaccio/scipub",
+  "statut": "ok",
+  "chemin": "vendor/audit/scipub",
+  "octets": 2912590,
+  "fichiers": 117
+ },
+ {
+  "repo": "facebookresearch/BLINK",
+  "statut": "ok",
+  "chemin": "vendor/synthese/BLINK",
+  "octets": 757682,
+  "fichiers": 95
+ },
+ {
+  "repo": "ferru97/PyPaperBot",
+  "statut": "ok",
+  "chemin": "vendor/fulltext/PyPaperBot",
+  "octets": 46254,
+  "fichiers": 19
+ },
+ {
+  "repo": "gbif/pygbif",
+  "statut": "ok",
+  "chemin": "vendor/donnees/pygbif",
+  "octets": 11863026,
+  "fichiers": 226
+ },
+ {
+  "repo": "gijswobben/pymed",
+  "statut": "ok",
+  "chemin": "vendor/decouverte/pymed",
+  "octets": 286671,
+  "fichiers": 26
+ },
+ {
+  "repo": "guma44/GEOparse",
+  "statut": "ok",
+  "chemin": "vendor/donnees/GEOparse",
+  "octets": 592666,
+  "fichiers": 57
+ },
+ {
+  "repo": "haddocking/pdb-tools",
+  "statut": "ok",
+  "chemin": "vendor/donnees/pdb-tools",
+  "octets": 1202376,
+  "fichiers": 150
+ },
+ {
+  "repo": "heidihelena/fullvahti",
+  "statut": "ok",
+  "chemin": "vendor/fulltext/fullvahti",
+  "octets": 167738,
+  "fichiers": 27
+ },
+ {
+  "repo": "ijmarshall/robotreviewer",
+  "statut": "ok",
+  "chemin": "vendor/revue_systematique/robotreviewer",
+  "octets": 274012091,
+  "fichiers": 429
+ },
+ {
+  "repo": "ijmarshall/robotsearch",
+  "statut": "ok",
+  "chemin": "vendor/revue_systematique/robotsearch",
+  "octets": 167056132,
+  "fichiers": 76
+ },
+ {
+  "repo": "ijmarshall/trialstreamer",
+  "statut": "ok",
+  "chemin": "vendor/revue_systematique/trialstreamer",
+  "octets": 206233343,
+  "fichiers": 82
+ },
+ {
+  "repo": "inspirehep/refextract",
+  "statut": "ok",
+  "chemin": "vendor/parsing/refextract",
+  "octets": 37785799,
+  "fichiers": 73
+ },
+ {
+  "repo": "jannisborn/paperscraper",
+  "statut": "ok",
+  "chemin": "vendor/decouverte/paperscraper",
+  "octets": 3474759,
+  "fichiers": 113
+ },
+ {
+  "repo": "jpruiz84/ScientoPy",
+  "statut": "ok",
+  "chemin": "vendor/decouverte/ScientoPy",
+  "octets": 82093795,
+  "fichiers": 136
+ },
+ {
+  "repo": "jsvine/pdfplumber",
+  "statut": "ok",
+  "chemin": "vendor/parsing/pdfplumber",
+  "octets": 20172723,
+  "fichiers": 151
+ },
+ {
+  "repo": "lhdjung/scrutiny",
+  "statut": "ok",
+  "chemin": "vendor/audit/scrutiny",
+  "octets": 1627052,
+  "fichiers": 264
+ },
+ {
+  "repo": "libscie/retractcheck",
+  "statut": "ok",
+  "chemin": "vendor/audit/retractcheck",
+  "octets": 1743962,
+  "fichiers": 63
+ },
+ {
+  "repo": "lukasschwab/arxiv.py",
+  "statut": "ok",
+  "chemin": "vendor/decouverte/arxiv.py",
+  "octets": 792990,
+  "fichiers": 44
+ },
+ {
+  "repo": "mcguinlu/robvis",
+  "statut": "ok",
+  "chemin": "vendor/revue_systematique/robvis",
+  "octets": 73260873,
+  "fichiers": 199
+ },
+ {
+  "repo": "metapub/metapub",
+  "statut": "ok",
+  "chemin": "vendor/decouverte/metapub",
+  "octets": 12162166,
+  "fichiers": 599
+ },
+ {
+  "repo": "mlava/scholar-sidekick-mcp",
+  "statut": "ok",
+  "chemin": "vendor/mcp/scholar-sidekick-mcp",
+  "octets": 734507,
+  "fichiers": 60
+ },
+ {
+  "repo": "nealhaddaway/bibfix",
+  "statut": "ok",
+  "chemin": "vendor/decouverte/bibfix",
+  "octets": 71366154,
+  "fichiers": 171
+ },
+ {
+  "repo": "nealhaddaway/citationchaser",
+  "statut": "ok",
+  "chemin": "vendor/decouverte/citationchaser",
+  "octets": 405057,
+  "fichiers": 33
+ },
+ {
+  "repo": "neuml/paperetl",
+  "statut": "ok",
+  "chemin": "vendor/parsing/paperetl",
+  "octets": 2092589,
+  "fichiers": 40
+ },
+ {
+  "repo": "oksure/openalex-research-mcp",
+  "statut": "ok",
+  "chemin": "vendor/mcp/openalex-research-mcp",
+  "octets": 407797,
+  "fichiers": 58
+ },
+ {
+  "repo": "openags/paper-search-mcp",
+  "statut": "ok",
+  "chemin": "vendor/mcp/paper-search-mcp",
+  "octets": 1675636,
+  "fichiers": 134
+ },
+ {
+  "repo": "openml/openml-python",
+  "statut": "ok",
+  "chemin": "vendor/donnees/openml-python",
+  "octets": 10818166,
+  "fichiers": 205
+ },
+ {
+  "repo": "osfclient/osfclient",
+  "statut": "ok",
+  "chemin": "vendor/donnees/osfclient",
+  "octets": 383250,
+  "fichiers": 56
+ },
+ {
+  "repo": "ourresearch/openalex-api-tutorials",
+  "statut": "ok",
+  "chemin": "vendor/decouverte/openalex-api-tutorials",
+  "octets": 1237704,
+  "fichiers": 24
+ },
+ {
+  "repo": "paperfetcher/paperfetcher",
+  "statut": "ok",
+  "chemin": "vendor/revue_systematique/paperfetcher",
+  "octets": 15113242,
+  "fichiers": 149
+ },
+ {
+  "repo": "pdfminer/pdfminer.six",
+  "statut": "ok",
+  "chemin": "vendor/parsing/pdfminer.six",
+  "octets": 22192832,
+  "fichiers": 325
+ },
+ {
+  "repo": "prisma-flowdiagram/PRISMA2020",
+  "statut": "ok",
+  "chemin": "vendor/revue_systematique/PRISMA2020",
+  "octets": 3382971,
+  "fichiers": 74
+ },
+ {
+  "repo": "pybliometrics-dev/pybliometrics",
+  "statut": "ok",
+  "chemin": "vendor/decouverte/pybliometrics",
+  "octets": 1558742,
+  "fichiers": 134
+ },
+ {
+  "repo": "quest-bih/oddpub",
+  "statut": "ok",
+  "chemin": "vendor/revue_systematique/oddpub",
+  "octets": 26974750,
+  "fichiers": 67
+ },
+ {
+  "repo": "quest-bih/rtransparent",
+  "statut": "ok",
+  "chemin": "vendor/revue_systematique/rtransparent",
+  "octets": 1795628,
+  "fichiers": 204
+ },
+ {
+  "repo": "rcsb/py-rcsb-api",
+  "statut": "ok",
+  "chemin": "vendor/donnees/py-rcsb-api",
+  "octets": 10529759,
+  "fichiers": 98
+ },
+ {
+  "repo": "scholarly-python-package/scholarly",
+  "statut": "ok",
+  "chemin": "vendor/decouverte/scholarly",
+  "octets": 241642,
+  "fichiers": 46
+ },
+ {
+  "repo": "sciunto-org/python-bibtexparser",
+  "statut": "ok",
+  "chemin": "vendor/decouverte/python-bibtexparser",
+  "octets": 496265,
+  "fichiers": 89
+ },
+ {
+  "repo": "sckott/habanero",
+  "statut": "ok",
+  "chemin": "vendor/decouverte/habanero",
+  "octets": 3222005,
+  "fichiers": 194
+ },
+ {
+  "repo": "surendranb/find-research-papers-mcp",
+  "statut": "ok",
+  "chemin": "vendor/mcp/find-research-papers-mcp",
+  "octets": 494574,
+  "fichiers": 50
+ },
+ {
+  "repo": "titipata/pubmed_parser",
+  "statut": "ok",
+  "chemin": "vendor/decouverte/pubmed_parser",
+  "octets": 57561496,
+  "fichiers": 46
+ },
+ {
+  "repo": "titipata/scipdf_parser",
+  "statut": "ok",
+  "chemin": "vendor/parsing/scipdf_parser",
+  "octets": 34970562,
+  "fichiers": 21
+ },
+ {
+  "repo": "unpywall/unpywall",
+  "statut": "ok",
+  "chemin": "vendor/decouverte/unpywall",
+  "octets": 104485,
+  "fichiers": 32
+ },
+ {
+  "repo": "urschrei/pyzotero",
+  "statut": "ok",
+  "chemin": "vendor/decouverte/pyzotero",
+  "octets": 1567676,
+  "fichiers": 73
+ },
+ {
+  "repo": "wedo911/citeguard",
+  "statut": "ok",
+  "chemin": "vendor/audit/citeguard",
+  "octets": 210336,
+  "fichiers": 48
+ },
+ {
+  "repo": "xntj-ai/gengscan",
+  "statut": "ok",
+  "chemin": "vendor/audit/gengscan",
+  "octets": 139450,
+  "fichiers": 16
+ },
+ {
+  "repo": "zongmin-yu/semantic-scholar-fastmcp-mcp-server",
+  "statut": "ok",
+  "chemin": "vendor/mcp/semantic-scholar-fastmcp-mcp-server",
+  "octets": 184319,
+  "fichiers": 46
+ }
+]

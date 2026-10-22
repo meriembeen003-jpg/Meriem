@@ -1,0 +1,875 @@
+{
+  "horodatage": "2026-10-22T18:30:51+00:00",
+  "statistiques": {
+    "resultats": [
+      {
+        "type": "F",
+        "statistique": 3.21,
+        "df1": 2.0,
+        "df2": 45.0,
+        "df_texte": "F(2, 45)",
+        "p_rapportee": 0.049,
+        "operateur": "=",
+        "p_calculee": 0.04975193003199664,
+        "n": null,
+        "extrait": "près de\n140 élèves. Nous rapportons un effet principal du programme, t(138) = 2.41,\np = .019, ainsi qu'une interaction entre le programme et le niveau initial,\nF(2, 45) = 3.21, p = .049. Les analyses de médiation indiquent une relation\npositive entre motivation et score final, r(28) = .41, p = .021.\n\nMÉTHODE - Les participants (N = 140) ont ét",
+        "ecart": 0.0007519300319966393,
+        "stat_brut": "3.21",
+        "intervalle_p": [
+          0.04953472573466709,
+          0.04997012926963023
+        ],
+        "constats": [
+          {
+            "code": "incoherence",
+            "severite": "mineur",
+            "message": "Écart faible mais réel : p recalculée = 0.0498 (intervalle 0.0495–0.0500) vs p rapportée = 0.0490.",
+            "extrait": "près de\n140 élèves. Nous rapportons un effet principal du programme, t(138) = 2.41,\np = .019, ainsi qu'une interaction entre le programme et le niveau initial,\nF(2, 45) = 3.21, p = .049. Les analyses de médiation indiquent une relation\npositive entre motivation et score final, r(28) = .41, p = .021.\n\nMÉTHODE - Les participants (N = 140) ont ét"
+          }
+        ]
+      },
+      {
+        "type": "F",
+        "statistique": 4.02,
+        "df1": 3.0,
+        "df2": 96.0,
+        "df_texte": "F(3, 96)",
+        "p_rapportee": 0.01,
+        "operateur": "=",
+        "p_calculee": 0.009663906597783727,
+        "n": null,
+        "extrait": "f,\nchi2(1, N = 140) = 4.50, p = .034 ; la répartition observée était de 52 % de\nfilles et de 52 % de garçons. Le modèle complet expliquait 31 % de la variance,\nF(3, 96) = 4.02, p = .010, et l'effet principal du programme restait significatif\naprès ajustement, t(58) = 2.41, p = .019. Les analyses exploratoires, elles,\nn'atteignaient pas le seui",
+        "ecart": 0.0003360934022162733,
+        "stat_brut": "4.02",
+        "intervalle_p": [
+          0.00960424449096016,
+          0.009723942717981361
+        ],
+        "constats": []
+      },
+      {
+        "type": "chi2",
+        "statistique": 4.5,
+        "df1": 1.0,
+        "df2": null,
+        "df_texte": "chi2(1)",
+        "p_rapportee": 0.034,
+        "operateur": "=",
+        "p_calculee": 0.03389485352468924,
+        "n": 140,
+        "extrait": "autre comparaison sur la compréhension\nn'était pas significative, t(38) = 1.98, p = .055.\n\nLe test du chi-deux sur la répartition des sexes était significatif,\nchi2(1, N = 140) = 4.50, p = .034 ; la répartition observée était de 52 % de\nfilles et de 52 % de garçons. Le modèle complet expliquait 31 % de la variance,\nF(3, 96) = 4.02, p = .010, et l'effe",
+        "ecart": 0.00010514647531076338,
+        "stat_brut": "4.50",
+        "intervalle_p": [
+          0.03379589620194413,
+          0.033994113679482935
+        ],
+        "constats": []
+      },
+      {
+        "type": "t",
+        "statistique": 2.41,
+        "df1": 138.0,
+        "df2": null,
+        "df_texte": "t(138)",
+        "p_rapportee": 0.019,
+        "operateur": "=",
+        "p_calculee": 0.01727029703381597,
+        "n": null,
+        "extrait": "contrôlée randomisée\n\nRÉSUMÉ - Cette étude évalue un programme de remédiation en lecture auprès de\n140 élèves. Nous rapportons un effet principal du programme, t(138) = 2.41,\np = .019, ainsi qu'une interaction entre le programme et le niveau initial,\nF(2, 45) = 3.21, p = .049. Les analyses de médiation indiquent une relation\npositive entre m",
+        "ecart": 0.0017297029661840282,
+        "stat_brut": "2.41",
+        "intervalle_p": [
+          0.017044743928475194,
+          0.01749849253610683
+        ],
+        "constats": [
+          {
+            "code": "incoherence",
+            "severite": "mineur",
+            "message": "Écart faible mais réel : p recalculée = 0.0173 (intervalle 0.0170–0.0175) vs p rapportée = 0.0190.",
+            "extrait": "contrôlée randomisée\n\nRÉSUMÉ - Cette étude évalue un programme de remédiation en lecture auprès de\n140 élèves. Nous rapportons un effet principal du programme, t(138) = 2.41,\np = .019, ainsi qu'une interaction entre le programme et le niveau initial,\nF(2, 45) = 3.21, p = .049. Les analyses de médiation indiquent une relation\npositive entre m"
+          }
+        ]
+      },
+      {
+        "type": "t",
+        "statistique": 1.85,
+        "df1": 28.0,
+        "df2": null,
+        "df_texte": "t(28)",
+        "p_rapportee": 0.042,
+        "operateur": "=",
+        "p_calculee": 0.07489375173097963,
+        "n": null,
+        "extrait": "- Le score moyen du groupe programme était de 3.77 (DT = 0.31),\ncontre 3.11 (DT = 0.44) pour le groupe contrôle, une différence statistiquement\nsignificative, t(28) = 1.85, p = .042. L'effet était modéré. Une analyse\nsecondaire a montré une différence significative entre les deux conditions sur\nla fluence, t(38) = 2.15, p = .034. Une autre",
+        "ecart": 0.03289375173097963,
+        "stat_brut": "1.85",
+        "intervalle_p": [
+          0.07415417997931842,
+          0.07563966412976546
+        ],
+        "constats": [
+          {
+            "code": "erreur_decision",
+            "severite": "critique",
+            "message": "La décision change : p rapportée = 0.0420 mais p recalculée = 0.0749 (seuil 0.05).",
+            "extrait": "- Le score moyen du groupe programme était de 3.77 (DT = 0.31),\ncontre 3.11 (DT = 0.44) pour le groupe contrôle, une différence statistiquement\nsignificative, t(28) = 1.85, p = .042. L'effet était modéré. Une analyse\nsecondaire a montré une différence significative entre les deux conditions sur\nla fluence, t(38) = 2.15, p = .034. Une autre"
+          },
+          {
+            "code": "incoherence",
+            "severite": "majeur",
+            "message": "p recalculée = 0.0749 (intervalle 0.0742–0.0756) incompatible avec p rapportée = 0.0420.",
+            "extrait": "- Le score moyen du groupe programme était de 3.77 (DT = 0.31),\ncontre 3.11 (DT = 0.44) pour le groupe contrôle, une différence statistiquement\nsignificative, t(28) = 1.85, p = .042. L'effet était modéré. Une analyse\nsecondaire a montré une différence significative entre les deux conditions sur\nla fluence, t(38) = 2.15, p = .034. Une autre"
+          },
+          {
+            "code": "claim_contredit",
+            "severite": "critique",
+            "message": "Le texte qualifie le résultat de significatif, mais p recalculée = 0.0749.",
+            "extrait": "- Le score moyen du groupe programme était de 3.77 (DT = 0.31),\ncontre 3.11 (DT = 0.44) pour le groupe contrôle, une différence statistiquement\nsignificative, t(28) = 1.85, p = .042. L'effet était modéré. Une analyse\nsecondaire a montré une différence significative entre les deux conditions sur\nla fluence, t(38) = 2.15, p = .034. Une autre"
+          }
+        ]
+      },
+      {
+        "type": "t",
+        "statistique": 2.15,
+        "df1": 38.0,
+        "df2": null,
+        "df_texte": "t(38)",
+        "p_rapportee": 0.034,
+        "operateur": "=",
+        "p_calculee": 0.03798294211111464,
+        "n": null,
+        "extrait": "ificative, t(28) = 1.85, p = .042. L'effet était modéré. Une analyse\nsecondaire a montré une différence significative entre les deux conditions sur\nla fluence, t(38) = 2.15, p = .034. Une autre comparaison sur la compréhension\nn'était pas significative, t(38) = 1.98, p = .055.\n\nLe test du chi-deux sur la répartition des sexes était signific",
+        "ecart": 0.003982942111114635,
+        "stat_brut": "2.15",
+        "intervalle_p": [
+          0.03756246832972153,
+          0.03840757222229226
+        ],
+        "constats": [
+          {
+            "code": "incoherence",
+            "severite": "mineur",
+            "message": "Écart faible mais réel : p recalculée = 0.0380 (intervalle 0.0376–0.0384) vs p rapportée = 0.0340.",
+            "extrait": "ificative, t(28) = 1.85, p = .042. L'effet était modéré. Une analyse\nsecondaire a montré une différence significative entre les deux conditions sur\nla fluence, t(38) = 2.15, p = .034. Une autre comparaison sur la compréhension\nn'était pas significative, t(38) = 1.98, p = .055.\n\nLe test du chi-deux sur la répartition des sexes était signific"
+          }
+        ]
+      },
+      {
+        "type": "t",
+        "statistique": 1.98,
+        "df1": 38.0,
+        "df2": null,
+        "df_texte": "t(38)",
+        "p_rapportee": 0.055,
+        "operateur": "=",
+        "p_calculee": 0.05497910887933206,
+        "n": null,
+        "extrait": "ifférence significative entre les deux conditions sur\nla fluence, t(38) = 2.15, p = .034. Une autre comparaison sur la compréhension\nn'était pas significative, t(38) = 1.98, p = .055.\n\nLe test du chi-deux sur la répartition des sexes était significatif,\nchi2(1, N = 140) = 4.50, p = .034 ; la répartition observée était de 52 % de\nfilles et d",
+        "ecart": 2.0891120667942964e-05,
+        "stat_brut": "1.98",
+        "intervalle_p": [
+          0.05439762476569613,
+          0.05556597337316459
+        ],
+        "constats": [
+          {
+            "code": "claim_contredit",
+            "severite": "critique",
+            "message": "Le texte qualifie le résultat de significatif, mais p recalculée = 0.0550.",
+            "extrait": "ifférence significative entre les deux conditions sur\nla fluence, t(38) = 2.15, p = .034. Une autre comparaison sur la compréhension\nn'était pas significative, t(38) = 1.98, p = .055.\n\nLe test du chi-deux sur la répartition des sexes était significatif,\nchi2(1, N = 140) = 4.50, p = .034 ; la répartition observée était de 52 % de\nfilles et d"
+          }
+        ]
+      },
+      {
+        "type": "t",
+        "statistique": 2.41,
+        "df1": 58.0,
+        "df2": null,
+        "df_texte": "t(58)",
+        "p_rapportee": 0.019,
+        "operateur": "=",
+        "p_calculee": 0.019145004654719237,
+        "n": null,
+        "extrait": "garçons. Le modèle complet expliquait 31 % de la variance,\nF(3, 96) = 4.02, p = .010, et l'effet principal du programme restait significatif\naprès ajustement, t(58) = 2.41, p = .019. Les analyses exploratoires, elles,\nn'atteignaient pas le seuil, et nous rapportons p = .000 pour le modèle nul,\nce qui indique une absence totale de relation.",
+        "ecart": 0.00014500465471923782,
+        "stat_brut": "2.41",
+        "intervalle_p": [
+          0.018908462278377464,
+          0.01938419731948324
+        ],
+        "constats": []
+      },
+      {
+        "type": "r",
+        "statistique": 0.41,
+        "df1": 28.0,
+        "df2": null,
+        "df_texte": "r(28)",
+        "p_rapportee": 0.021,
+        "operateur": "=",
+        "p_calculee": 0.02443584340296256,
+        "n": null,
+        "extrait": "entre le programme et le niveau initial,\nF(2, 45) = 3.21, p = .049. Les analyses de médiation indiquent une relation\npositive entre motivation et score final, r(28) = .41, p = .021.\n\nMÉTHODE - Les participants (N = 140) ont été répartis aléatoirement entre le\ngroupe programme et le groupe contrôle. La moyenne d'âge était de 9.43 ans\n(DT =",
+        "ecart": 0.00343584340296256,
+        "stat_brut": ".41",
+        "intervalle_p": [
+          0.02258393242939647,
+          0.026410281065834817
+        ],
+        "constats": [
+          {
+            "code": "incoherence",
+            "severite": "mineur",
+            "message": "Écart faible mais réel : p recalculée = 0.0244 (intervalle 0.0226–0.0264) vs p rapportée = 0.0210.",
+            "extrait": "entre le programme et le niveau initial,\nF(2, 45) = 3.21, p = .049. Les analyses de médiation indiquent une relation\npositive entre motivation et score final, r(28) = .41, p = .021.\n\nMÉTHODE - Les participants (N = 140) ont été répartis aléatoirement entre le\ngroupe programme et le groupe contrôle. La moyenne d'âge était de 9.43 ans\n(DT ="
+          }
+        ]
+      },
+      {
+        "type": "r",
+        "statistique": 0.12,
+        "df1": 45.0,
+        "df2": null,
+        "df_texte": "r(45)",
+        "p_rapportee": 0.422,
+        "operateur": "=",
+        "p_calculee": 0.42172326843514407,
+        "n": null,
+        "extrait": "i indique une absence totale de relation.\n\nBien que la différence entre les groupes soit significative, la relation entre\ntemps de devoirs et performance était r(45) = .12, p = .422.\n\nDISCUSSION - Les résultats sont cohérents avec la littérature récente. Cette\nétude présente néanmoins des limites : la durée du suivi est courte et\nl'échanti",
+        "ecart": 0.0002767315648559143,
+        "stat_brut": ".12",
+        "intervalle_p": [
+          0.40249606731316834,
+          0.44146038276211264
+        ],
+        "constats": []
+      }
+    ],
+    "constats": [
+      {
+        "code": "p_zero",
+        "severite": "mineur",
+        "message": "p = .000 apparaît dans le texte (impossible).",
+        "extrait": "du programme restait significatif\naprès ajustement, t(58) = 2.41, p = .019. Les analyses exploratoires, elles,\nn'atteignaient pas le seuil, et nous rapportons p = .000 pour le modèle nul,\nce qui indique une absence totale de relation.\n\nBien que la différence entre les groupes soit significative, la relation entre\ntemps de dev"
+      }
+    ],
+    "nb_resultats": 10,
+    "nb_significatifs": 7,
+    "nb_incoherents": 1,
+    "nb_arrondis": 4,
+    "nb_erreurs_decision": 2,
+    "score": 76
+  },
+  "synthese_statistique": {
+    "resultats_extraits": 10,
+    "significatifs": 7,
+    "incoherents": 1,
+    "arrondis_stricts": 4,
+    "erreurs_de_decision": 2,
+    "score_coherence": 76,
+    "taux_incoherence": 0.1
+  },
+  "transparence": {
+    "score": 59,
+    "manquants": [
+      "Disponibilité du code / des analyses",
+      "Financement déclaré",
+      "Approbation éthique / consentement",
+      "Justification de la taille d'échantillon"
+    ],
+    "indicateurs": [
+      {
+        "cle": "donnees",
+        "libelle": "Disponibilité des données",
+        "present": true,
+        "qualite": "fort",
+        "extrait": "imites : la durée du suivi est courte et l'échantillon est issu d'une seule académie. Les données sont disponibles sur demande raisonnable auprès de l'auteur correspondant. Il n'y a pas de conflit d'intér",
+        "note": ""
+      },
+      {
+        "cle": "code",
+        "libelle": "Disponibilité du code / des analyses",
+        "present": false,
+        "qualite": "absent",
+        "extrait": "",
+        "note": ""
+      },
+      {
+        "cle": "preregistration",
+        "libelle": "Préenregistrement / rapport enregistré",
+        "present": true,
+        "qualite": "fort",
+        "extrait": "atériel supplémentaire (tableaux descriptifs) est disponible en ligne. Le protocole a été enregistré avant la collecte.",
+        "note": "Vérifier que le préenregistrement précède la collecte et couvre l'analyse rapportée."
+      },
+      {
+        "cle": "financement",
+        "libelle": "Financement déclaré",
+        "present": false,
+        "qualite": "absent",
+        "extrait": "",
+        "note": ""
+      },
+      {
+        "cle": "conflits",
+        "libelle": "Conflits d'intérêts",
+        "present": true,
+        "qualite": "fort",
+        "extrait": "ont disponibles sur demande raisonnable auprès de l'auteur correspondant. Il n'y a pas de conflit d'intérêts à déclarer. MATÉRIEL SUPPLÉMENTAIRE — Le matériel supplémentaire (tableaux descriptifs)",
+        "note": ""
+      },
+      {
+        "cle": "ethique",
+        "libelle": "Approbation éthique / consentement",
+        "present": false,
+        "qualite": "absent",
+        "extrait": "",
+        "note": ""
+      },
+      {
+        "cle": "puissance",
+        "libelle": "Justification de la taille d'échantillon",
+        "present": false,
+        "qualite": "absent",
+        "extrait": "",
+        "note": ""
+      },
+      {
+        "cle": "protocole",
+        "libelle": "Protocole disponible",
+        "present": true,
+        "qualite": "fort",
+        "extrait": "ÉMENTAIRE — Le matériel supplémentaire (tableaux descriptifs) est disponible en ligne. Le protocole a été enregistré avant la collecte.",
+        "note": ""
+      },
+      {
+        "cle": "limites",
+        "libelle": "Limites discutées",
+        "present": true,
+        "qualite": "fort",
+        "extrait": "résultats sont cohérents avec la littérature récente. Cette étude présente néanmoins des limites : la durée du suivi est courte et l'échantillon est issu d'une seule académie. Les donnée",
+        "note": ""
+      },
+      {
+        "cle": "materiel",
+        "libelle": "Matériel supplémentaire",
+        "present": true,
+        "qualite": "fort",
+        "extrait": "onnable auprès de l'auteur correspondant. Il n'y a pas de conflit d'intérêts à déclarer. MATÉRIEL SUPPLÉMENTAIRE — Le matériel supplémentaire (tableaux descriptifs) est disponible en ligne. Le protocole",
+        "note": ""
+      }
+    ]
+  },
+  "distribution_p": {
+    "pcurve": {
+      "test": "p-curve",
+      "n_significatifs": 8,
+      "part_p_inf_025": 0.5,
+      "test_skew_binomial_p": 0.636719,
+      "moyenne_p": 0.0285,
+      "t_vs_attendu": 0.743,
+      "p_moyenne_vs_attendue": 0.481558,
+      "ks_uniforme": {
+        "D": 0.951,
+        "p": 0.0
+      },
+      "interpretation": "distribution plate ou en hausse près de .05 : compatible avec une sélection de résultats / un fichier tiroir — n faible, résultat indicatif"
+    },
+    "exces": {
+      "test": "excès de significativité",
+      "n_tests": 10,
+      "observes_significatifs": 8,
+      "attendus": 5.0,
+      "part_observee": 0.8,
+      "z": 1.897,
+      "p": 0.05778,
+      "interpretation": "pas d'excès détecté"
+    },
+    "variance": {
+      "test": "variance insuffisante (Carlisle)",
+      "n": 10,
+      "variance_observee": 0.01546,
+      "variance_attendue": 0.08333,
+      "chi2": 1.67,
+      "p_variance_trop_faible": 0.004319,
+      "interpretation": "variance anormalement faible : p-values possiblement fabriquées ou recopiées (n faible : indicatif)"
+    }
+  },
+  "grim": {
+    "descriptifs": [
+      {
+        "label": "Groupe programme — score lecture",
+        "n": 60,
+        "mean": 3.77,
+        "sd": 0.31,
+        "grim": {
+          "test": "GRIM",
+          "possible": true,
+          "message": "M = 3.77 est réalisable avec n = 60 (somme entière possible).",
+          "details": {
+            "moyenne": 3.77,
+            "n": 60,
+            "items": 1,
+            "sommes_possibles": [
+              226
+            ]
+          }
+        },
+        "grimmer": {
+          "test": "GRIMMER",
+          "possible": false,
+          "message": "(M = 3.77, SD = 0.31) est impossible avec n = 60 entiers : aucune somme de carrés compatible.",
+          "details": {
+            "moyenne": 3.77,
+            "sd": 0.31,
+            "n": 60,
+            "items": 1,
+            "motif": "aucune somme de carrés entière ne reproduit cet écart-type"
+          }
+        },
+        "sprite": {
+          "test": "SPRITE",
+          "possible": false,
+          "message": "SD = 0.31 est hors des bornes atteignables [0.427 ; 1.845] pour n = 60 entiers dans [1, 5] avec M = 3.77.",
+          "details": {
+            "moyenne": 3.77,
+            "sd": 0.31,
+            "n": 60,
+            "lo": 1,
+            "hi": 5,
+            "sd_min": 0.4265218680850989,
+            "sd_max": 1.8445215875683456
+          }
+        }
+      },
+      {
+        "label": "Groupe contrôle — score lecture",
+        "n": 60,
+        "mean": 3.11,
+        "sd": 0.44,
+        "grim": {
+          "test": "GRIM",
+          "possible": false,
+          "message": "M = 3.11 est impossible avec n = 60 et 1 item(s) entier(s) (la somme devrait être 186.600, donc un multiple de 1) ; la moyenne réalisable la plus proche est 3.1",
+          "details": {
+            "moyenne": 3.11,
+            "n": 60,
+            "items": 1,
+            "somme_attendue": 186.6,
+            "moyenne_proche": 3.1
+          }
+        },
+        "grimmer": {
+          "test": "GRIMMER",
+          "possible": false,
+          "message": "Échec du test GRIM préalable : M = 3.11 est impossible avec n = 60 et 1 item(s) entier(s) (la somme devrait être 186.600, donc un multiple de 1) ; la moyenne réalisable la plus proche est 3.1",
+          "details": {
+            "grim": {
+              "moyenne": 3.11,
+              "n": 60,
+              "items": 1,
+              "somme_attendue": 186.6,
+              "moyenne_proche": 3.1
+            }
+          }
+        },
+        "sprite": {
+          "test": "SPRITE",
+          "possible": false,
+          "message": "Aucune somme entière ne donne M = 3.11 avec n = 60 (test GRIM échoué).",
+          "details": {
+            "moyenne": 3.11,
+            "n": 60
+          }
+        }
+      },
+      {
+        "label": "Sous-groupe A — satisfaction",
+        "n": 25,
+        "mean": 4.37,
+        "sd": 0.42,
+        "grim": {
+          "test": "GRIM",
+          "possible": false,
+          "message": "M = 4.37 est impossible avec n = 25 et 1 item(s) entier(s) (la somme devrait être 109.250, donc un multiple de 1) ; la moyenne réalisable la plus proche est 4.36",
+          "details": {
+            "moyenne": 4.37,
+            "n": 25,
+            "items": 1,
+            "somme_attendue": 109.25,
+            "moyenne_proche": 4.36
+          }
+        },
+        "grimmer": {
+          "test": "GRIMMER",
+          "possible": false,
+          "message": "Échec du test GRIM préalable : M = 4.37 est impossible avec n = 25 et 1 item(s) entier(s) (la somme devrait être 109.250, donc un multiple de 1) ; la moyenne réalisable la plus proche est 4.36",
+          "details": {
+            "grim": {
+              "moyenne": 4.37,
+              "n": 25,
+              "items": 1,
+              "somme_attendue": 109.25,
+              "moyenne_proche": 4.36
+            }
+          }
+        },
+        "sprite": {
+          "test": "SPRITE",
+          "possible": false,
+          "message": "Aucune somme entière ne donne M = 4.37 avec n = 25 (test GRIM échoué).",
+          "details": {
+            "moyenne": 4.37,
+            "n": 25
+          }
+        }
+      },
+      {
+        "label": "Sous-groupe B — satisfaction",
+        "n": 18,
+        "mean": 5.19,
+        "sd": 0.28,
+        "grim": {
+          "test": "GRIM",
+          "possible": false,
+          "message": "M = 5.19 est impossible avec n = 18 et 1 item(s) entier(s) (la somme devrait être 93.420, donc un multiple de 1) ; la moyenne réalisable la plus proche est 5.17",
+          "details": {
+            "moyenne": 5.19,
+            "n": 18,
+            "items": 1,
+            "somme_attendue": 93.42,
+            "moyenne_proche": 5.17
+          }
+        },
+        "grimmer": {
+          "test": "GRIMMER",
+          "possible": false,
+          "message": "Échec du test GRIM préalable : M = 5.19 est impossible avec n = 18 et 1 item(s) entier(s) (la somme devrait être 93.420, donc un multiple de 1) ; la moyenne réalisable la plus proche est 5.17",
+          "details": {
+            "grim": {
+              "moyenne": 5.19,
+              "n": 18,
+              "items": 1,
+              "somme_attendue": 93.42,
+              "moyenne_proche": 5.17
+            }
+          }
+        },
+        "sprite": {
+          "test": "SPRITE",
+          "possible": false,
+          "message": "Aucune somme entière ne donne M = 5.19 avec n = 18 (test GRIM échoué).",
+          "details": {
+            "moyenne": 5.19,
+            "n": 18
+          }
+        }
+      },
+      {
+        "label": "Échantillon total — motivation",
+        "n": 40,
+        "mean": 4.9,
+        "sd": 0.05,
+        "grim": {
+          "test": "GRIM",
+          "possible": true,
+          "message": "M = 4.9 est réalisable avec n = 40 (somme entière possible).",
+          "details": {
+            "moyenne": 4.9,
+            "n": 40,
+            "items": 1,
+            "sommes_possibles": [
+              196
+            ]
+          }
+        },
+        "grimmer": {
+          "test": "GRIMMER",
+          "possible": false,
+          "message": "(M = 4.9, SD = 0.05) est impossible avec n = 40 entiers : aucune somme de carrés compatible.",
+          "details": {
+            "moyenne": 4.9,
+            "sd": 0.05,
+            "n": 40,
+            "items": 1,
+            "motif": "aucune somme de carrés entière ne reproduit cet écart-type"
+          }
+        },
+        "sprite": {
+          "test": "SPRITE",
+          "possible": false,
+          "message": "SD = 0.05 est hors des bornes atteignables [0.304 ; 0.632] pour n = 40 entiers dans [1, 5] avec M = 4.9.",
+          "details": {
+            "moyenne": 4.9,
+            "sd": 0.05,
+            "n": 40,
+            "lo": 1,
+            "hi": 5,
+            "sd_min": 0.30382181012510096,
+            "sd_max": 0.6324555320336763
+          }
+        }
+      }
+    ],
+    "nb_incoherents": 5,
+    "taux": 1.0
+  },
+  "bibliographie": {
+    "entrees": 8,
+    "nb_constats": 7,
+    "constats": [
+      {
+        "code": "retractee",
+        "severite": "critique",
+        "cible": "wakefield1998",
+        "message": "Référence rétractée : Ileal-lymphoid-nodular hyperplasia non-specific colitis and pervasive developmental disorder in children (1998) — Retraction Watch (cas emblématique)"
+      },
+      {
+        "code": "annee_aberrante",
+        "severite": "majeur",
+        "cible": "futur",
+        "message": "Année 2039 invraisemblable (bornes 1500–2027)."
+      },
+      {
+        "code": "doi_absent",
+        "severite": "mineur",
+        "cible": "futur",
+        "message": "Pas de DOI : vérification d'existence et de rétractation impossible."
+      },
+      {
+        "code": "doi_invalide",
+        "severite": "majeur",
+        "cible": "doimalforme",
+        "message": "DOI mal formé : doi-invalide-2019"
+      },
+      {
+        "code": "doi_absent",
+        "severite": "mineur",
+        "cible": "sansdoi",
+        "message": "Pas de DOI : vérification d'existence et de rétractation impossible."
+      },
+      {
+        "code": "doublon_doi",
+        "severite": "majeur",
+        "cible": "10.1000/rpe.2021.015",
+        "message": "DOI présent 2 fois dans la bibliographie."
+      },
+      {
+        "code": "doublon_titre",
+        "severite": "majeur",
+        "cible": "dupont2021 ≈ dupont2021bis",
+        "message": "Titres quasi identiques (100%) : doublon probable ou preprint + version publiée."
+      }
+    ],
+    "doublons": [
+      {
+        "type": "doi_identique",
+        "valeur": "10.1000/rpe.2021.015",
+        "occurrences": 2
+      },
+      {
+        "type": "titre_similaire",
+        "a": "dupont2021",
+        "b": "dupont2021bis",
+        "similarite": 1.0,
+        "titre_a": "Apprendre à lire : une synthèse des interventions efficaces",
+        "titre_b": "Apprendre a lire : une synthese des interventions efficaces"
+      }
+    ],
+    "retractees": [
+      {
+        "cle": "wakefield1998",
+        "doi": "10.1016/s0140-6736(97)11096-0",
+        "titre": "Ileal-lymphoid-nodular hyperplasia non-specific colitis and pervasive developmental disorder in children",
+        "annee": "1998",
+        "revue": "The Lancet",
+        "motif": "Fabrication/Falsification des données ; conflits d'intérêts non déclarés",
+        "date": "2010-02-06",
+        "source": "Retraction Watch (cas emblématique)"
+      }
+    ],
+    "stats": {
+      "sans_doi": 2,
+      "part_sans_doi": 0.25,
+      "annee_mediane": 2020.0,
+      "types": {
+        "article": 8
+      }
+    }
+  },
+  "constats": [
+    {
+      "code": "claim_contredit",
+      "severite": "critique",
+      "message": "Le texte qualifie le résultat de significatif, mais p recalculée = 0.0749.",
+      "extrait": "- Le score moyen du groupe programme était de 3.77 (DT = 0.31),\ncontre 3.11 (DT = 0.44) pour le groupe contrôle, une différence statistiquement\nsignificative, t(28) = 1.85, p = .042. L'effet était modéré. Une analyse\nsecondaire a montré une différence significative entre les deux conditions sur\nla fluence, t(38) = 2.15, p = .034. Une autre",
+      "source": "t — t(28)",
+      "valeur": "p rapportée 0.042 / recalculée 0.0749"
+    },
+    {
+      "code": "claim_contredit",
+      "severite": "critique",
+      "message": "Le texte qualifie le résultat de significatif, mais p recalculée = 0.0550.",
+      "extrait": "ifférence significative entre les deux conditions sur\nla fluence, t(38) = 2.15, p = .034. Une autre comparaison sur la compréhension\nn'était pas significative, t(38) = 1.98, p = .055.\n\nLe test du chi-deux sur la répartition des sexes était significatif,\nchi2(1, N = 140) = 4.50, p = .034 ; la répartition observée était de 52 % de\nfilles et d",
+      "source": "t — t(38)",
+      "valeur": "p rapportée 0.055 / recalculée 0.055"
+    },
+    {
+      "code": "erreur_decision",
+      "severite": "critique",
+      "message": "La décision change : p rapportée = 0.0420 mais p recalculée = 0.0749 (seuil 0.05).",
+      "extrait": "- Le score moyen du groupe programme était de 3.77 (DT = 0.31),\ncontre 3.11 (DT = 0.44) pour le groupe contrôle, une différence statistiquement\nsignificative, t(28) = 1.85, p = .042. L'effet était modéré. Une analyse\nsecondaire a montré une différence significative entre les deux conditions sur\nla fluence, t(38) = 2.15, p = .034. Une autre",
+      "source": "t — t(28)",
+      "valeur": "p rapportée 0.042 / recalculée 0.0749"
+    },
+    {
+      "code": "grim_impossible",
+      "severite": "critique",
+      "message": "M = 3.11 est impossible avec n = 60 et 1 item(s) entier(s) (la somme devrait être 186.600, donc un multiple de 1) ; la moyenne réalisable la plus proche est 3.1",
+      "source": "descriptif Groupe contrôle — score lecture",
+      "extrait": ""
+    },
+    {
+      "code": "grim_impossible",
+      "severite": "critique",
+      "message": "M = 4.37 est impossible avec n = 25 et 1 item(s) entier(s) (la somme devrait être 109.250, donc un multiple de 1) ; la moyenne réalisable la plus proche est 4.36",
+      "source": "descriptif Sous-groupe A — satisfaction",
+      "extrait": ""
+    },
+    {
+      "code": "grim_impossible",
+      "severite": "critique",
+      "message": "M = 5.19 est impossible avec n = 18 et 1 item(s) entier(s) (la somme devrait être 93.420, donc un multiple de 1) ; la moyenne réalisable la plus proche est 5.17",
+      "source": "descriptif Sous-groupe B — satisfaction",
+      "extrait": ""
+    },
+    {
+      "code": "grimmer_impossible",
+      "severite": "critique",
+      "message": "(M = 3.77, SD = 0.31) est impossible avec n = 60 entiers : aucune somme de carrés compatible.",
+      "source": "descriptif Groupe programme — score lecture",
+      "extrait": ""
+    },
+    {
+      "code": "grimmer_impossible",
+      "severite": "critique",
+      "message": "(M = 4.9, SD = 0.05) est impossible avec n = 40 entiers : aucune somme de carrés compatible.",
+      "source": "descriptif Échantillon total — motivation",
+      "extrait": ""
+    },
+    {
+      "code": "retractee",
+      "severite": "critique",
+      "message": "Référence rétractée : Ileal-lymphoid-nodular hyperplasia non-specific colitis and pervasive developmental disorder in children (1998) — Retraction Watch (cas emblématique)",
+      "source": "bibliographie — wakefield1998",
+      "extrait": ""
+    },
+    {
+      "code": "sprite_impossible",
+      "severite": "critique",
+      "message": "SD = 0.31 est hors des bornes atteignables [0.427 ; 1.845] pour n = 60 entiers dans [1, 5] avec M = 3.77.",
+      "source": "descriptif Groupe programme — score lecture",
+      "extrait": ""
+    },
+    {
+      "code": "sprite_impossible",
+      "severite": "critique",
+      "message": "SD = 0.05 est hors des bornes atteignables [0.304 ; 0.632] pour n = 40 entiers dans [1, 5] avec M = 4.9.",
+      "source": "descriptif Échantillon total — motivation",
+      "extrait": ""
+    },
+    {
+      "code": "annee_aberrante",
+      "severite": "majeur",
+      "message": "Année 2039 invraisemblable (bornes 1500–2027).",
+      "source": "bibliographie — futur",
+      "extrait": ""
+    },
+    {
+      "code": "doi_invalide",
+      "severite": "majeur",
+      "message": "DOI mal formé : doi-invalide-2019",
+      "source": "bibliographie — doimalforme",
+      "extrait": ""
+    },
+    {
+      "code": "doublon_doi",
+      "severite": "majeur",
+      "message": "DOI présent 2 fois dans la bibliographie.",
+      "source": "bibliographie — 10.1000/rpe.2021.015",
+      "extrait": ""
+    },
+    {
+      "code": "doublon_titre",
+      "severite": "majeur",
+      "message": "Titres quasi identiques (100%) : doublon probable ou preprint + version publiée.",
+      "source": "bibliographie — dupont2021 ≈ dupont2021bis",
+      "extrait": ""
+    },
+    {
+      "code": "incoherence",
+      "severite": "majeur",
+      "message": "p recalculée = 0.0749 (intervalle 0.0742–0.0756) incompatible avec p rapportée = 0.0420.",
+      "extrait": "- Le score moyen du groupe programme était de 3.77 (DT = 0.31),\ncontre 3.11 (DT = 0.44) pour le groupe contrôle, une différence statistiquement\nsignificative, t(28) = 1.85, p = .042. L'effet était modéré. Une analyse\nsecondaire a montré une différence significative entre les deux conditions sur\nla fluence, t(38) = 2.15, p = .034. Une autre",
+      "source": "t — t(28)",
+      "valeur": "p rapportée 0.042 / recalculée 0.0749"
+    },
+    {
+      "code": "doi_absent",
+      "severite": "mineur",
+      "message": "Pas de DOI : vérification d'existence et de rétractation impossible.",
+      "source": "bibliographie — futur",
+      "extrait": ""
+    },
+    {
+      "code": "doi_absent",
+      "severite": "mineur",
+      "message": "Pas de DOI : vérification d'existence et de rétractation impossible.",
+      "source": "bibliographie — sansdoi",
+      "extrait": ""
+    },
+    {
+      "code": "incoherence",
+      "severite": "mineur",
+      "message": "Écart faible mais réel : p recalculée = 0.0498 (intervalle 0.0495–0.0500) vs p rapportée = 0.0490.",
+      "extrait": "près de\n140 élèves. Nous rapportons un effet principal du programme, t(138) = 2.41,\np = .019, ainsi qu'une interaction entre le programme et le niveau initial,\nF(2, 45) = 3.21, p = .049. Les analyses de médiation indiquent une relation\npositive entre motivation et score final, r(28) = .41, p = .021.\n\nMÉTHODE - Les participants (N = 140) ont ét",
+      "source": "F — F(2, 45)",
+      "valeur": "p rapportée 0.049 / recalculée 0.0498"
+    },
+    {
+      "code": "incoherence",
+      "severite": "mineur",
+      "message": "Écart faible mais réel : p recalculée = 0.0173 (intervalle 0.0170–0.0175) vs p rapportée = 0.0190.",
+      "extrait": "contrôlée randomisée\n\nRÉSUMÉ - Cette étude évalue un programme de remédiation en lecture auprès de\n140 élèves. Nous rapportons un effet principal du programme, t(138) = 2.41,\np = .019, ainsi qu'une interaction entre le programme et le niveau initial,\nF(2, 45) = 3.21, p = .049. Les analyses de médiation indiquent une relation\npositive entre m",
+      "source": "t — t(138)",
+      "valeur": "p rapportée 0.019 / recalculée 0.0173"
+    },
+    {
+      "code": "incoherence",
+      "severite": "mineur",
+      "message": "Écart faible mais réel : p recalculée = 0.0380 (intervalle 0.0376–0.0384) vs p rapportée = 0.0340.",
+      "extrait": "ificative, t(28) = 1.85, p = .042. L'effet était modéré. Une analyse\nsecondaire a montré une différence significative entre les deux conditions sur\nla fluence, t(38) = 2.15, p = .034. Une autre comparaison sur la compréhension\nn'était pas significative, t(38) = 1.98, p = .055.\n\nLe test du chi-deux sur la répartition des sexes était signific",
+      "source": "t — t(38)",
+      "valeur": "p rapportée 0.034 / recalculée 0.038"
+    },
+    {
+      "code": "incoherence",
+      "severite": "mineur",
+      "message": "Écart faible mais réel : p recalculée = 0.0244 (intervalle 0.0226–0.0264) vs p rapportée = 0.0210.",
+      "extrait": "entre le programme et le niveau initial,\nF(2, 45) = 3.21, p = .049. Les analyses de médiation indiquent une relation\npositive entre motivation et score final, r(28) = .41, p = .021.\n\nMÉTHODE - Les participants (N = 140) ont été répartis aléatoirement entre le\ngroupe programme et le groupe contrôle. La moyenne d'âge était de 9.43 ans\n(DT =",
+      "source": "r — r(28)",
+      "valeur": "p rapportée 0.021 / recalculée 0.0244"
+    },
+    {
+      "code": "p_zero",
+      "severite": "mineur",
+      "message": "p = .000 apparaît dans le texte (impossible).",
+      "extrait": "du programme restait significatif\naprès ajustement, t(58) = 2.41, p = .019. Les analyses exploratoires, elles,\nn'atteignaient pas le seuil, et nous rapportons p = .000 pour le modèle nul,\nce qui indique une absence totale de relation.\n\nBien que la différence entre les groupes soit significative, la relation entre\ntemps de dev",
+      "source": "texte"
+    }
+  ],
+  "gravite": "critique",
+  "score_global": 32
+}

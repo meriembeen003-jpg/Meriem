@@ -1,0 +1,1128 @@
+{
+  "manifest_version": "0.3",
+  "name": "scholar-sidekick-mcp",
+  "display_name": "Scholar Sidekick",
+  "version": "0.8.13",
+  "description": "Catch AI-fabricated citations: verifyCitation cross-checks a claimed title against the real record at its identifier, detecting the dominant real-DOI + invented-title pattern (Topaz et al., Lancet 2026) that simple DOI resolution cannot catch. auditBibliography runs that check plus a retraction lookup on a whole reference list in one call. Also checks retraction and open-access status, and resolves eight identifier types (DOI, PMID, PMCID, ISBN, arXiv, ISSN, ADS, WHO IRIS) into 10,000+ CSL styles or nine export formats, single or batch.",
+  "long_description": "Scholar Sidekick MCP is a citation-integrity server for AI assistants. Its primary tool, verifyCitation, cross-checks a claimed citation against the record its identifier actually resolves to — catching the dominant AI fabrication pattern documented by Topaz et al. (Lancet 2026): a real, resolvable DOI paired with an invented title. This is the failure mode that defeats the usual advice of 'follow the DOI and see if it resolves' — fabricated citations resolve cleanly, and only a title-versus-record comparison exposes them. Topaz et al. found 1 in 277 biomedical papers in early 2026 contained at least one fabricated reference. verifyCitation returns a verdict of matched, mismatch (the fabrication pattern), ambiguous (the identifier resolves to one paper but the claimed title matches another — a citation error), or not_found, with a confidence score and a provenance block. auditBibliography runs the same check across a whole bibliography in one call (BibTeX, RIS, CSL-JSON, or a list of title-and-identifier pairs; up to 25 entries), adds a retraction lookup to every entry, and returns a per-entry verdict table with a summary — the 'check all my references before I submit' step at the end of a literature review. Two further integrity checks sit alongside it: checkRetraction surfaces retractions, corrections, and expressions of concern from Crossref / Retraction Watch; checkOpenAccess returns OA status and the best legal landing or PDF URL from Unpaywall. Underpinning all three is a resolver covering eight identifier types (DOI, PMID, PMCID, ISBN, arXiv, ISSN, NASA ADS bibcodes, WHO IRIS URLs) — broader coverage than DOI-only verifiers. Once a citation is verified, the same identifiers can be formatted in 10,000+ CSL styles (Vancouver, APA, AMA, IEEE, Chicago, Harvard, MLA, Nature, BMJ, Lancet) or exported to BibTeX, RIS, CSL JSON, EndNote (XML/Refer), RefWorks, MEDLINE, Zotero RDF, and CSV. The resolve, format, and export tools accept a single identifier or a comma/newline-separated batch, so an assistant can chain resolveIdentifier → formatCitation → exportCitation for an end-to-end 'raw IDs → exportable bibliography' workflow. Every formatted response carries a provenance metadata block (formatter, styleUsed, requestId, warnings) so users can see exactly which engine produced each citation. Accuracy is measured against a public, immutable validation fixture at scholar-sidekick.com/citation-integrity, which includes three of the Topaz fabricated citations verbatim. Works anonymously; an optional free ssk_ key raises rate limits.",
+  "author": {
+    "name": "Scholar Sidekick",
+    "url": "https://scholar-sidekick.com"
+  },
+  "homepage": "https://scholar-sidekick.com/mcp",
+  "documentation": "https://github.com/mlava/scholar-sidekick-mcp#readme",
+  "support": "https://github.com/mlava/scholar-sidekick-mcp/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mlava/scholar-sidekick-mcp"
+  },
+  "license": "MIT",
+  "privacy_policies": [
+    "https://scholar-sidekick.com/legal/privacy"
+  ],
+  "icon": "icon.png",
+  "keywords": [
+    "citations",
+    "bibliography",
+    "academic",
+    "scholar",
+    "doi",
+    "pmid",
+    "pmcid",
+    "isbn",
+    "arxiv",
+    "issn",
+    "ads-bibcode",
+    "who-iris",
+    "bibtex",
+    "ris",
+    "csl",
+    "endnote",
+    "zotero",
+    "crossref",
+    "reference-manager",
+    "retraction",
+    "retraction-watch",
+    "open-access",
+    "unpaywall"
+  ],
+  "server": {
+    "type": "node",
+    "entry_point": "dist/mcp-server.mjs",
+    "mcp_config": {
+      "command": "node",
+      "args": [
+        "${__dirname}/dist/mcp-server.mjs"
+      ],
+      "env": {
+        "SCHOLAR_API_KEY": "${user_config.scholar_api_key}",
+        "RAPIDAPI_KEY": "${user_config.rapidapi_key}",
+        "RAPIDAPI_HOST": "${user_config.rapidapi_host}",
+        "SCHOLAR_SIDEKICK_TIMEOUT_MS": "${user_config.timeout_ms}"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "verifyCitation",
+      "title": "Verify Citation",
+      "description": "Verify a claimed citation against the resolved record at its identifier. Detects the dominant AI-driven fabrication pattern documented by Topaz et al. (Lancet 2026): a real, resolvable identifier (DOI / PMID / PMCID / arXiv / etc.) paired with a title that does NOT correspond to the paper at that identifier. Use when the user pastes a citation and asks 'is this real?' or 'check this DOI' — most fabricated citations resolve cleanly under doi.org but their cited title and the resolved title disagree. Single citation per call. Required: `title` plus exactly one identifier (doi, pmid, pmcid, isbn, arxiv, issn, ads, or whoIrisUrl). Optional refinements: author (first-author family name), year, container (journal). Set `semanticTitle: true` (any tier) to add a semantic same-work check that catches one-word title swaps string similarity misses (a flagged match becomes 'ambiguous' for review, never 'mismatch'; not byte-deterministic). Set `screenWithLlm: true` to invoke the Stage 3 LLM screen on low-confidence mismatches (catches informal-abbreviation false positives); LLM access is gated to authenticated first-party keys and paid RapidAPI tiers — anonymous callers get 400 LLM_SCREEN_FORBIDDEN. Returns: { verdict: 'matched' | 'mismatch' | 'not_found' | 'ambiguous', confidence: 'high' | 'medium' | 'low', matched: <resolved record or null>, mismatches: [{field, claimed, resolved, similarity}], candidates: [{item, registries, score}] (when title-search ran), _provenance: {stages_run, resolved_via, registries_searched, llm_screen, semantic_title} }. Verdict semantics: 'matched' = claim agrees with resolved record; 'mismatch' = identifier resolves but title does not match (Topaz fabrication pattern); 'ambiguous' = identifier resolves to one paper but the claimed title matches a DIFFERENT paper found via title-search (CITADEL 'citation error' subtype — wrong identifier for a real paper); 'not_found' = neither the identifier nor the title resolves anywhere. No sibling tool overlaps: resolveIdentifier returns metadata for a known-good identifier; verifyCitation is the only tool that cross-checks claimed title vs resolved metadata. Read-only and idempotent — safe to retry. Works anonymously for the non-LLM path; the Stage 3 LLM screen requires authentication — set SCHOLAR_API_KEY (a free ssk_ key from https://scholar-sidekick.com/account) or use a paid RapidAPI tier. SCHOLAR_API_KEY also raises your rate limit.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000,
+            "description": "The title as it appears in the cited reference. This is the field the verifier cross-checks against the resolved record at the supplied identifier. Required."
+          },
+          "doi": {
+            "description": "DOI as cited (with or without https://doi.org/ prefix; a shortDOI alias such as 10/aabbe is accepted here too and expanded to the full DOI). Provide whichever identifier(s) the cited reference carries; the verifier uses the first one in priority order doi > pmid > pmcid > arxiv > ads > isbn > issn > whoIrisUrl.",
+            "type": "string",
+            "maxLength": 200
+          },
+          "pmid": {
+            "description": "PubMed ID as cited (digits only, or with 'PMID:' prefix).",
+            "type": "string",
+            "maxLength": 50
+          },
+          "pmcid": {
+            "description": "PubMed Central ID (e.g. 'PMC1234567' or 'PMCID:1234567').",
+            "type": "string",
+            "maxLength": 50
+          },
+          "isbn": {
+            "description": "ISBN (10- or 13-digit, hyphens tolerated).",
+            "type": "string",
+            "maxLength": 50
+          },
+          "arxiv": {
+            "description": "arXiv ID (e.g. '2301.08745' or 'arXiv:2301.08745'; old-style 'hep-ph/0501023' accepted).",
+            "type": "string",
+            "maxLength": 50
+          },
+          "issn": {
+            "description": "ISSN for journal-level resolution.",
+            "type": "string",
+            "maxLength": 50
+          },
+          "ads": {
+            "description": "NASA ADS bibcode (19 chars).",
+            "type": "string",
+            "maxLength": 50
+          },
+          "whoIrisUrl": {
+            "description": "WHO IRIS URL (https://iris.who.int/...).",
+            "type": "string",
+            "maxLength": 2000
+          },
+          "author": {
+            "description": "First-author family name as cited. Refines the verdict — a title-vs-resolved-title match plus an author mismatch raises suspicion of fabrication. Pass only the family name (e.g. 'Topaz', not 'Topaz, Maxim').",
+            "type": "string",
+            "maxLength": 200
+          },
+          "year": {
+            "description": "Publication year as cited. Wrong year alone does not flip the verdict, but >=2-year gap from the resolved record lowers confidence.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9999
+          },
+          "container": {
+            "description": "Journal or container name as cited (e.g. 'The Lancet', 'Neuroscience'). Soft signal — surfaced as a mismatch field but does not gate the verdict.",
+            "type": "string",
+            "maxLength": 500
+          },
+          "screenWithLlm": {
+            "description": "Opt-in Stage 3 LLM screen. Fires only when the pre-LLM verdict is mismatch with low confidence (the informal-abbreviation false-positive bucket). Gated: requires an authenticated first-party API key or a paid RapidAPI tier; anonymous / free callers receive 400 LLM_SCREEN_FORBIDDEN. Default false.",
+            "type": "boolean"
+          },
+          "semanticTitle": {
+            "description": "Opt-in semantic title check (any tier, no key needed). On a string-level matched verdict, a calibrated model judges whether the claimed and resolved titles describe the same work and whether a word in one reverses the other; catches one-word swaps in long titles that string similarity misses. A flagged title moves matched → ambiguous (review), never mismatch. Not byte-deterministic — _provenance.semantic_title carries the probabilities. Default false.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "matched",
+              "mismatch",
+              "not_found",
+              "ambiguous"
+            ],
+            "description": "Verdict on the cited citation."
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "description": "Confidence in the verdict."
+          },
+          "matched": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Resolved BiblioItem at the cited identifier (or top search candidate on the no-identifier / ambiguous-via-search path). Null on not_found."
+          },
+          "mismatches": {
+            "type": "array",
+            "description": "Per-field discrepancies between claimed and resolved metadata.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string",
+                  "enum": [
+                    "title",
+                    "first_author",
+                    "year",
+                    "container"
+                  ]
+                },
+                "claimed": {},
+                "resolved": {},
+                "similarity": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            }
+          },
+          "candidates": {
+            "type": "array",
+            "description": "Title-search alternatives surfaced when the cited identifier resolved to something other than the claimed title (or when no identifier was supplied). Present whenever the search stage ran.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "item": {
+                  "type": "object"
+                },
+                "registries": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "crossref",
+                      "pubmed",
+                      "openalex"
+                    ]
+                  }
+                },
+                "score": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            }
+          },
+          "_provenance": {
+            "type": "object",
+            "properties": {
+              "stages_run": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "compare",
+                    "search",
+                    "llm_screen"
+                  ]
+                }
+              },
+              "resolved_via": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "registries_searched": {
+                "type": "array"
+              },
+              "llm_screen": {
+                "type": "object",
+                "properties": {
+                  "applied": {
+                    "type": "boolean"
+                  },
+                  "model": {
+                    "type": "string"
+                  },
+                  "verdict": {
+                    "type": "string",
+                    "enum": [
+                      "informal_abbreviation",
+                      "different_paper",
+                      "uncertain"
+                    ]
+                  },
+                  "reasoning": {
+                    "type": "string"
+                  },
+                  "cost_usd": {
+                    "type": "number"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "verdict",
+          "confidence"
+        ]
+      },
+      "annotations": {
+        "title": "Verify Citation",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "auditBibliography",
+      "title": "Audit Bibliography",
+      "description": "Verify a WHOLE bibliography in one call — the batch counterpart to verifyCitation. Each entry runs the same fabrication check (real, resolvable identifier paired with a title that does NOT match the resolved paper; Topaz et al., Lancet 2026) plus a retraction lookup, and the tool returns a per-entry verdict table and a corpus summary. Use when the user pastes a reference list, a .bib / .ris file, or asks to 'check all these citations at once' / 'audit my bibliography' / 'which of these references are fake or retracted'. Input: EITHER `bibliography` (raw BibTeX / RIS / CSL-JSON text — format auto-detected) OR `claims` (an array of pre-parsed {title + identifier} objects), not both. Capped at 25 entries per call; excess is dropped and reported via `truncated`. `checks` defaults to ['retraction'] (pass [] to skip); `semanticTitle` opt-in per entry (any tier; catches one-word title swaps, flagged → 'ambiguous' for review); `screenWithLlm` opt-in per entry (same auth gating as verifyCitation). Returns: { format, entries: [{ index, sourceKey?, status: 'ok'|'error', verdict: 'matched' | 'mismatch' | 'not_found' | 'ambiguous', confidence, matched, mismatches, retraction: { checked, doi, isRetracted, hasCorrections, hasConcern, notices } | null, _provenance }], parseErrors: [{ index, error, message }], truncated, summary: { total, matched, mismatch, ambiguous, not_found, errored, retracted } }. Reading the result: `index` is 1-BASED (entry 1 is the first reference) — do not add 1 again when reporting it. `sourceKey` is the entry's own key in the source file (BibTeX cite key, RIS `ID`, CSL-JSON `id`) and is the reliable way to point a user at the offending reference; it is absent on the claims[] path. `entries` and `parseErrors` share one index space, so a given input position appears in exactly one of them — report parseErrors as UNCHECKED, never as clean. `summary.total` counts verifiable entries only, excluding parseErrors and anything past the cap; `summary.retracted` is a separate axis from the verdict counts (an entry can be both matched and retracted), so never sum those fields. A non-zero `truncated` means the audit is incomplete — split the bibliography and call again. Per-entry leniency: one entry that fails to resolve becomes status:'error' without failing the batch. This audits citation IDENTITY (does each identifier resolve to the claimed work, and is it retracted) — it does NOT check whether a source supports the claim it is cited for. Read-only and idempotent. Works anonymously for the non-LLM path; SCHOLAR_API_KEY (a free ssk_ key from https://scholar-sidekick.com/account) or a paid RapidAPI tier raises rate limits and enables the optional LLM screen.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "bibliography": {
+            "description": "Raw bibliography text to parse and audit — BibTeX, RIS, or CSL-JSON. Provide EITHER this or `claims`, not both. Format is auto-detected; override with `format`. Capped at 25 entries per call (excess dropped, reported via `truncated`).",
+            "type": "string",
+            "maxLength": 131072
+          },
+          "format": {
+            "description": "Override format auto-detection for `bibliography`.",
+            "type": "string",
+            "enum": [
+              "bibtex",
+              "ris",
+              "csl-json"
+            ]
+          },
+          "claims": {
+            "description": "Pre-parsed citations to audit — an alternative to `bibliography` for agents that already hold structured references. Each needs a `title` plus whatever identifiers the citation carries.",
+            "maxItems": 25,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "maxLength": 2000,
+                  "description": "Title exactly as the citation claims it. Required — the audit compares this against the title of the record the identifier actually resolves to, and that comparison is the fabrication check."
+                },
+                "doi": {
+                  "description": "DOI as cited, with or without a prefix ('10.1038/nphys1170' or a doi.org URL).",
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "pmid": {
+                  "description": "PubMed ID, digits only or 'PMID:' prefixed.",
+                  "type": "string",
+                  "maxLength": 50
+                },
+                "pmcid": {
+                  "description": "PubMed Central ID, e.g. 'PMC1234567'.",
+                  "type": "string",
+                  "maxLength": 50
+                },
+                "isbn": {
+                  "description": "ISBN-10 or ISBN-13; hyphens are tolerated.",
+                  "type": "string",
+                  "maxLength": 50
+                },
+                "arxiv": {
+                  "description": "arXiv ID, e.g. '2301.00001' or 'arXiv:2301.00001'.",
+                  "type": "string",
+                  "maxLength": 50
+                },
+                "issn": {
+                  "description": "ISSN of the containing journal. Identifies a container, not a paper, so it cannot resolve an entry on its own — supply it alongside another identifier.",
+                  "type": "string",
+                  "maxLength": 50
+                },
+                "ads": {
+                  "description": "NASA ADS bibcode, e.g. '2019A&A...625A.135L'.",
+                  "type": "string",
+                  "maxLength": 50
+                },
+                "whoIrisUrl": {
+                  "description": "WHO IRIS publication URL.",
+                  "type": "string",
+                  "maxLength": 2000
+                },
+                "author": {
+                  "description": "First-author family name as cited. Refines the comparison; a disagreement here can downgrade a verdict to 'ambiguous'.",
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "year": {
+                  "description": "Publication year as cited. Refinement only — it never decides a verdict alone.",
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9999
+                },
+                "container": {
+                  "description": "Journal or book title as cited. Refinement only, same role as `year`.",
+                  "type": "string",
+                  "maxLength": 500
+                }
+              },
+              "required": [
+                "title"
+              ]
+            }
+          },
+          "checks": {
+            "description": "Per-entry enrichment checks. Defaults to ['retraction'] (flags retracted / corrected / expression-of-concern works via Crossref + Retraction Watch, keyed on each resolved DOI). Pass [] to skip.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "retraction"
+              ]
+            }
+          },
+          "screenWithLlm": {
+            "description": "Opt-in Stage 3 LLM screen applied per entry (same gating as verifyCitation). Default false.",
+            "type": "boolean"
+          },
+          "semanticTitle": {
+            "description": "Opt-in semantic title check applied per entry (any tier; see verifyCitation). Default false.",
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Detected input format, or null for the claims[] path."
+          },
+          "entries": {
+            "type": "array",
+            "description": "One result per verifiable entry: { index, sourceKey?, status, verdict, confidence, matched, mismatches, retraction, _provenance }.",
+            "items": {
+              "type": "object"
+            }
+          },
+          "parseErrors": {
+            "type": "array",
+            "description": "Entries that could not be parsed or lacked a title: { index, error, message }.",
+            "items": {
+              "type": "object"
+            }
+          },
+          "truncated": {
+            "type": "number",
+            "description": "Count of entries dropped beyond the 25-entry cap."
+          },
+          "summary": {
+            "type": "object",
+            "description": "Corpus roll-up: { total, matched, mismatch, ambiguous, not_found, errored, retracted }."
+          }
+        },
+        "required": [
+          "format",
+          "entries",
+          "parseErrors",
+          "truncated",
+          "summary"
+        ]
+      },
+      "annotations": {
+        "title": "Audit Bibliography",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "checkRetraction",
+      "title": "Check Retraction",
+      "description": "Check whether a single scholarly work has been retracted, corrected, or had an expression of concern raised. Use when the user asks 'has this paper been retracted?' or wants to verify a paper's standing before citing it (clinical, regulatory, evidence-synthesis contexts). To check a WHOLE reference list for retractions (e.g. 'check all these citations for retractions' at the end of a literature review, a guideline or a systematic review), use auditBibliography instead — one call runs the retraction check plus the fabrication check on up to 25 entries. Sourced from Crossref `updated-by` (which mirrors Retraction Watch). Resolves DOI/PMID/PMCID/arXiv/ADS inputs to a DOI before lookup; ISBN inputs always return doi=null and reason='no_doi' since books are not in the retraction graph. Single identifier per call — does NOT accept comma/newline batches; for a handful of papers loop one call per identifier, for a bibliography use auditBibliography. Returns: { doi, resolvedFrom?, reason?, result } where result has isRetracted, hasCorrections, hasConcern (booleans), notices (array of {type: 'retraction'|'correction'|'expression-of-concern', label, doi, date, source}), and title; result is null when no DOI could be resolved and reason explains why ('no_doi'). resolveIdentifier returns metadata but not retraction status; auditBibliography includes this check for every entry of a bibliography. Read-only and idempotent — safe to retry. Works anonymously against the public Scholar Sidekick API (rate-limited free tier); set SCHOLAR_API_KEY (a free ssk_ key from https://scholar-sidekick.com/account) for higher limits, or RAPIDAPI_KEY for paid RapidAPI tiers. Rate limits follow your tier; Crossref is queried server-side with its own caching.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "description": "A single scholarly identifier to check. 1–500 characters. Non-DOI inputs are resolved to a DOI server-side before the lookup; if no DOI can be derived, the tool returns doi=null with reason='no_doi'. Pass exactly one identifier — comma/newline batches are NOT accepted by this tool; loop one call per identifier for multiple papers. Accepted: DOI (including a shortDOI alias such as 10/aabbe), PMID, PMCID, arXiv ID, or NASA ADS bibcode (with or without prefixes). ISBN inputs are accepted but always return doi=null since books are not in the retraction graph."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "doi": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The DOI used for the lookup, or null when no DOI could be resolved"
+          },
+          "resolvedFrom": {
+            "type": "object",
+            "description": "Original input identifier when it was not already a DOI",
+            "properties": {
+              "type": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            }
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason code when result is null (e.g. 'no_doi')"
+          },
+          "result": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "isRetracted": {
+                "type": "boolean"
+              },
+              "hasCorrections": {
+                "type": "boolean"
+              },
+              "hasConcern": {
+                "type": "boolean"
+              },
+              "notices": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "label": {
+                      "type": "string"
+                    },
+                    "doi": {
+                      "type": "string"
+                    },
+                    "date": {
+                      "type": "string"
+                    },
+                    "source": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "title": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "required": [
+          "doi",
+          "result"
+        ]
+      },
+      "annotations": {
+        "title": "Check Retraction",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "checkOpenAccess",
+      "title": "Check Open Access",
+      "description": "Check whether a single scholarly work is openly accessible and where to find the best legal version. Use when the user asks 'is this open access?', 'where can I read this for free?', or wants the OA license/version before reusing or redistributing. Sourced from Unpaywall. Resolves DOI/PMID/PMCID/arXiv/ISBN/ADS inputs to a DOI before lookup; inputs that don't map to a DOI return doi=null and reason='no_doi'. Single identifier per call — does NOT accept comma/newline batches; loop one call per identifier for multiple papers. Returns: { doi, resolvedFrom?, reason?, result } where result has isOa (boolean), oaStatus ('gold' | 'green' | 'hybrid' | 'bronze' | 'closed'), title, bestLocation ({url, hostType: 'publisher' | 'repository', license, version: 'submittedVersion' | 'acceptedVersion' | 'publishedVersion'} or null), and locations (array of the same shape); result is null when no DOI could be resolved and reason explains why ('no_doi'). No sibling tool overlaps this — resolveIdentifier returns metadata but not OA status. Read-only and idempotent — safe to retry. Works anonymously against the public Scholar Sidekick API (rate-limited free tier); set SCHOLAR_API_KEY (a free ssk_ key from https://scholar-sidekick.com/account) for higher limits, or RAPIDAPI_KEY for paid RapidAPI tiers. Rate limits follow your tier; Unpaywall is queried server-side with its own caching.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "description": "A single scholarly identifier to check. 1–500 characters. Non-DOI inputs are resolved to a DOI server-side before the lookup; if no DOI can be derived, the tool returns doi=null with reason='no_doi'. Pass exactly one identifier — comma/newline batches are NOT accepted by this tool; loop one call per identifier for multiple papers. Accepted: DOI (including a shortDOI alias such as 10/aabbe), PMID, PMCID, arXiv ID, ISBN, or NASA ADS bibcode (with or without prefixes)."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "doi": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The DOI used for the lookup, or null when no DOI could be resolved"
+          },
+          "resolvedFrom": {
+            "type": "object",
+            "description": "Original input identifier when it was not already a DOI",
+            "properties": {
+              "type": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            }
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason code when result is null (e.g. 'no_doi')"
+          },
+          "result": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "isOa": {
+                "type": "boolean"
+              },
+              "oaStatus": {
+                "type": "string",
+                "enum": [
+                  "gold",
+                  "green",
+                  "hybrid",
+                  "bronze",
+                  "closed"
+                ]
+              },
+              "title": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "bestLocation": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "url": {
+                    "type": "string"
+                  },
+                  "hostType": {
+                    "type": "string"
+                  },
+                  "license": {
+                    "type": "string"
+                  },
+                  "version": {
+                    "type": "string"
+                  }
+                }
+              },
+              "locations": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string"
+                    },
+                    "hostType": {
+                      "type": "string"
+                    },
+                    "license": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "doi",
+          "result"
+        ]
+      },
+      "annotations": {
+        "title": "Check Open Access",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "resolveIdentifier",
+      "title": "Resolve Identifier",
+      "description": "Resolve scholarly identifiers to structured CSL JSON metadata (title, authors, journal, year, identifiers). Use when the user wants raw bibliographic data to inspect, transform, or feed into another tool — not a formatted citation. Common single-shot conversions: PMID → PMCID, arXiv → DOI, ISBN → CSL JSON, WHO IRIS URL → structured metadata. Accepts DOI, PMID, PMCID, ISBN, arXiv ID, ISSN, NASA ADS bibcode, or WHO IRIS URL, with or without prefixes (PMID:, arXiv:, ISBN hyphens, https://doi.org/...). Pass a single identifier or a comma/newline-separated batch — one round trip per call. Returns: a JSON array of CSL items, each with id, type, title, author[], issued.date-parts, container-title, DOI/PMID/PMCID/ISBN/ISSN/URL when available. Use formatCitation instead when the user wants a finished citation string in a specific style; use exportCitation when they want a downloadable bibliography file. Read-only and idempotent — safe to retry. Works anonymously against the public Scholar Sidekick API (rate-limited free tier); set SCHOLAR_API_KEY (a free ssk_ key from https://scholar-sidekick.com/account) for higher limits, or RAPIDAPI_KEY for paid RapidAPI tiers. Rate limits follow your tier; the underlying REST API caches repeated identical requests and surfaces cache state in the x-scholar-cache response header.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "One or more scholarly identifiers to process — DOI (with or without https://doi.org/; a shortDOI alias such as 10/aabbe is also accepted and expanded to the full DOI), PMID (with or without 'PMID:' prefix), PMCID (e.g. PMC7793608), ISBN (10 or 13 digit, hyphens tolerated), arXiv ID (with or without 'arXiv:' prefix; old-style hep-ph/0501023 also accepted), ISSN, NASA ADS bibcode (19 chars), or WHO IRIS URL. Pass identifiers verbatim — do not strip prefixes. Multiple identifiers may be separated by newlines or commas; mixed types in one batch are supported and resolved in a single round trip."
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "description": "Array of resolved bibliographic items in CSL JSON format",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Citation key or identifier"
+                },
+                "type": {
+                  "type": "string",
+                  "description": "CSL item type (e.g. article-journal, book, chapter)"
+                },
+                "title": {
+                  "type": "string",
+                  "description": "Title of the work"
+                },
+                "author": {
+                  "type": "array",
+                  "description": "Authors as CSL name objects",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "family": {
+                        "type": "string"
+                      },
+                      "given": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "issued": {
+                  "type": "object",
+                  "description": "Publication date in CSL date format",
+                  "properties": {
+                    "date-parts": {
+                      "type": "array",
+                      "items": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  }
+                },
+                "container-title": {
+                  "type": "string",
+                  "description": "Journal, book, or container title"
+                },
+                "DOI": {
+                  "type": "string"
+                },
+                "PMID": {
+                  "type": "string"
+                },
+                "PMCID": {
+                  "type": "string"
+                },
+                "ISBN": {
+                  "type": "string"
+                },
+                "ISSN": {
+                  "type": "string"
+                },
+                "URL": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "annotations": {
+        "title": "Resolve Identifier",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "formatCitation",
+      "title": "Format Citation",
+      "description": "Format scholarly identifiers into a finished citation in a specific style. Use when the user wants a paste-ready citation string for a manuscript, slide, message, footnote, or in-line reference. Style defaults to vancouver if unspecified; ask the user before defaulting if any ambiguity exists (e.g. 'Harvard' and 'Chicago' have multiple variants — confirm which one). Supports five hand-tuned builtins (vancouver, ama, apa, ieee, cse) plus any of 10,000+ CSL style IDs (chicago-author-date, harvard-cite-them-right, modern-language-association, nature, bmj, the-lancet, etc.). Alias and dependent-style resolution apply, so 'harvard' resolves to 'harvard-cite-them-right' and the canonical ID is reported back as styleUsed. Output defaults to text; pass output=html for marked-up HTML or output=json for structured CSL items. Accepts the same identifier formats as resolveIdentifier (DOI/PMID/PMCID/ISBN/arXiv/ISSN/ADS/WHO IRIS, prefixes tolerated), single or comma/newline-separated batch — one round trip per call. Returns: one of { text, html, items } depending on the output parameter, followed by a metadata block ({formatter: 'builtin' | 'csl', styleUsed, requestId, warnings?}) appended as a second text content item — surface this to the user when they care about reproducibility. Use resolveIdentifier instead when the user wants raw metadata to inspect or transform; use exportCitation when they want a downloadable bibliography file. Read-only and idempotent — safe to retry. Works anonymously against the public Scholar Sidekick API (rate-limited free tier); set SCHOLAR_API_KEY (a free ssk_ key from https://scholar-sidekick.com/account) for higher limits, or RAPIDAPI_KEY for paid RapidAPI tiers. Rate limits follow your tier.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "One or more scholarly identifiers to process — DOI (with or without https://doi.org/; a shortDOI alias such as 10/aabbe is also accepted and expanded to the full DOI), PMID (with or without 'PMID:' prefix), PMCID (e.g. PMC7793608), ISBN (10 or 13 digit, hyphens tolerated), arXiv ID (with or without 'arXiv:' prefix; old-style hep-ph/0501023 also accepted), ISSN, NASA ADS bibcode (19 chars), or WHO IRIS URL. Pass identifiers verbatim — do not strip prefixes. Multiple identifiers may be separated by newlines or commas; mixed types in one batch are supported and resolved in a single round trip."
+          },
+          "style": {
+            "description": "Citation style: 'vancouver' (default), 'ama', 'apa', 'ieee', 'cse', or any of 10,000+ CSL style IDs from citation-style-language/styles (e.g. 'chicago-author-date', 'harvard-cite-them-right', 'modern-language-association', 'nature', 'bmj', 'the-lancet'). Aliases and dependent styles resolve automatically — 'harvard' → 'harvard-cite-them-right'.",
+            "type": "string"
+          },
+          "lang": {
+            "description": "BCP-47 locale tag for formatting (e.g. 'en-US', 'en-GB', 'fr-FR'). Defaults to the locale embedded in the chosen CSL style, typically en-US.",
+            "type": "string"
+          },
+          "footnote": {
+            "description": "When true, render as a footnote/note-style citation rather than a bibliography entry. Only meaningful for note-style CSL styles (chicago-note-bibliography, turabian-fullnote-bibliography); ignored by author-date and numeric styles.",
+            "type": "boolean"
+          },
+          "output": {
+            "description": "Output format: 'text' (plain text, default), 'html' (marked-up HTML for web rendering), or 'json' (structured CSL items, equivalent to resolveIdentifier).",
+            "type": "string",
+            "enum": [
+              "text",
+              "html",
+              "json"
+            ]
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "description": "Formatted citation output. Exactly one of 'text', 'html', or 'items' will be present depending on the requested 'output' format.",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "Formatted citation as plain text (when output=text)"
+          },
+          "html": {
+            "type": "string",
+            "description": "Formatted citation as HTML (when output=html)"
+          },
+          "items": {
+            "type": "array",
+            "description": "Structured CSL JSON items (when output=json)",
+            "items": {
+              "type": "object"
+            }
+          },
+          "styleUsed": {
+            "type": "string",
+            "description": "The citation style ID actually applied"
+          },
+          "formatter": {
+            "type": "string",
+            "description": "Backend formatter used to produce the output"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Any non-fatal warnings (e.g. missing fields, locale fallback)"
+          }
+        }
+      },
+      "annotations": {
+        "title": "Format Citation",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "exportCitation",
+      "title": "Export Citation",
+      "description": "Export scholarly identifiers to a bibliography file format ready to write to disk or paste into a reference manager. Use when the user wants a file (.bib, .ris, .nbib, .xml, .rdf, .csv) for Zotero, Mendeley, EndNote, RefWorks, BibTeX/LaTeX, Pandoc, or Excel. Format parameter is required: bib (BibTeX — LaTeX), ris (RIS — most widely supported by reference managers), csl (CSL JSON — Pandoc/Quarto), endnote-xml, endnote-refer, refworks, medline (NBIB — PubMed round-trips, clinical workflows), zotero-rdf, csv (spreadsheet-friendly), or txt (plain-text bibliography rendered with the optional style parameter — txt is the only format that uses style; the others have their own structured shape and ignore it). Accepts the same identifier formats as resolveIdentifier (DOI/PMID/PMCID/ISBN/arXiv/ISSN/ADS/WHO IRIS, prefixes tolerated), single or comma/newline-separated batch — one round trip per call. Returns: { content: string, format: string } where content is the entire bibliography in the requested format as a single string — write it to a file (.bib/.ris/.nbib/etc.) or paste it directly into the target tool. Use formatCitation instead when the user wants in-line citation text (manuscript, slide); use resolveIdentifier when they want raw structured metadata. Read-only and idempotent — safe to retry. Works anonymously against the public Scholar Sidekick API (rate-limited free tier); set SCHOLAR_API_KEY (a free ssk_ key from https://scholar-sidekick.com/account) for higher limits, or RAPIDAPI_KEY for paid RapidAPI tiers. Rate limits follow your tier.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "One or more scholarly identifiers to process — DOI (with or without https://doi.org/; a shortDOI alias such as 10/aabbe is also accepted and expanded to the full DOI), PMID (with or without 'PMID:' prefix), PMCID (e.g. PMC7793608), ISBN (10 or 13 digit, hyphens tolerated), arXiv ID (with or without 'arXiv:' prefix; old-style hep-ph/0501023 also accepted), ISSN, NASA ADS bibcode (19 chars), or WHO IRIS URL. Pass identifiers verbatim — do not strip prefixes. Multiple identifiers may be separated by newlines or commas; mixed types in one batch are supported and resolved in a single round trip."
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "bib",
+              "ris",
+              "csv",
+              "csl",
+              "endnote-refer",
+              "endnote-xml",
+              "refworks",
+              "medline",
+              "zotero-rdf",
+              "txt"
+            ],
+            "description": "Export format. 'bib' (BibTeX/.bib for LaTeX), 'ris' (RIS — most widely supported by reference managers), 'csl' (CSL JSON for Pandoc/Quarto), 'endnote-xml' (EndNote XML import), 'endnote-refer' (EndNote Refer/tagged), 'refworks' (RefWorks tagged), 'medline' (NBIB for PubMed round-trips), 'zotero-rdf' (Zotero RDF), 'csv' (spreadsheet-friendly), or 'txt' (plain-text bibliography rendered with the optional `style` parameter)."
+          },
+          "style": {
+            "description": "Citation style ID — used only when format='txt'. Same vocabulary as formatCitation's style parameter (vancouver, apa, ama, ieee, cse, or any CSL style ID). Ignored by all other formats.",
+            "type": "string"
+          },
+          "lang": {
+            "description": "BCP-47 locale tag (e.g. 'en-US') — used only when format='txt' and style is set. Ignored by structured formats.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "format"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "Exported bibliography as a string in the requested format (BibTeX, RIS, CSL JSON, EndNote, RefWorks, MEDLINE, Zotero RDF, CSV, or plain text)"
+          },
+          "format": {
+            "type": "string",
+            "description": "The export format produced"
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "annotations": {
+        "title": "Export Citation",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    }
+  ],
+  "tools_generated": false,
+  "prompts": [
+    {
+      "name": "format",
+      "description": "Format an academic identifier in a specific citation style.",
+      "arguments": [
+        {
+          "name": "identifier",
+          "description": "Identifier to use (DOI, PMID, PMCID, ISBN, arXiv ID, ISSN, ADS bibcode, or WHO IRIS URL)",
+          "required": true
+        },
+        {
+          "name": "style",
+          "description": "Citation style: vancouver, apa, ama, ieee, cse, or any CSL style ID (e.g. chicago-author-date, harvard-cite-them-right, modern-language-association, nature)",
+          "required": true
+        }
+      ],
+      "text": "Format ${arguments.identifier} in ${arguments.style} style."
+    },
+    {
+      "name": "export",
+      "description": "Resolve an identifier and export it to a bibliography file format.",
+      "arguments": [
+        {
+          "name": "identifier",
+          "description": "Identifier to use (DOI, PMID, PMCID, ISBN, arXiv ID, ISSN, ADS bibcode, or WHO IRIS URL)",
+          "required": true
+        },
+        {
+          "name": "format",
+          "description": "Export format: bib (BibTeX), ris, csl (CSL JSON), endnote-xml, endnote-refer, refworks, medline (NBIB), zotero-rdf, csv, txt",
+          "required": true
+        }
+      ],
+      "text": "Resolve ${arguments.identifier} and export it as ${arguments.format}."
+    },
+    {
+      "name": "batch_format",
+      "description": "Format multiple identifiers as a bibliography in a single citation style.",
+      "arguments": [
+        {
+          "name": "identifiers",
+          "description": "Identifiers separated by newlines or commas (DOI, PMID, PMCID, ISBN, arXiv ID, ISSN, ADS bibcode, WHO IRIS URL)",
+          "required": true
+        },
+        {
+          "name": "style",
+          "description": "Citation style: vancouver, apa, ama, ieee, cse, or any CSL style ID (e.g. chicago-author-date, harvard-cite-them-right, modern-language-association, nature)",
+          "required": true
+        }
+      ],
+      "text": "Format these references in ${arguments.style} style:\n${arguments.identifiers}"
+    },
+    {
+      "name": "resolve",
+      "description": "Resolve an identifier to structured bibliographic metadata (CSL JSON).",
+      "arguments": [
+        {
+          "name": "identifier",
+          "description": "Identifier to use (DOI, PMID, PMCID, ISBN, arXiv ID, ISSN, ADS bibcode, or WHO IRIS URL)",
+          "required": true
+        }
+      ],
+      "text": "Resolve ${arguments.identifier} and return the bibliographic metadata as structured JSON."
+    },
+    {
+      "name": "retraction",
+      "description": "Check whether a paper has been retracted, corrected, or had an expression of concern raised.",
+      "arguments": [
+        {
+          "name": "identifier",
+          "description": "Identifier to check (DOI, PMID, PMCID, arXiv ID, or ADS bibcode). Single identifier only.",
+          "required": true
+        }
+      ],
+      "text": "Check whether ${arguments.identifier} has been retracted, corrected, or had an expression of concern raised."
+    },
+    {
+      "name": "open_access",
+      "description": "Check whether a paper is open access and find the best legal copy.",
+      "arguments": [
+        {
+          "name": "identifier",
+          "description": "Identifier to check (DOI, PMID, PMCID, arXiv ID, ISBN, or ADS bibcode). Single identifier only.",
+          "required": true
+        }
+      ],
+      "text": "Check whether ${arguments.identifier} is open access and report the best legal landing or PDF URL."
+    },
+    {
+      "name": "verify",
+      "description": "Check whether a claimed citation matches the paper at its identifier (detects AI-driven citation fabrication).",
+      "arguments": [
+        {
+          "name": "title",
+          "description": "The cited title (the title as it appears in the bibliography).",
+          "required": true
+        },
+        {
+          "name": "identifier",
+          "description": "The cited identifier (DOI, PMID, PMCID, ISBN, arXiv ID, ISSN, ADS bibcode, or WHO IRIS URL). Single identifier only.",
+          "required": true
+        }
+      ],
+      "text": "Verify the citation '${arguments.title}' at identifier ${arguments.identifier}."
+    }
+  ],
+  "prompts_generated": false,
+  "resources": [
+    {
+      "name": "supported-identifiers",
+      "uri": "scholar-sidekick://identifiers",
+      "title": "Supported Identifier Types",
+      "description": "Reference table of the 8 scholarly identifier types Scholar Sidekick MCP can resolve, with example formats and notes on prefix tolerance.",
+      "mimeType": "text/markdown"
+    },
+    {
+      "name": "supported-styles",
+      "uri": "scholar-sidekick://styles",
+      "title": "Supported Citation Styles",
+      "description": "Reference table of citation styles supported by formatCitation: 5 hand-tuned builtins plus a starter list of common CSL style IDs from the citation-style-language/styles repository (10,000+ available).",
+      "mimeType": "text/markdown"
+    },
+    {
+      "name": "supported-formats",
+      "uri": "scholar-sidekick://formats",
+      "title": "Supported Export Formats",
+      "description": "Reference table of the 10 export formats supported by exportCitation, with picking guidance per common workflow (LaTeX, reference managers, Pandoc, clinical/PubMed, spreadsheets, plain text).",
+      "mimeType": "text/markdown"
+    },
+    {
+      "name": "verify-verdicts",
+      "uri": "scholar-sidekick://verify-verdicts",
+      "title": "Citation Verifier Verdicts",
+      "description": "Reference for the four verifier verdicts (matched / mismatch / ambiguous / not_found), confidence scores, the LLM-screen gating, the _provenance block, and the Topaz et al. (Lancet 2026) source paper. Use as context when interpreting verifyCitation responses.",
+      "mimeType": "text/markdown"
+    }
+  ],
+  "resources_generated": false,
+  "user_config": {
+    "scholar_api_key": {
+      "type": "string",
+      "title": "Scholar Sidekick API Key (ssk_)",
+      "description": "Optional first-party API key. The server works anonymously against the public Scholar Sidekick API (rate-limited free tier) with no key at all; add a free ssk_ key for higher limits and the verifier's LLM screen. Create one at https://scholar-sidekick.com/account",
+      "sensitive": true,
+      "required": false
+    },
+    "rapidapi_key": {
+      "type": "string",
+      "title": "RapidAPI Key",
+      "description": "Optional RapidAPI subscription key for paid/managed tiers, which routes calls through the RapidAPI gateway. Leave blank to use the anonymous or first-party (ssk_) path against scholar-sidekick.com. Get a key at https://rapidapi.com/scholar-sidekick-scholar-sidekick-api/api/scholar-sidekick",
+      "sensitive": true,
+      "required": false
+    },
+    "rapidapi_host": {
+      "type": "string",
+      "title": "RapidAPI Host (advanced)",
+      "description": "Override the default RapidAPI host. Leave blank unless instructed.",
+      "default": "scholar-sidekick.p.rapidapi.com",
+      "required": false
+    },
+    "timeout_ms": {
+      "type": "string",
+      "title": "Request timeout (ms)",
+      "description": "How long to wait for the Scholar Sidekick API before failing. Default 30000.",
+      "default": "30000",
+      "required": false
+    }
+  },
+  "compatibility": {
+    "claude_desktop": ">=0.10.0",
+    "platforms": [
+      "darwin",
+      "win32"
+    ],
+    "runtimes": {
+      "node": ">=20.0.0"
+    }
+  }
+}

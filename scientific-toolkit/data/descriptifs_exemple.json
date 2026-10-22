@@ -1,0 +1,7 @@
+[
+  {"label": "Groupe programme — score lecture", "n": 60, "mean": 3.77, "sd": 0.31},
+  {"label": "Groupe contrôle — score lecture", "n": 60, "mean": 3.11, "sd": 0.44},
+  {"label": "Sous-groupe A — satisfaction", "n": 25, "mean": 4.37, "sd": 0.42},
+  {"label": "Sous-groupe B — satisfaction", "n": 18, "mean": 5.19, "sd": 0.28},
+  {"label": "Échantillon total — motivation", "n": 40, "mean": 4.90, "sd": 0.05}
+]

@@ -1,0 +1,52 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Haddaway
+    given-names: Neal
+    orcid: https://orcid.org/0000-0003-3902-2234
+  - family-names: McGuinness
+    given-names: Luke A
+    orcid: https://orcid.org/0000-0001-8730-9761
+  - family-names: Chapman
+    given-names: Brennan
+  - family-names: Hammady
+    given-names: Hossam
+  - family-names: Kolstad
+    given-names: Anders
+    orcid: https://orcid.org/0000-0002-9623-9491
+  - family-names: Dimri
+    given-names: Shreya
+    orcid: https://orcid.org/0009-0009-2155-7506
+  - family-names: Jones
+    given-names: Matt Lloyd
+    orcid: https://orcid.org/0000-0001-5841-4554
+  - family-names: Kulas
+    given-names: John-o
+  - family-names: Pritchard
+    given-names: Chris C
+    orcid: https://orcid.org/0000-0002-1143-9751
+title: "PRISMA2020: R package and ShinyApp for producing PRISMA 2020 compliant flow diagrams"
+version: 1.1.5
+doi: 10.5281/zenodo.4287834
+date-released: 2026-09-05
+license: MIT
+url: "https://doi.org/10.5281/zenodo.4287834"
+preferred-citation:
+  type: article
+  authors:
+  - family-names: Haddaway
+    given-names: Neal
+    orcid: https://orcid.org/0000-0003-3902-2234
+  - family-names: Page
+    given-names: Matthew J
+    orcid: https://orcid.org/0000-0002-4242-7526
+  - family-names: Pritchard
+    given-names: Chris C
+    orcid: https://orcid.org/0000-0002-1143-9751
+  - family-names: McGuinness
+    given-names: Luke A
+    orcid: https://orcid.org/0000-0001-8730-9761
+  doi: "10.1002/cl2.1230"
+  journal: "Campbell Systematic Reviews"
+  title: "PRISMA2020: an R package and Shiny app for producing PRISMA 2020-compliant flow diagrams, with interactivity for optimised digital transparency and Open Synthesis"
+  year: 2022

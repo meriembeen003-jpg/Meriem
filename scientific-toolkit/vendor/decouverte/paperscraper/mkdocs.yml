@@ -1,0 +1,145 @@
+site_name: Paperscraper
+site_description: Documentation for the paperscraper python package
+# site_url :
+# Repository
+repo_name: jannisborn/paperscraper
+repo_url: https://github.com/jannisborn/paperscraper
+edit_uri: edit/main/docs/
+
+# Theme
+theme:
+  name: material
+  font:
+    text: IBM Plex Sans
+    code: IBM Plex Mono
+  logo: favicon.png
+  favicon: favicon.png
+  features:
+    - content.code.annotate
+    - content.code.copy
+    # - content.tabs.link
+    - content.tooltips
+    # - header.autohide
+    # - navigation.expand
+    - navigation.indexes
+    # - navigation.instant
+    - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
+    - navigation.tracking
+    - search.highlight
+    - search.share
+    - search.suggest
+    - toc.follow
+    - toc.integrate
+  palette:
+    - scheme: default
+      primary: black
+      accent: blue
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to dark mode
+    - scheme: slate
+      primary: black
+      accent: blue
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to light mode
+  language: en
+
+nav:
+  - Overview: README.md
+  - API Documentation:
+    - Overview: api/index.md
+    - paperscraper: 
+      - api/paperscraper/index.md
+      - paperscraper.arxiv: api/arxiv.md
+      - paperscraper.citations: api/citations.md
+      - paperscraper.get_dumps: api/get_dumps.md
+      - paperscraper.pdf: api/pdf.md
+      - paperscraper.pubmed: api/pubmed.md
+      - paperscraper.scholar: api/scholar.md
+      - paperscraper.xrxiv: api/xrxiv.md
+  - Examples:
+    - Getting Started: examples/getting-started.md
+    - Paper Keyword Analysis: examples/paper-keyword-analysis.md
+    - PDF Retrieval: examples/pdf-retrieval.md
+    - Scholar Metrics Analysis: examples/scholar-metrics-analysis.md
+    - Self-Citation Analysis: examples/self-citation-analysis.md
+
+# Copyright
+copyright: MIT License
+
+# Customization
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/jannisborn/paperscraper
+  generator: false
+
+# Plugins
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          options:
+            show_submodules: true
+            heading_level: 2
+            group_by_category: true
+            members_order: source
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            render_typehint_in_signature: true
+            show_root_heading: true
+            show_signature_annotations: true
+            show_source: true
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - md_in_html
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - meta
+  - toc:
+      permalink: true
+      # toc_depth: 3
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.critic
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets:
+      check_paths: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+extra_css:
+  - css/nav-code-style.css
+  - css/mkdocstrings-chips.css
+extra_javascript:
+  - js/termynal.js
+  - js/custom.js

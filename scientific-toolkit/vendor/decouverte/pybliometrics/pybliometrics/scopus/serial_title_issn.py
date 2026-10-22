@@ -1,0 +1,345 @@
+from typing import NamedTuple
+import warnings
+
+from pybliometrics.superclasses import Retrieval
+from pybliometrics.utils import chained_get, check_parameter_value, \
+    get_link, make_float_if_possible, make_int_if_possible, VIEWS
+
+
+class Citescoreinfolist(NamedTuple):
+    year: int
+    citescore: float
+    status: str | None = None
+    documentcount: int | None = None 
+    citationcount: int | None = None
+    percentcited: int | None = None
+    rank: list['Citescoresubjectrank'] | None = None
+
+
+class Citescoresubjectrank(NamedTuple):
+    subjectcode: int
+    rank: int
+    percentile: int
+
+
+class Subjectarea(NamedTuple):
+    area: str
+    abbreviation: str
+    code: int
+
+
+class Yearlydata(NamedTuple):
+    year: int
+    publicationcount: int
+    revpercent: float | None
+    zerocitessce: int
+    zerocitespercentsce: float | None
+    citecountsce: int
+
+
+class SerialTitleISSN(Retrieval):
+    @property
+    def aggregation_type(self) -> str:
+        """The type of the source."""
+        return self._entry['prism:aggregationType']
+
+    @property
+    def citescoreyearinfolist(self) -> list[Citescoreinfolist] | None:
+        """A list of named tuples of the form: `(year citescore)` or (when
+        `view="CITESCORE"`) `(year citescore status documentcount citationcount
+        percentcited rank)`.  `rank` is `None` or a named tuple of the form
+        `(subjectcode rank percentile)`.
+
+        For more information see the
+        [CiteScore documentation](https://service.elsevier.com/app/answers/detail/a_id/14880/supporthub/scopus/).
+        """
+        
+        try:
+            data = self._entry.get('citeScoreYearInfoList', {})
+        except KeyError:
+            return None
+
+        # Function to create a named tuple for CurrentMetric and CurrentTracker
+        def _create_namedtuple(data, mode, info_class):
+            year = data.get(f'citeScore{mode}Year')
+            cite_score = data.get(f'citeScore{mode}')
+
+            # To be consistent with old version
+            if (year is None) and (cite_score is None):
+                return None
+
+            return info_class(year=int(year), citescore=float(cite_score))
+
+        # Extract depending on view
+        new_data = None
+        if self._view in ('STANDARD', 'ENHANCED'):
+            current = _create_namedtuple(data, 'CurrentMetric', Citescoreinfolist)
+            tracker = _create_namedtuple(data, 'Tracker', Citescoreinfolist)
+            new_data = [current, tracker]
+
+        elif self._view == 'CITESCORE':
+            new_data = _get_all_cite_score_years(Citescoreinfolist, Citescoresubjectrank, data)
+
+        return new_data or None
+
+    @property
+    def eissn(self) -> str | None:
+        """The electronic ISSN of the source."""
+        return self._entry.get('prism:eIssn')
+
+    @property
+    def issn(self) -> str | None:
+        """The ISSN of the source."""
+        return self._entry.get('prism:issn')
+
+    @property
+    def oaallowsauthorpaid(self) -> str | None:
+        """Whether under the Open-Access policy authors are allowed to pay."""
+        return self._entry.get('oaAllowsAuthorPaid')
+
+    @property
+    def openaccess(self) -> int | None:
+        """Open Access status (0 or 1)."""
+        return make_int_if_possible(chained_get(self._entry, ['openaccess']))
+
+    @property
+    def openaccessstartdate(self):
+        """Starting availability date."""
+        return self._entry.get('openaccessStartDate')
+
+    @property
+    def openaccesstype(self) -> str | None:
+        """Open Archive status (full or partial)."""
+        return self._entry.get('openaccessType')
+
+    @property
+    def openaccessarticle(self) -> bool | None:
+        """Open Access status."""
+        return self._entry.get('openaccessArticle')
+
+    @property
+    def openarchivearticle(self) -> bool | None:
+        """Open Archive status."""
+        return self._entry.get('openArchiveArticle')
+
+    @property
+    def openaccesssponsorname(self) -> str | None:
+        """The name of the Open Access sponsor."""
+        return self._entry.get('openaccessSponsorName')
+
+    @property
+    def openaccesssponsortype(self) -> str | None:
+        """The type of the Open Access sponsor."""
+        return self._entry.get('openaccessSponsorType')
+
+    @property
+    def openaccessuserlicense(self) -> str | None:
+        """The User license."""
+        return self._entry.get('openaccessUserLicense')
+
+    @property
+    def publisher(self) -> str:
+        """The publisher of the source."""
+        return self._entry['dc:publisher']
+
+    @property
+    def scopus_source_link(self) -> str:
+        """URL to info site on scopus.com."""
+        return get_link(self._entry, 0, ["link"])
+
+    @property
+    def self_link(self) -> str:
+        """URL to the source's API page."""
+        return get_link(self._json, 0, ["link"])
+
+    @property
+    def sjrlist(self) -> list[tuple[int, float]] | None:
+        """The SCImago Journal Rank (SJR) indicator as list of tuples in the form
+        `(year, indicator)`.  See
+        https://www.scimagojr.com/journalrank.php.
+        """
+        return _parse_list(self._entry, "SJR")
+
+    @property
+    def sniplist(self) -> list[tuple[int, float]] | None:
+        """The Source-Normalized Impact per Paper (SNIP) as list of tuples in the form
+        `(year, indicator)`.  See
+        https://blog.scopus.com/posts/journal-metrics-in-scopus-source-normalized-impact-per-paper-snip.
+        """
+        return _parse_list(self._entry, "SNIP")
+
+    @property
+    def source_id(self) -> int:
+        """The Scopus ID of the source."""
+        return int(self._entry['source-id'])
+
+    @property
+    def subject_area(self) -> list[Subjectarea] | None:
+        """List of named tuples of subject areas in the form
+        `(area, abbreviation, code)` of the source.
+        """
+        areas = [Subjectarea(area=item['$'], code=int(item['@code']),
+                      abbreviation=item['@abbrev'])
+                 for item in self._entry["subject-area"]]
+        return areas or None
+
+    @property
+    def title(self) -> str:
+        """The title of the source."""
+        return self._entry['dc:title']
+
+    @property
+    def yearly_data(self) -> list[Yearlydata] | None:
+        """Yearly citation information as a list of Yearlydata in the
+        form `(year, publicationcount, revpercent, zerocitessce,
+        zerocitespercentsce, citecountsce)`.  That's the number of documents
+        published in this year, the share of review articles thereof, the
+        number and share of not-cited documents, and the number of distinct
+        documents that were cited in this year.
+        """
+        try:
+            data = self._entry['yearly-data']["info"]
+        except KeyError:
+            return None
+        data = [Yearlydata(year=int(d['@year']), citecountsce=int(d['citeCountSCE']),
+                    publicationcount=int(d['publicationCount']),
+                    revpercent=make_float_if_possible(d['revPercent']),
+                    zerocitessce=int(d['zeroCitesSCE']),
+                    zerocitespercentsce=make_float_if_possible(d['zeroCitesPercentSCE']))
+                for d in data]
+        return data or None
+
+    def __init__(self,
+                 issn: int | str,
+                 refresh: bool | int = False,
+                 view: str = "ENHANCED",
+                 years: str | None = None,
+                 **kwds: str
+                 ) -> None:
+        """Interaction with the `ISSN` endpoint of the `Serial Title API`.
+        Class retrieves data from both Scopus and ScienceDirect.
+
+        :param issn: The ISSN or the E-ISSN of the source.
+        :param refresh: Whether to refresh the cached file if it exists or not.
+                        If int is passed, cached file will be refreshed if the
+                        number of days since last modification exceeds that value.
+        :param view: The view of the file that should be downloaded.  Allowed
+                     values: `STANDARD`, `ENHANCED`, `CITESCORE`.  For details
+                     see https://dev.elsevier.com/sc_serial_title_views.html.
+        :param years: A string specifying a year or range of years (combining
+                      two years with a hyphen) for which yearly metric data
+                      (SJR, SNIP, yearly-data) should be looked up for.  If
+                      `None`, only the most recent metric data values are
+                      provided. Note: If not `None`, refresh will always be `True`.
+        :param kwds: Keywords passed on as query parameters.  Must contain
+                     fields and values mentioned in the API specification at
+                     https://dev.elsevier.com/documentation/SerialTitleAPI.wadl.
+
+        Raises
+        ------
+        ValueError
+            If any of the parameters `refresh` or `view` is not
+            one of the allowed values.
+
+        Notes
+        -----
+        The directory for cached results is `{path}/{view}/{source_id}`,
+        where `path` is specified in your configuration file.
+        """
+        # Checks
+        check_parameter_value(view, VIEWS['SerialTitleISSN'], "view")
+        self._view = view
+
+        # Force refresh when years is specified
+        if years:
+            refresh = True
+        self._refresh = refresh
+
+        # Load json
+        self._id = str(issn)
+        self._years = years
+        Retrieval.__init__(self, identifier=self._id, date=years, **kwds)
+
+        # Parse json
+        self._json = self._json['serial-metadata-response']
+        self._entry = self._json['entry'][0]
+
+    def __str__(self):
+        """Print a summary string."""
+        date = self.get_cache_file_mdate().split()[0]
+        areas = [e.area for e in self.subject_area or []]
+        if len(areas) == 1:
+            areas = areas[0]
+        else:
+            areas = " and ".join([", ".join(areas[:-1]), areas[-1]])
+        s = f"'{self.title}', {self.aggregation_type} published by "\
+            f"'{self.publisher}', is active in {areas}\n"
+        metrics = []
+        if self.sjrlist:
+            metrics.append("SJR:  year value")
+            for rec in self.sjrlist:
+                metrics.append(f"      {rec[0]} {rec[1]}")
+        if self.sniplist:
+            metrics.append("SNIP: year value")
+            for rec in self.sniplist:
+                metrics.append(f"      {rec[0]} {rec[1]}")
+        if metrics:
+            s += f"Metrics as of {date}:\n    " + "\n    ".join(metrics) + "\n"
+        s += f"    ISSN: {self.issn or '-'}, E-ISSN: {self.eissn or '-'}, "\
+             f"Scopus ID: {self.source_id}"
+        return s
+
+
+def _parse_list(d, metric):
+    """Auxiliary function to parse SNIP and SJR lists."""
+    try:
+        values = [(int(r['@year']), float(r['$'])) for r
+                  in d[metric + "List"][metric]]
+        return sorted(set(values))
+    except (KeyError, TypeError):
+        return None
+
+
+def _get_all_cite_score_years(
+        named_info_list: type[Citescoreinfolist],
+        named_rank_list: type[Citescoresubjectrank],
+        data: dict
+) -> list[Citescoreinfolist] | None:
+    """Auxiliary function to get all information contained in cite score 
+    information list for the `CITESCORE` view.
+    """
+    data = data.get('citeScoreYearInfo', [])
+
+    new_data = []
+    # Iterate through years
+    for d in data:
+        citeScoreInfo = d.get('citeScoreInformationList', [])[0].get('citeScoreInfo', [])[0]
+        # Iterate through subject ranks
+        subject_rank = [named_rank_list(subjectcode=int(subject['subjectCode']),
+                                        rank=int(subject['rank']),
+                                        percentile=int(subject['percentile']))
+                        for subject in citeScoreInfo.get('citeScoreSubjectRank', [])]
+        # Create named tuple with info
+        Citescoreinfolist_year = named_info_list(year=int(d['@year']),
+            citescore=make_float_if_possible(citeScoreInfo['citeScore']),
+            status=d['@status'],
+            documentcount=int(citeScoreInfo['scholarlyOutput']),
+            citationcount=int(citeScoreInfo['citationCount']),
+            percentcited=int(citeScoreInfo['percentCited']),
+            rank=subject_rank)
+        # Append new data
+        new_data.append(Citescoreinfolist_year)
+
+    return new_data or None
+
+def SerialTitle(*args, **kwds):
+    """Deprecated: Use SerialTitleISSN instead.
+    This class is deprecated and will be removed.
+    """
+    warnings.warn(
+        "SerialTitle is deprecated and will be removed with the next major release. "
+        "Use SerialTitleISSN instead.",
+        DeprecationWarning,
+        stacklevel=2
+    )
+    return SerialTitleISSN(*args, **kwds)

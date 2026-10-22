@@ -1,0 +1,143 @@
+[
+  {
+    "titre": "Effets d'un programme de remédiation sur la lecture",
+    "doi": "10.1000/rpe.2021.015",
+    "annee": 2021,
+    "auteurs": [
+      "Dupont M."
+    ],
+    "revue": "Revue de psychologie de l éducation",
+    "resume": "Essai contrôlé randomisé évaluant un programme de remédiation en lecture chez 140 élèves.",
+    "citations": 34,
+    "oa_url": "https://example.org/pdf1",
+    "est_oa": null,
+    "type": "",
+    "langue": "",
+    "editeur": "",
+    "issn": "",
+    "pmid": "",
+    "arxiv_id": "",
+    "url": "",
+    "source": "openalex",
+    "id_source": "",
+    "sujets": [],
+    "references": [],
+    "sources_multiples": [
+      "crossref",
+      "openalex"
+    ]
+  },
+  {
+    "titre": "Reading remediation in primary school: a randomized trial",
+    "doi": "10.1037/edu0000123",
+    "annee": 2023,
+    "auteurs": [
+      "Smith J.",
+      "Doe J.",
+      "Martin C."
+    ],
+    "revue": "Journal of Educational Psychology",
+    "resume": "Randomized trial of reading remediation in primary school children.",
+    "citations": 12,
+    "oa_url": "https://example.org/pdf2",
+    "est_oa": null,
+    "type": "",
+    "langue": "",
+    "editeur": "",
+    "issn": "",
+    "pmid": "",
+    "arxiv_id": "",
+    "url": "",
+    "source": "europepmc",
+    "id_source": "",
+    "sujets": [],
+    "references": [],
+    "sources_multiples": [
+      "europepmc",
+      "openalex"
+    ]
+  },
+  {
+    "titre": "Interventions for reading comprehension: a meta-analysis",
+    "doi": "10.1000/meta.2019.44",
+    "annee": 2019,
+    "auteurs": [
+      "Bernard S.",
+      "Klein T."
+    ],
+    "revue": "Review of Educational Research",
+    "resume": "Meta-analysis of 120 studies of reading comprehension interventions in school settings.",
+    "citations": 210,
+    "oa_url": "https://example.org/pdf3",
+    "est_oa": null,
+    "type": "",
+    "langue": "",
+    "editeur": "",
+    "issn": "",
+    "pmid": "",
+    "arxiv_id": "",
+    "url": "",
+    "source": "openalex",
+    "id_source": "",
+    "sujets": [],
+    "references": [],
+    "sources_multiples": [
+      "crossref",
+      "openalex"
+    ]
+  },
+  {
+    "titre": "Cortical correlates of reading difficulty in adults",
+    "doi": "10.1000/neuro.2022.11",
+    "annee": 2022,
+    "auteurs": [
+      "Roux C.",
+      "Klein T."
+    ],
+    "revue": "NeuroImage",
+    "resume": "fMRI study of cortical correlates of reading difficulty in adults.",
+    "citations": 23,
+    "oa_url": "https://example.org/pdf4",
+    "est_oa": null,
+    "type": "",
+    "langue": "",
+    "editeur": "",
+    "issn": "",
+    "pmid": "",
+    "arxiv_id": "",
+    "url": "",
+    "source": "openalex",
+    "id_source": "",
+    "sujets": [],
+    "references": [],
+    "sources_multiples": []
+  },
+  {
+    "titre": "Reading acquisition and bilingualism: a longitudinal study",
+    "doi": "10.1000/biling.2021.03",
+    "annee": 2021,
+    "auteurs": [
+      "Bernard S."
+    ],
+    "revue": "Language and Education",
+    "resume": "Longitudinal study of reading acquisition and bilingualism in children.",
+    "citations": 19,
+    "oa_url": "",
+    "est_oa": null,
+    "type": "",
+    "langue": "",
+    "editeur": "",
+    "issn": "",
+    "pmid": "",
+    "arxiv_id": "",
+    "url": "",
+    "source": "openalex",
+    "id_source": "",
+    "sujets": [],
+    "references": [],
+    "sources_multiples": [
+      "crossref",
+      "openalex"
+    ]
+  }
+]

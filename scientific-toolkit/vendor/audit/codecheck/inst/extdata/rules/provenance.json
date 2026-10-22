@@ -1,0 +1,25 @@
+{
+  "comment": "Written by codecheck::update_codecheck_rules(). The rules themselves are maintained in the register, see https://github.com/codecheckers/register/blob/master/RULES.md",
+  "source": "https://raw.githubusercontent.com/codecheckers/register/master/",
+  "via": "local register checkout",
+  "retrieved": "2026-10-13T12:15:36+0200",
+  "files": [
+    {
+      "file": "rules-2.0.yml",
+      "spec_version": "2.0",
+      "rules": 62,
+      "commit": "557e9eaab155f4821feedbba0d6537b38373a386",
+      "commit_date": "2026-10-13T10:15:10+0000",
+      "md5": "a042015a9b914cd6553e76f045a3f34f"
+    },
+    {
+      "file": "rules-1.0.yml",
+      "spec_version": "1.0",
+      "rules": 59,
+      "commit": "557e9eaab155f4821feedbba0d6537b38373a386",
+      "commit_date": "2026-10-13T10:15:10+0000",
+      "md5": "22980765fe96918fc8cf1f67e71c5b44"
+    }
+  ]
+}
+

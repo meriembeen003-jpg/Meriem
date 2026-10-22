@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>RobotReviewer report</title>
+
+    {% if online %}
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='scripts/spa/css/foundation.css') }}">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+    {% endif %}
+
+    <link rel="stylesheet" type=text/css href="{{ url_for('static', filename='css/report.css') }}">
+  </head>
+
+  <body>
+    <div class="reportcontainer">
+      <h1>RobotReviewer report</h1>
+
+      {% if online %}
+      <div class="download">
+        <ul class="button-group">
+          <li>
+            <a class="button tiny secondary" href="download_report/{{ report_uuid }}/html">
+              <i class="fa fa-file-text-o" aria-hidden="true"></i> html
+            </a>
+          </li>
+          <li>
+            <a class="button tiny secondary" href="download_report/{{ report_uuid }}/json">
+              <i class="fa fa-file-code-o" aria-hidden="true"></i> json
+            </a>
+          </li>
+          <li>
+            <a class="button tiny secondary" href="download_report/{{ report_uuid }}/doc">
+              <i class="fa fa-file-word-o" aria-hidden="true"></i> word
+            </a>
+          </li>
+        </ul>
+      </div>
+      {% endif %}
+
+      {% include "report_elements.html" with context %}
+
+
+
+    </div>
+  </body>
+</html>

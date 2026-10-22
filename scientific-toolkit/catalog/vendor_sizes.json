@@ -1,0 +1,372 @@
+[
+ {
+  "repo": "decouverte/metapub",
+  "Mo": 2.22,
+  "fichiers": 351
+ },
+ {
+  "repo": "audit/codecheck",
+  "Mo": 2.14,
+  "fichiers": 228
+ },
+ {
+  "repo": "donnees/pygbif",
+  "Mo": 1.61,
+  "fichiers": 209
+ },
+ {
+  "repo": "revue_systematique/robotreviewer",
+  "Mo": 1.51,
+  "fichiers": 139
+ },
+ {
+  "repo": "decouverte/habanero",
+  "Mo": 1.39,
+  "fichiers": 177
+ },
+ {
+  "repo": "mcp/paper-search-mcp",
+  "Mo": 1.13,
+  "fichiers": 127
+ },
+ {
+  "repo": "donnees/openml-python",
+  "Mo": 1.11,
+  "fichiers": 172
+ },
+ {
+  "repo": "mcp/arxiv-mcp-server",
+  "Mo": 1.05,
+  "fichiers": 104
+ },
+ {
+  "repo": "parsing/science-parse",
+  "Mo": 1.05,
+  "fichiers": 122
+ },
+ {
+  "repo": "decouverte/metaknowledge",
+  "Mo": 0.98,
+  "fichiers": 159
+ },
+ {
+  "repo": "audit/scrutiny",
+  "Mo": 0.9,
+  "fichiers": 156
+ },
+ {
+  "repo": "parsing/pdfminer.six",
+  "Mo": 0.85,
+  "fichiers": 104
+ },
+ {
+  "repo": "donnees/py-rcsb-api",
+  "Mo": 0.81,
+  "fichiers": 63
+ },
+ {
+  "repo": "revue_systematique/paperfetcher",
+  "Mo": 0.75,
+  "fichiers": 64
+ },
+ {
+  "repo": "decouverte/pyzotero",
+  "Mo": 0.72,
+  "fichiers": 61
+ },
+ {
+  "repo": "revue_systematique/robotsearch",
+  "Mo": 0.72,
+  "fichiers": 34
+ },
+ {
+  "repo": "donnees/pdb-tools",
+  "Mo": 0.67,
+  "fichiers": 113
+ },
+ {
+  "repo": "synthese/scibert",
+  "Mo": 0.67,
+  "fichiers": 48
+ },
+ {
+  "repo": "revue_systematique/trialstreamer",
+  "Mo": 0.66,
+  "fichiers": 60
+ },
+ {
+  "repo": "decouverte/ScientoPy",
+  "Mo": 0.65,
+  "fichiers": 50
+ },
+ {
+  "repo": "decouverte/pybliometrics",
+  "Mo": 0.62,
+  "fichiers": 125
+ },
+ {
+  "repo": "decouverte/recordlinkage",
+  "Mo": 0.55,
+  "fichiers": 86
+ },
+ {
+  "repo": "parsing/refextract",
+  "Mo": 0.54,
+  "fichiers": 40
+ },
+ {
+  "repo": "synthese/BLINK",
+  "Mo": 0.51,
+  "fichiers": 90
+ },
+ {
+  "repo": "audit/scipub",
+  "Mo": 0.5,
+  "fichiers": 61
+ },
+ {
+  "repo": "decouverte/novelpy",
+  "Mo": 0.49,
+  "fichiers": 49
+ },
+ {
+  "repo": "decouverte/python-bibtexparser",
+  "Mo": 0.49,
+  "fichiers": 75
+ },
+ {
+  "repo": "decouverte/pybibx",
+  "Mo": 0.48,
+  "fichiers": 38
+ },
+ {
+  "repo": "parsing/pdfplumber",
+  "Mo": 0.46,
+  "fichiers": 54
+ },
+ {
+  "repo": "decouverte/paperscraper",
+  "Mo": 0.44,
+  "fichiers": 95
+ },
+ {
+  "repo": "mcp/scholar-sidekick-mcp",
+  "Mo": 0.44,
+  "fichiers": 47
+ },
+ {
+  "repo": "decouverte/litstudy",
+  "Mo": 0.43,
+  "fichiers": 67
+ },
+ {
+  "repo": "mcp/mcp-for-research",
+  "Mo": 0.43,
+  "fichiers": 59
+ },
+ {
+  "repo": "revue_systematique/oddpub",
+  "Mo": 0.4,
+  "fichiers": 26
+ },
+ {
+  "repo": "mcp/openalex-research-mcp",
+  "Mo": 0.39,
+  "fichiers": 48
+ },
+ {
+  "repo": "revue_systematique/rtransparent",
+  "Mo": 0.39,
+  "fichiers": 23
+ },
+ {
+  "repo": "decouverte/openalex-api-tutorials",
+  "Mo": 0.33,
+  "fichiers": 14
+ },
+ {
+  "repo": "audit/statcheck",
+  "Mo": 0.26,
+  "fichiers": 52
+ },
+ {
+  "repo": "mcp/find-research-papers-mcp",
+  "Mo": 0.25,
+  "fichiers": 42
+ },
+ {
+  "repo": "fulltext/fulltext-article-downloader",
+  "Mo": 0.24,
+  "fichiers": 32
+ },
+ {
+  "repo": "decouverte/scholarly",
+  "Mo": 0.23,
+  "fichiers": 34
+ },
+ {
+  "repo": "decouverte/semanticscholar",
+  "Mo": 0.23,
+  "fichiers": 46
+ },
+ {
+  "repo": "revue_systematique/robvis",
+  "Mo": 0.23,
+  "fichiers": 51
+ },
+ {
+  "repo": "synthese/scirepeval",
+  "Mo": 0.23,
+  "fichiers": 41
+ },
+ {
+  "repo": "decouverte/bibfix",
+  "Mo": 0.22,
+  "fichiers": 26
+ },
+ {
+  "repo": "donnees/GEOparse",
+  "Mo": 0.22,
+  "fichiers": 41
+ },
+ {
+  "repo": "audit/retractcheck",
+  "Mo": 0.2,
+  "fichiers": 39
+ },
+ {
+  "repo": "audit/statcheck-web",
+  "Mo": 0.19,
+  "fichiers": 15
+ },
+ {
+  "repo": "mcp/semantic-scholar-fastmcp-mcp-server",
+  "Mo": 0.18,
+  "fichiers": 42
+ },
+ {
+  "repo": "synthese/specter2",
+  "Mo": 0.18,
+  "fichiers": 13
+ },
+ {
+  "repo": "decouverte/citationchaser",
+  "Mo": 0.15,
+  "fichiers": 14
+ },
+ {
+  "repo": "decouverte/pubmed_parser",
+  "Mo": 0.15,
+  "fichiers": 29
+ },
+ {
+  "repo": "fulltext/fullvahti",
+  "Mo": 0.15,
+  "fichiers": 21
+ },
+ {
+  "repo": "audit/citeguard",
+  "Mo": 0.14,
+  "fichiers": 33
+ },
+ {
+  "repo": "audit/gengscan",
+  "Mo": 0.14,
+  "fichiers": 15
+ },
+ {
+  "repo": "revue_systematique/PRISMA2020",
+  "Mo": 0.14,
+  "fichiers": 31
+ },
+ {
+  "repo": "donnees/osfclient",
+  "Mo": 0.13,
+  "fichiers": 41
+ },
+ {
+  "repo": "synthese/scifact",
+  "Mo": 0.13,
+  "fichiers": 45
+ },
+ {
+  "repo": "parsing/paperetl",
+  "Mo": 0.11,
+  "fichiers": 32
+ },
+ {
+  "repo": "audit/retraction-check",
+  "Mo": 0.09,
+  "fichiers": 18
+ },
+ {
+  "repo": "decouverte/pyalex",
+  "Mo": 0.08,
+  "fichiers": 9
+ },
+ {
+  "repo": "decouverte/unpywall",
+  "Mo": 0.08,
+  "fichiers": 28
+ },
+ {
+  "repo": "fulltext/SciDownl",
+  "Mo": 0.08,
+  "fichiers": 43
+ },
+ {
+  "repo": "decouverte/arxiv.py",
+  "Mo": 0.07,
+  "fichiers": 13
+ },
+ {
+  "repo": "decouverte/mcp-bibliotheque_nationale_de_France",
+  "Mo": 0.06,
+  "fichiers": 8
+ },
+ {
+  "repo": "donnees/dataverse-client-python",
+  "Mo": 0.06,
+  "fichiers": 20
+ },
+ {
+  "repo": "fulltext/doi2pdf",
+  "Mo": 0.06,
+  "fichiers": 6
+ },
+ {
+  "repo": "decouverte/core_api_pylib",
+  "Mo": 0.04,
+  "fichiers": 5
+ },
+ {
+  "repo": "decouverte/pymed",
+  "Mo": 0.04,
+  "fichiers": 19
+ },
+ {
+  "repo": "fulltext/PyPaperBot",
+  "Mo": 0.04,
+  "fichiers": 18
+ },
+ {
+  "repo": "revue_systematique/Systematic-Review-Automation",
+  "Mo": 0.04,
+  "fichiers": 9
+ },
+ {
+  "repo": "parsing/scipdf_parser",
+  "Mo": 0.03,
+  "fichiers": 10
+ },
+ {
+  "repo": "mcp/PubMed-MCP-Server",
+  "Mo": 0.02,
+  "fichiers": 8
+ },
+ {
+  "repo": "mcp/paperscraper-MCP-Server",
+  "Mo": 0.0,
+  "fichiers": 1
+ }
+]

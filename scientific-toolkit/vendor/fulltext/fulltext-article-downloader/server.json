@@ -1,0 +1,74 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "io.github.computron/fulltext-article-downloader",
+  "description": "Full text of research papers by DOI, arXiv, PMC or OpenReview id, verified against the record",
+  "repository": {
+    "url": "https://github.com/computron/fulltext-article-downloader",
+    "source": "github"
+  },
+  "version": "0.2.4",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "fulltext-article-downloader",
+      "version": "0.2.4",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeHint": "uvx",
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "--from",
+          "isRequired": true
+        },
+        {
+          "type": "positional",
+          "value": "fulltext-article-downloader[mcp]",
+          "isRequired": true
+        },
+        {
+          "type": "positional",
+          "value": "fulltext-mcp",
+          "isRequired": true
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "UNPAYWALL_EMAIL",
+          "description": "Contact email for Unpaywall and Crossref",
+          "isRequired": false
+        },
+        {
+          "name": "FULLTEXT_OUTPUT_DIR",
+          "description": "Folder for downloaded files (default ./papers)",
+          "isRequired": false
+        },
+        {
+          "name": "WILEY_API_KEY",
+          "description": "Wiley TDM token",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "ELSEVIER_API_KEY",
+          "description": "Elsevier API key",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "SPRINGER_API_KEY",
+          "description": "Springer Nature API key",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "SEMANTIC_SCHOLAR_API_KEY",
+          "description": "Semantic Scholar API key",
+          "isRequired": false,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}

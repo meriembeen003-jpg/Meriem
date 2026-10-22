@@ -1,0 +1,83 @@
+
+/* general settings --------------------------------------------------------- */
+
+body {
+  padding-bottom: 5rem;
+}
+
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+ }
+
+img {
+  width: 100%;
+  max-width: 650px;
+}
+
+#infographic img {
+  width: 100%;
+  max-width: 650px;
+}
+
+nav {
+  border-bottom: 1px solid lightgray;
+}
+
+.container {
+  max-width: 720px;
+}
+
+/* file input --------------------------------------------------------------- */
+
+.btn-file {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border: 1px solid lightgray;
+}
+
+.btn-file:hover {
+  border: 1px solid lightgray;
+}
+
+.input-group-btn .btn-default:hover {
+  background-color: #d2d4d9;
+}
+
+/* accordion */
+
+.accordion-button  {
+  font-weight: 500;
+}
+
+.accordion-button:not(.collapsed) {
+  background-color: #f8f9fa;
+}
+
+/* settings for contributor page -------------------------------------------- */
+
+.ctrbs li {
+  margin-bottom: 5px;
+}
+
+.ctrb {
+  border-radius: 10px;
+  padding: 3px 6px 4px 6px;
+  margin-left: 3px;
+}
+
+.ctrb-author {
+  background: #FA8600;
+  color: white;
+}
+
+.ctrb-creator {
+  background: #FFB701;
+  color: white;
+}
+
+.ctrb-contributor {
+  background: #219EBC;
+  color: white;
+}

@@ -1,0 +1,207 @@
+import math
+import warnings
+
+import httpx2
+from tqdm import tqdm
+from urllib3.exceptions import ConnectTimeoutError
+
+from .exceptions import RequestError
+from .facets import validate_facets
+from .field_queries import validate_field_queries
+from .filterhandler import filter_handler
+from .habanero_utils import (
+    check_json,
+    filter_dict,
+    ifelsestr,
+    make_ua,
+    rename_query_filters,
+)
+from .select import validate_select
+from .sort import validate_sort
+
+
+class Request:
+    """
+    Habanero: request class
+
+    This is the request class for all requests
+    """
+
+    def __init__(
+        self,
+        mailto,
+        ua_string,
+        timeout,
+        url,
+        path,
+        query=None,
+        filters=None,
+        offset=None,
+        limit=None,
+        sample=None,
+        sort=None,
+        order=None,
+        facet=None,
+        select=None,
+        cursor=None,
+        cursor_max=5000,
+        agency=False,
+        progress_bar=False,
+        *,
+        client=None,
+        **kwargs,
+    ):
+        # anything with a `.get(url, params=, headers=, timeout=)` method:
+        # an httpx2.Client (connection reuse), or the httpx2 module as fallback
+        self.client = client if client is not None else httpx2
+        self.mailto = mailto
+        self.ua_string = ua_string
+        self.timeout = timeout
+        self.url = url
+        self.path = path
+        self.query = query
+        self.filters = filters
+        self.offset = offset
+        self.limit = limit
+        self.sample = sample
+        self.sort = sort
+        self.order = order
+        self.facet = facet
+        self.select = select
+        self.cursor = cursor
+        self.cursor_max = cursor_max
+        self.agency = agency
+        self.progress_bar = progress_bar
+        self.kwargs = kwargs
+
+    def _url(self):
+        tmpurl = self.url + self.path
+        return tmpurl.strip("/")
+
+    def payload(self):
+        """Validate parameters and build the query string parameters
+        that are sent with the request"""
+        filt = filter_handler(self.filters)
+        if isinstance(self.select, list):
+            self.select = ",".join(self.select)
+
+        validate_facets(self.facet)
+        validate_sort(self.sort)
+        validate_select(self.select)
+        fq_keys = [
+            k.replace("query_", "query.", 1).replace("_", "-")
+            for k in filter_dict(self.kwargs)
+        ]
+        validate_field_queries(fq_keys if fq_keys else None)
+
+        if not isinstance(self.cursor, (type(None), str)):
+            raise TypeError("cursor must be of class str")
+
+        if not isinstance(self.cursor_max, (type(None), int)):
+            raise TypeError("cursor_max must be of class int (or None for no cap)")
+
+        payload = {
+            "query": self.query,
+            "filter": filt,
+            "offset": self.offset,
+            "rows": self.limit,
+            "sample": self.sample,
+            "sort": self.sort,
+            "order": self.order,
+            "facet": self.facet,
+            "select": self.select,
+            "cursor": self.cursor,
+        }
+        # convert limit/offset to str before removing None
+        # b/c 0 (zero) is falsey, so that param gets dropped
+        payload["offset"] = ifelsestr(payload["offset"])
+        payload["rows"] = ifelsestr(payload["rows"])
+        # remove params with value None
+        payload = {k: v for k, v in payload.items() if v}
+        # add field queries
+        payload.update(filter_dict(self.kwargs))
+        # rename field queries
+        return rename_query_filters(payload)
+
+    def do_request(self, should_warn=False):
+        payload = self.payload()
+
+        js = self._req(payload=payload, should_warn=should_warn)
+        if js is None:
+            return js
+        cu = js["message"].get("next-cursor")
+        max_avail = js["message"]["total-results"]
+        res = self._redo_req(js, payload, cu, max_avail, should_warn)
+        return res
+
+    def _redo_req(self, js, payload, cu, max_avail, should_warn):
+        # cursor_max=None means no cap: page until everything is retrieved
+        cursor_max = math.inf if self.cursor_max is None else self.cursor_max
+        first_n = len(js["message"]["items"])
+
+        if cu is not None and cursor_max > first_n:
+            res = [js]
+            total = first_n
+
+            # progress bar setup
+            pbar = None
+            if self.progress_bar:
+                actual_max = min(cursor_max, max_avail)
+                runs = math.ceil(actual_max / (self.limit or 20))
+                pbar = tqdm(total=max(runs - 1, 0))
+
+            try:
+                while cu is not None and cursor_max > total and total < max_avail:
+                    payload["cursor"] = cu
+                    out = self._req(payload=payload, should_warn=should_warn)
+                    if out is None:
+                        # request failed and should_warn=True: the warning was
+                        # already issued, so keep the pages retrieved so far
+                        break
+                    items = out["message"]["items"]
+                    if not items:
+                        # an empty page can still carry a next-cursor; stop
+                        # rather than loop forever
+                        break
+                    cu = out["message"].get("next-cursor")
+                    res.append(out)
+                    total += len(items)
+                    if pbar is not None:
+                        pbar.update(1)
+            finally:
+                if pbar is not None:
+                    pbar.close()
+            return res
+        else:
+            return js
+
+    def _req(self, payload, should_warn):
+        try:
+            r = self.client.get(
+                self._url(),
+                params=payload,
+                headers=make_ua(self.mailto, self.ua_string),
+                timeout=self.timeout,
+            )
+            r.raise_for_status()
+        except httpx2.HTTPStatusError:
+            try:
+                f = r.json()
+                raise RequestError(r.status_code, f["message"][0]["message"])
+            except (ValueError, KeyError, IndexError):
+                if should_warn:
+                    mssg = f"{r.status_code}: {r.reason_phrase}"
+                    warnings.warn(mssg, stacklevel=2)
+                    return None
+                else:
+                    r.raise_for_status()
+        except ConnectTimeoutError as e:
+            raise httpx2.ConnectTimeout(str(e)) from e
+        except httpx2.HTTPError as e:
+            raise RuntimeError(e) from e
+        else:
+            if not r:
+                raise RuntimeError("An unknown problem occurred with an HTTP request")
+
+            check_json(r)
+            return r.json()

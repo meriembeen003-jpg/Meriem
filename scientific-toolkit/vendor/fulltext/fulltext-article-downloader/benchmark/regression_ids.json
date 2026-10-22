@@ -1,0 +1,1382 @@
+[
+ {
+  "id": "2511.02956",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "arxiv",
+  "route": "arxiv"
+ },
+ {
+  "id": "2005.02117",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "arxiv",
+  "route": "arxiv"
+ },
+ {
+  "id": "2005.02512",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "arxiv",
+  "route": "arxiv"
+ },
+ {
+  "id": "2209.02781",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "arxiv",
+  "route": "arxiv"
+ },
+ {
+  "id": "2603.00541",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "arxiv",
+  "route": "arxiv"
+ },
+ {
+  "id": "cond-mat/9608102",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "arxiv",
+  "route": "arxiv"
+ },
+ {
+  "id": "2511.02561",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "arxiv",
+  "route": "arxiv"
+ },
+ {
+  "id": "2110.04256",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "arxiv",
+  "route": "arxiv"
+ },
+ {
+  "id": "10.26434/chemrxiv-2022-lhm0z",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "ChemRxiv",
+  "route": "chemrxiv"
+ },
+ {
+  "id": "10.26434/chemrxiv-2023-52p7p",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "ChemRxiv",
+  "route": "chemrxiv"
+ },
+ {
+  "id": "10.26434/chemrxiv-2024-ft4sj",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "ChemRxiv",
+  "route": "chemrxiv"
+ },
+ {
+  "id": "10.26434/chemrxiv.13809527.v1",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "ChemRxiv",
+  "route": "chemrxiv"
+ },
+ {
+  "id": "10.1101/2024.06.17.599351",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "other",
+  "route": "biorxiv"
+ },
+ {
+  "id": "10.1101/2024.08.20.608861",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "other",
+  "route": "biorxiv"
+ },
+ {
+  "id": "10.1101/2024.08.25.607996",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "other",
+  "route": "biorxiv"
+ },
+ {
+  "id": "10.3390/met15030308",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "other",
+  "route": "mdpi"
+ },
+ {
+  "id": "10.3390/en18030517",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "other",
+  "route": "mdpi"
+ },
+ {
+  "id": "10.1038/s41563-020-0705-9",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "Springer Nature",
+  "route": "unpaywall"
+ },
+ {
+  "id": "10.3960/jslrt.51.67",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "other",
+  "route": "unpaywall"
+ },
+ {
+  "id": "10.1016/j.cell.2023.10.006",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "Elsevier",
+  "route": "unpaywall"
+ },
+ {
+  "id": "10.1016/j.cell.2019.01.024",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "Elsevier",
+  "route": "unpaywall"
+ },
+ {
+  "id": "10.1214/20-aos2025",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "other",
+  "route": "unpaywall"
+ },
+ {
+  "id": "10.1103/physrevx.11.031005",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "APS",
+  "route": "unpaywall"
+ },
+ {
+  "id": "10.1016/j.joule.2024.03.005",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "Elsevier",
+  "route": "unpaywall"
+ },
+ {
+  "id": "10.1016/j.cell.2021.08.036",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "Elsevier",
+  "route": "unpaywall"
+ },
+ {
+  "id": "10.1145/3638048",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "other",
+  "route": "unpaywall"
+ },
+ {
+  "id": "10.3389/fncir.2012.00001",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "other",
+  "route": "unpaywall"
+ },
+ {
+  "id": "10.1038/s41467-024-54112-5",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "Springer Nature",
+  "route": "springerpdf"
+ },
+ {
+  "id": "10.1038/s41467-024-50376-z",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "Springer Nature",
+  "route": "springerpdf"
+ },
+ {
+  "id": "10.1038/s41567-023-02377-w",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "Springer Nature",
+  "route": "springerpdf"
+ },
+ {
+  "id": "10.1038/s41467-021-23154-4",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "Springer Nature",
+  "route": "springerpdf"
+ },
+ {
+  "id": "10.1002/advs.202102156",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "Wiley",
+  "route": "wiley"
+ },
+ {
+  "id": "10.1002/chem.202303113",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "Wiley",
+  "route": "wiley"
+ },
+ {
+  "id": "10.1016/j.diabet.2025.101624",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "Elsevier",
+  "route": "elsevier"
+ },
+ {
+  "id": "10.1016/j.xcrp.2021.100620",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "Elsevier",
+  "route": "elsevier"
+ },
+ {
+  "id": "10.1016/j.xcrp.2024.101959",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "Elsevier",
+  "route": "elsevier"
+ },
+ {
+  "id": "10.12688/openreseurope.21242.1",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "other",
+  "route": "crossref_tdm"
+ },
+ {
+  "id": "10.1103/physrevlett.122.045502",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "APS",
+  "route": "crossref_tdm"
+ },
+ {
+  "id": "10.1038/s41557-022-00933-0",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "Springer Nature",
+  "route": "europepmc"
+ },
+ {
+  "id": "10.1021/acs.chemmater.4c00303",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "ACS",
+  "route": "osti"
+ },
+ {
+  "id": "10.1109/tit.2024.3436923",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "IEEE",
+  "route": "semantic"
+ },
+ {
+  "id": "10.1371/journal.pone.0001897",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "other",
+  "route": "plos"
+ },
+ {
+  "id": "PMC13344488",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "pmc",
+  "route": "pmc"
+ },
+ {
+  "id": "PMC11846926",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "pmc",
+  "route": "pmc"
+ },
+ {
+  "id": "PMC12311270",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "pmc",
+  "route": "pmc"
+ },
+ {
+  "id": "PMC11847190",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "pmc",
+  "route": "pmc"
+ },
+ {
+  "id": "PMC11814882",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "pmc",
+  "route": "pmc"
+ },
+ {
+  "id": "10.5281/zenodo.17558243",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "Zenodo",
+  "route": "zenodo"
+ },
+ {
+  "id": "10.5281/zenodo.8425709",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "Zenodo",
+  "route": "zenodo"
+ },
+ {
+  "id": "10.1021/acscatal.0c04038",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "ACS",
+  "route": "europepmc"
+ },
+ {
+  "id": "10.26434/chemrxiv-2025-925jm",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "ChemRxiv",
+  "route": "chemrxiv"
+ },
+ {
+  "id": "10.26434/chemrxiv-2024-xlpxn",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "ChemRxiv",
+  "route": "chemrxiv"
+ },
+ {
+  "id": "10.26434/chemrxiv-2024-3mcc5-v2",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "ChemRxiv",
+  "route": "chemrxiv"
+ },
+ {
+  "id": "10.26434/chemrxiv-2024-b0hd8",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "ChemRxiv",
+  "route": "chemrxiv"
+ },
+ {
+  "id": "10.26434/chemrxiv-2024-bkmwz",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "ChemRxiv",
+  "route": "chemrxiv"
+ },
+ {
+  "id": "10.26434/chemrxiv-2024-bxxhh-v2",
+  "group": "known_good",
+  "expected": "success",
+  "publisher": "ChemRxiv",
+  "route": "chemrxiv"
+ },
+ {
+  "id": "10.1016/j.nanoen.2019.03.005",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Elsevier",
+  "reason": "Elsevier API entitlement",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1016/j.jpowsour.2022.231657",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Elsevier",
+  "reason": "Elsevier API entitlement",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1016/j.jretconser.2025.104426",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Elsevier",
+  "reason": "Elsevier API entitlement",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1016/j.ceramint.2024.04.319",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Elsevier",
+  "reason": "Elsevier API entitlement",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1016/j.frl.2025.107932",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Elsevier",
+  "reason": "Elsevier API entitlement",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1016/j.jallcom.2023.170710",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Elsevier",
+  "reason": "Elsevier API entitlement",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1016/j.electacta.2022.140894",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Elsevier",
+  "reason": "Elsevier API entitlement",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1016/j.matpr.2023.08.103",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Elsevier",
+  "reason": "Elsevier API entitlement",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1016/j.commatsci.2024.113160",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Elsevier",
+  "reason": "Elsevier API entitlement",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1016/j.jallcom.2023.170810",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Elsevier",
+  "reason": "Elsevier API entitlement",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1016/j.matpr.2020.12.407",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Elsevier",
+  "reason": "Elsevier API entitlement",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1016/j.actamat.2022.118640",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Elsevier",
+  "reason": "Elsevier API entitlement",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1016/j.commatsci.2024.112781",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Elsevier",
+  "reason": "Elsevier API entitlement",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1016/j.chemosphere.2011.03.001",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Elsevier",
+  "reason": "Elsevier API entitlement",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1002/adfm.202111784",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Wiley",
+  "reason": "Wiley TDM entitlement",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1111/ajps.12851",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Wiley",
+  "reason": "Wiley TDM entitlement",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1002/adma.202402391",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Wiley",
+  "reason": "Wiley TDM entitlement",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1002/anie.201902838",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Wiley",
+  "reason": "Wiley TDM entitlement",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1038/s41580-022-00458-x",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Springer Nature",
+  "reason": "subscription",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1038/d41586-019-00479-1",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Springer Nature",
+  "reason": "subscription",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1038/s41563-023-01793-w",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Springer Nature",
+  "reason": "subscription",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1038/s41557-022-01075-z",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Springer Nature",
+  "reason": "subscription",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1007/s00027-006-0852-3",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Springer Nature",
+  "reason": "subscription",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1038/s41587-024-02417-7",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Springer Nature",
+  "reason": "subscription",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1016/j.nanoen.2022.107378",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Elsevier",
+  "reason": "Elsevier API entitlement",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1016/j.apcata.2009.05.028",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Elsevier",
+  "reason": "Elsevier API entitlement",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1038/s41929-024-01277-3",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Springer Nature",
+  "reason": "subscription",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1016/j.ensm.2019.12.012",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Elsevier",
+  "reason": "Elsevier API entitlement",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1038/s41578-023-00612-7",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Springer Nature",
+  "reason": "subscription",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1007/s42250-025-01347-4",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Springer Nature",
+  "reason": "subscription",
+  "unlocked": [
+   "2026-09-17"
+  ]
+ },
+ {
+  "id": "10.3758/bf03193479",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Springer (Psychonomic)",
+  "reason": "subscription",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1086/724802",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "University of Chicago Press",
+  "reason": "subscription",
+  "unlocked": [
+   "2026-09-17"
+  ]
+ },
+ {
+  "id": "10.1353/ajm.2023.0003",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Project MUSE",
+  "reason": "subscription",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1353/ajm.2023.0006",
+  "group": "needs_institution",
+  "expected": "with_institution",
+  "publisher": "Project MUSE",
+  "reason": "subscription",
+  "unlocked": [
+   "2026-09-17",
+   "2026-09-28"
+  ]
+ },
+ {
+  "id": "10.1021/acsnano.4c06714",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "ACS",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1021/jacs.9b13549",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "ACS",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1021/acsnano.1c08120",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "ACS",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1021/acs.inorgchem.0c02426",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "ACS",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1021/acs.inorgchem.4c00592",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "ACS",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1021/acsenergylett.1c01753",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "ACS",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1021/acsami.0c06873",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "ACS",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1021/ol400065j",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "ACS",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1021/jacs.9b08835",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "ACS",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1021/acsnano.2c00448",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "ACS",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1021/acs.jpcc.0c03061",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "ACS",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1021/acsenergylett.4c00198",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "ACS",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1039/c8nr09653h",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "RSC",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1039/d4dt01727g",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "RSC",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1039/d0cp05909a",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "RSC",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1039/d3mh00594a",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "RSC",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1039/d3nr03077f",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "RSC",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1039/d3ee01447a",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "RSC",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1039/d0cp05567k",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "RSC",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1039/d0cc06185a",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "RSC",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1039/d3cc00019b",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "RSC",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1039/d0ee01860k",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "RSC",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1039/c8nr10507c",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "RSC",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1039/d1ta05751k",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "RSC",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1038/d41586-020-02751-1",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "Springer Nature",
+  "reason": "no PDF link"
+ },
+ {
+  "id": "10.1063/5.0098085",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "AIP",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1063/1.1896986",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "AIP",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1063/5.0174238",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "AIP",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1063/5.0093115",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "AIP",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1063/5.0195583",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "AIP",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1149/1945-7111/abeaf1",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "IOP (ECS)",
+  "reason": "Radware challenge"
+ },
+ {
+  "id": "10.1149/1945-7111/ad8d7d",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "IOP (ECS)",
+  "reason": "Radware challenge"
+ },
+ {
+  "id": "10.1126/science.ado4166",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "AAAS",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1126/science.adp3271",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "AAAS",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1021/acsami.4c04852",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "ACS",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1021/acs.nanolett.2c03838",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "ACS",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1039/d1cc04327g",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "RSC",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1063/5.0036605",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "AIP",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1063/5.0149871",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "AIP",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1021/acs.est.3c10758",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "ACS",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1021/acs.est.9b05621",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "ACS",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1021/ct0501957",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "ACS",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1039/d4ta06980c",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "RSC",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1039/d4gc06348a",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "RSC",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1039/d2ta00561a",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "RSC",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1080/01419870.2025.2519807",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "Taylor & Francis",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1001/jamainternmed.2022.2211",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "JAMA Network",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1056/nejme2024212",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "NEJM",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.7326/annals-25-00431",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "American College of Physicians",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1001/jamainternmed.2022.2205",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "JAMA Network",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1001/jamainternmed.2019.5161",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "JAMA Network",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.7326/m18-3227",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "American College of Physicians",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1080/01621459.2020.1837138",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "Taylor & Francis",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1177/00031224241231985",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "SAGE",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.3167/th.2025.7218301",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "Berghahn",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1001/jama.2023.0262",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "JAMA Network",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1001/jama.2020.22717",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "JAMA Network",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1056/nejmc1913971",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "NEJM",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1177/1474474010363844",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "SAGE",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1093/qje/qjae011",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "OUP",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1183/09031936.00147706",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "ERS",
+  "reason": "PDF link answers 404"
+ },
+ {
+  "id": "10.1056/nejmp2307507",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "NEJM",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1001/jama.2021.10043",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "JAMA Network",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1177/00031224241245706",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "SAGE",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1086/724571",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "University of Chicago Press",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1149/1945-7111/acced3",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "IOP (ECS)",
+  "reason": "Radware challenge"
+ },
+ {
+  "id": "10.1126/science.373.6555.607",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "AAAS",
+  "reason": "Cloudflare challenge"
+ },
+ {
+  "id": "10.1088/1748-9326/ac8496",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "IOP",
+  "reason": "Radware challenge"
+ },
+ {
+  "id": "10.1149/1945-7111/ad9992",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "IOP (ECS)",
+  "reason": "Radware challenge"
+ },
+ {
+  "id": "10.1213/01.ane.0000156207.73396.8e",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "Wolters Kluwer",
+  "reason": "PDF link serves an HTML page"
+ },
+ {
+  "id": "10.1109/tip.2025.3532094",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "IEEE",
+  "reason": "IEEE staging host answers 418"
+ },
+ {
+  "id": "10.7326/a22-0009",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "American College of Physicians",
+  "reason": "no PDF link"
+ },
+ {
+  "id": "10.1093/restud/rdz057",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "OUP",
+  "reason": "no PDF link"
+ },
+ {
+  "id": "10.1093/qje/qjad005",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "OUP",
+  "reason": "no PDF link"
+ },
+ {
+  "id": "10.1109/tcyb.2023.3319647",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "IEEE",
+  "reason": "IEEE staging host answers 418"
+ },
+ {
+  "id": "10.7326/awho202206210",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "American College of Physicians",
+  "reason": "no PDF link"
+ },
+ {
+  "id": "10.1109/mm.2014.10",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "IEEE",
+  "reason": "IEEE staging host answers 418"
+ },
+ {
+  "id": "10.1109/tcyb.2022.3194099",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "IEEE",
+  "reason": "IEEE staging host answers 418"
+ },
+ {
+  "id": "10.1093/ser/mwm005",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "OUP",
+  "reason": "no PDF link"
+ },
+ {
+  "id": "10.1093/restud/rdaa066",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "OUP",
+  "reason": "no PDF link"
+ },
+ {
+  "id": "10.1093/qje/qjad052",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "OUP",
+  "reason": "no PDF link"
+ },
+ {
+  "id": "10.1109/tcyb.2024.3474714",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "IEEE",
+  "reason": "IEEE staging host answers 418"
+ },
+ {
+  "id": "10.1109/tap.2009.2026595",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "IEEE",
+  "reason": "IEEE staging host answers 418"
+ },
+ {
+  "id": "10.1001/jama.2019.6672",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "JAMA Network",
+  "reason": "malformed Crossref link"
+ },
+ {
+  "id": "10.1109/tit.2020.2981524",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "IEEE",
+  "reason": "IEEE staging host answers 418"
+ },
+ {
+  "id": "10.1109/jproc.2020.2966560",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "IEEE",
+  "reason": "cover page only"
+ },
+ {
+  "id": "10.1126/science.abd6238",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "AAAS",
+  "reason": "no PDF link"
+ },
+ {
+  "id": "10.1126/science.abg1208",
+  "group": "expected_fail",
+  "expected": "fail",
+  "publisher": "AAAS",
+  "reason": "Cloudflare challenge"
+ }
+]

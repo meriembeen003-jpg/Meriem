@@ -1,0 +1,2 @@
+coverage
+vcrpy>=8.2.1

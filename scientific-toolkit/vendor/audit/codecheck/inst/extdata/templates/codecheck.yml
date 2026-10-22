@@ -1,0 +1,31 @@
+%YAML 1.1
+---
+version: https://codecheck.org.uk/spec/config/1.0
+
+paper:
+  title: >
+    FIXME: Paper title
+  authors:
+    - name: FIXME
+    - name: Josiah Carberry
+      ORCID: 0000-0002-1825-0097
+  reference: https://doi.org/FIXME
+
+manifest:
+  - file: codecheck/placeholder_output.txt
+    comment: Placeholder output file - replace with actual reproduced outputs (figures, data files, tables, etc.)
+
+codechecker:
+  - name: Cameron Checker
+    ORCID: 0000-0000-0000-0000
+
+# Shown in the certificate's summary table and in the Zenodo description.
+# LaTeX math between $ signs is kept, so write \$ for a dollar sign.
+summary: >
+  FIXME: Short summary of the CODECHECK certificate
+repository: https://github.com/FIXME/FIXME
+check_time: "2020-04-13 10:00:00"
+certificate: 2020-XYZ
+# Use the version-specific Zenodo DOI, not the "concept DOI" (which always
+# points at the latest version) - see https://zenodo.org/help/versioning
+report: https://doi.org/10.5281/zenodo.FIXME

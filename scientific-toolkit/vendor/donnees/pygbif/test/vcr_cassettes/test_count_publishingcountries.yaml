@@ -1,0 +1,52 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      user-agent:
+      - python-requests/2.31.0,pygbif/0.6.4
+    method: GET
+    uri: https://api.gbif.org/v1/occurrence/counts/publishingCountries?country=DE
+  response:
+    body:
+      string: '{"GERMANY":48727786,"NETHERLANDS":4307810,"UNITED_STATES":2579423,"FRANCE":1853730,"UNITED_KINGDOM":1043610,"BELGIUM":508346,"UNKNOWN":308338,"SWITZERLAND":209995,"AUSTRIA":120300,"ESTONIA":118484,"POLAND":72100,"SWEDEN":72035,"COLOMBIA":66557,"LUXEMBOURG":43624,"FINLAND":42173,"DENMARK":42035,"NORWAY":24715,"AUSTRALIA":20442,"SPAIN":20217,"CANADA":12723,"BRAZIL":11556,"JAPAN":9110,"NEW_ZEALAND":8030,"RUSSIAN_FEDERATION":7741,"CZECH_REPUBLIC":7543,"CHINA":5419,"SOUTH_AFRICA":4659,"MEXICO":2535,"PORTUGAL":2251,"ARGENTINA":2105,"ITALY":2073,"ECUADOR":1911,"BULGARIA":1572,"PANAMA":1156,"UKRAINE":726,"TAIWAN":494,"ISRAEL":450,"COSTA_RICA":415,"CHILE":278,"NICARAGUA":232,"GREECE":132,"HUNGARY":125,"GHANA":73,"VENEZUELA":63,"LITHUANIA":52,"PERU":31,"KOREA_SOUTH":24,"URUGUAY":13,"ARMENIA":8,"TAJIKISTAN":7,"MOROCCO":7,"NIGERIA":4,"GUATEMALA":4,"TRINIDAD_TOBAGO":2,"SLOVENIA":2,"ZIMBABWE":1}'
+    headers:
+      Accept-Ranges:
+      - bytes
+      Age:
+      - '0'
+      Cache-Control:
+      - public, max-age=600
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 04 Oct 2024 07:00:06 GMT
+      Expires:
+      - '0'
+      Pragma:
+      - no-cache
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin, Access-Control-Request-Method, Access-Control-Request-Headers
+      Via:
+      - 1.1 varnish (Varnish/6.0)
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+      X-Varnish:
+      - '665780740'
+      X-XSS-Protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+version: 1

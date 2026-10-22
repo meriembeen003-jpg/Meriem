@@ -1,0 +1,1807 @@
+Pyzotero is a Python wrapper for the `Zotero API (v3) <https://www.zotero.org/support/dev/web_api/v3/start>`_.
+
+
+.. Pyzotero documentation master file, created by
+   sphinx-quickstart on Mon Jul  4 19:39:03 2011.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+.. py:module:: zotero
+
+
+
+===============================
+Getting started (short version)
+===============================
+1. ``uv add pyzotero`` or ``pip install pyzotero`` or ``conda install conda-forge::pyzotero``
+2. You'll need the ID of the personal or group library you want to access:
+
+  * Your **personal library ID** is available `here <https://www.zotero.org/settings/keys>`_, in the section ``Your userID for use in API calls``
+  * For **group libraries**, the ID can be found by opening the group's page: ``https://www.zotero.org/groups/groupname``, and hovering over the ``group settings`` link. The ID is the integer after ``/groups/``
+
+3. You'll also need [*]_ to get an **API key** from the Zotero `site <https://www.zotero.org/settings/keys/new>`_
+4. Are you accessing your own Zotero library? Set``library_type`` to ``'user'``
+5. Are you accessing a shared group library? Set``library_type`` to ``'group'``
+6. Access to your local Zotero library is available: set ``local=True``. Reads need no authentication; writes require a local API key and a recent Zotero version — see :ref:`localapi`
+
+
+.. _hello-world:
+
+    .. code-block:: python
+        :emphasize-lines: 1,2,3
+
+            from pyzotero import Zotero
+            zot = Zotero(library_id, library_type, api_key)
+            items = zot.top(limit=5)
+            # we've retrieved the latest five top-level items in our library
+            # we can print each item's item type and ID
+            for item in items:
+            print(f"Item: {item['data']['itemType']} | Key: {item['data']['key']}")
+
+Refer to the :ref:`read` and :ref:`write`.
+
+
+=============================================
+Installation, testing, usage (longer version)
+=============================================
+
+.. _installation:
+
+Installation
+------------
+Using `uv <https://docs.astral.sh/uv/concepts/projects/dependencies/#adding-dependencies>`_: ``uv add pyzotero``
+
+Using `pip <http://www.pip-installer.org/en/latest/index.html>`_: ``pip install pyzotero``
+
+Using `Anaconda <https://www.anaconda.com/distribution/>`_: ``conda install conda-forge::pyzotero``
+
+Optional: Command-Line Interface
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Pyzotero includes an optional command-line interface for searching and querying your local Zotero library, and for managing its collections.
+
+To install Pyzotero with the CLI:
+
+* Using `uv <https://docs.astral.sh/uv/>`_: ``uv add "pyzotero[cli]"``
+* Using `pip <http://www.pip-installer.org/en/latest/index.html>`_: ``pip install "pyzotero[cli]"``
+
+If you just want to use the CLI without permanently installing Pyzotero:
+
+* Using `uvx <https://docs.astral.sh/uv/>`_: ``uvx --from "pyzotero[cli]" pyzotero search -q "your query"``
+* Using `pipx <https://pipx.pypa.io/>`_: ``pipx run --spec "pyzotero[cli]" pyzotero search -q "your query"``
+
+See :ref:`cli-usage` for usage details.
+
+Optional: MCP Server
+~~~~~~~~~~~~~~~~~~~~
+
+Pyzotero includes an optional `MCP <https://modelcontextprotocol.io>`_ server that exposes your local Zotero library and the Semantic Scholar integration.
+
+To install Pyzotero with the MCP server:
+
+* Using `uv <https://docs.astral.sh/uv/>`_: ``uv add "pyzotero[mcp]"``
+* Using `pip <http://www.pip-installer.org/en/latest/index.html>`_: ``pip install "pyzotero[mcp]"``
+* As a standalone tool: ``uv tool install "pyzotero[mcp]"``
+* CLI and MCP server together: ``uv tool install "pyzotero[cli,mcp]"``
+
+See :ref:`mcp-server` for configuration and the list of tools.
+
+From a local clone, if you wish to install Pyzotero from a specific branch:
+
+    .. code-block:: bash
+
+
+        git clone git://github.com/urschrei/pyzotero.git
+        cd pyzotero
+        git checkout main
+        uv sync
+
+The Pyzotero source tarball is also available from `PyPI <http://pypi.python.org/pypi/Pyzotero>`_
+
+
+
+Installing development versions
+-------------------------------
+Pyzotero remains in development as of 2025. Unstable development versions can be found on the `Github main branch <https://github.com/urschrei/pyzotero/tree/main>`_, and installed directly from a checked-out ``main`` branch on a local clone, as in the example above: specify ``--dev`` (uv) / ``--group dev`` (pip).
+
+
+Testing
+-------
+Testing requires installation of the ``dev`` dependency group (see above).
+
+Run ``pytest .`` from the top-level directory.
+
+.. _cli-usage:
+
+Command-Line Interface Usage
+----------------------------
+
+The Pyzotero CLI connects to your local Zotero installation and allows you to search your library, list collections, view item types, and manage collection membership.
+
+Basic Commands
+~~~~~~~~~~~~~~
+
+Search for top-level items:
+
+    .. code-block:: bash
+
+        pyzotero search -q "machine learning"
+
+Search with full-text mode:
+
+    .. code-block:: bash
+
+        pyzotero search -q "climate change" --fulltext
+
+Filter by item type:
+
+    .. code-block:: bash
+
+        pyzotero search -q "methodology" --itemtype book --itemtype journalArticle
+
+Search for top-level items within a collection:
+
+    .. code-block:: bash
+
+        pyzotero search --collection ABC123 -q "test"
+
+Output as JSON for machine processing:
+
+    .. code-block:: bash
+
+        pyzotero search -q "climate" --json
+
+Filter by tags (multiple tags use AND logic):
+
+    .. code-block:: bash
+
+        pyzotero search -q "topic" --tag "climate" --tag "adaptation"
+
+Paginate results:
+
+    .. code-block:: bash
+
+        pyzotero search -q "topic" --limit 20 --offset 20 --json
+
+List all collections:
+
+    .. code-block:: bash
+
+        pyzotero listcollections
+
+List available item types:
+
+    .. code-block:: bash
+
+        pyzotero itemtypes
+
+List the fields and creator types that one item type accepts:
+
+    .. code-block:: bash
+
+        pyzotero listitemfields journalArticle
+
+Item and Attachment Commands
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Get a single item by key:
+
+    .. code-block:: bash
+
+        pyzotero item ABC123 --json
+
+Get child items (attachments, notes) of an item:
+
+    .. code-block:: bash
+
+        pyzotero children ABC123 --json
+
+Get multiple items by key in a single call (up to 50):
+
+    .. code-block:: bash
+
+        pyzotero subset ABC123 DEF456 GHI789 --json
+
+Get full-text content of an attachment:
+
+    .. code-block:: bash
+
+        pyzotero fulltext ABC123
+
+Tag Commands
+~~~~~~~~~~~~
+
+List all tags in the library:
+
+    .. code-block:: bash
+
+        pyzotero tags
+
+List tags from a specific collection:
+
+    .. code-block:: bash
+
+        pyzotero tags --collection ABC123
+
+Write Commands
+~~~~~~~~~~~~~~
+
+These commands write to your library, so they need a local API key. Run ``pyzotero authorize`` once and choose "Always Allow" in Zotero's dialog. The key is stored in ``$XDG_CONFIG_HOME/pyzotero/local-api-key.json`` (``~/.config/pyzotero/local-api-key.json`` if that variable is unset). Setting ``PYZOTERO_LOCAL_API_KEY`` in the environment takes precedence over the file.
+
+Obtain and store a key:
+
+    .. code-block:: bash
+
+        pyzotero authorize --app-name "My tool"
+
+Create items from a JSON file, or from standard input:
+
+    .. code-block:: bash
+
+        pyzotero createitem item.json
+        cat items.json | pyzotero createitem -
+        pyzotero createitem items.json --collection FD9AUNP2 --tag "to read" --json
+
+The file contains one item object, or a list of them, in Zotero's item-data format:
+
+    .. code-block:: json
+
+        [
+          {
+            "itemType": "book",
+            "title": "Frankenstein",
+            "creators": [{"creatorType": "author", "lastName": "Shelley", "firstName": "Mary"}],
+            "date": "1818"
+          }
+        ]
+
+``--collection`` files every created item under one collection, and ``--tag``, which you can repeat, tags every created item. Collections and tags that an item already has are kept. The item type and the field names of every item are checked against the library's schema before anything is sent. ``pyzotero itemtypes`` lists the item types, and ``pyzotero listitemfields TYPE`` lists the fields of one type. Zotero accepts up to 50 items in one call.
+
+Create a collection, at the top level or nested under ``--parent``:
+
+    .. code-block:: bash
+
+        pyzotero createcollection "Frankenstein Cities" --parent FD9AUNP2
+
+Add items to a collection:
+
+    .. code-block:: bash
+
+        pyzotero addtocollection FD9AUNP2 ABC123 DEF456
+
+Remove items from a collection (the items themselves are unchanged):
+
+    .. code-block:: bash
+
+        pyzotero removefromcollection FD9AUNP2 ABC123
+
+Move items from one collection to another:
+
+    .. code-block:: bash
+
+        pyzotero movetocollection --from FD9AUNP2 --to X7Y8Z9W0 ABC123 DEF456
+
+Each command accepts ``--json`` and reports the keys it touched. The membership commands change items one at a time. ``movetocollection`` changes each item in one request: its membership of other collections is kept. If Zotero rejects an item that ``createitem`` sends, the error gives its reason and names the items that were created.
+
+DOI Index
+~~~~~~~~~
+
+Output the complete DOI-to-key mapping for caching:
+
+    .. code-block:: bash
+
+        pyzotero doiindex > doi_cache.json
+
+This returns a JSON mapping of normalised DOIs to item keys and original DOIs, allowing external tools to cache the index and avoid repeated full-library scans.
+
+Search Behaviour
+~~~~~~~~~~~~~~~~
+
+By default, ``pyzotero search`` searches only top-level item titles and metadata fields.
+
+When the ``--fulltext`` flag is used, the search expands to include all full-text indexed content, including PDFs and other attachments. Since most full-text content comes from PDF attachments rather than top-level items, the CLI automatically retrieves the parent bibliographic items for any matching attachments. This ensures you receive useful bibliographic records (journal articles, books, etc.) rather than raw attachment items.
+
+Output Format
+~~~~~~~~~~~~~
+
+By default, the CLI outputs human-readable text with all relevant metadata including:
+
+* Title, authors, date, publication
+* Volume, issue, DOI, URL
+* PDF attachments (with local file paths)
+
+Use the ``--json`` flag to output structured JSON suitable for consumption by other tools and agents.
+
+
+.. _mcp-server:
+
+MCP Server
+----------
+
+The ``pyzotero-mcp`` command starts an `MCP <https://modelcontextprotocol.io>`_ server over standard input and output (see :ref:`mcp-http` for HTTP). It exposes your local Zotero library, and the Semantic Scholar integration. This lets sandboxed applications use your library without access to the CLI. See :ref:`installation` for how to install it.
+
+The server is read-only unless it is started with ``--enable-writes``.
+
+Claude Desktop Configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Add one of the following to your Claude Desktop configuration file.
+
+If ``pyzotero-mcp`` is installed:
+
+    .. code-block:: json
+
+        {
+          "mcpServers": {
+            "zotero": {
+              "command": "pyzotero-mcp"
+            }
+          }
+        }
+
+Or, without installing, using ``uvx``:
+
+    .. code-block:: json
+
+        {
+          "mcpServers": {
+            "zotero": {
+              "command": "uvx",
+              "args": ["--from", "pyzotero[mcp]", "pyzotero-mcp"]
+            }
+          }
+        }
+
+Zotero Library Tools
+~~~~~~~~~~~~~~~~~~~~
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 75
+
+   * - Tool
+     - Description
+   * - ``search``
+     - Search the local Zotero library by query, item type, collection, tag, or full-text content. ``sort="dateAdded"`` lists recently added items
+   * - ``get_item``
+     - Get a single Zotero item by its key
+   * - ``get_children``
+     - Get the child items (attachments, notes) of a Zotero item
+   * - ``list_collections``
+     - List all collections in the library
+   * - ``list_tags``
+     - List all tags, optionally filtered by collection
+   * - ``get_fulltext``
+     - Get the full-text content of a PDF or other attachment
+   * - ``get_notes``
+     - Get an item's notes as plain text, search the text of all notes, or list recently modified notes
+   * - ``get_annotations``
+     - Get the highlights, comments and other annotations made in Zotero's reader, for an item or one attachment
+   * - ``export_bibtex``
+     - Export items as BibTeX, using Zotero's own exporter
+   * - ``find_duplicates``
+     - Find probable duplicates: items with the same DOI, or the same type, title and year
+   * - ``find_by_citation_key``
+     - Find items by citation key, such as the keys in a LaTeX document's ``\cite`` commands
+
+Semantic Scholar Tools
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 75
+
+   * - Tool
+     - Description
+   * - ``find_related``
+     - Find semantically similar papers using SPECTER2 embeddings
+   * - ``get_citations``
+     - Find papers that cite a given paper
+   * - ``get_references``
+     - Find papers referenced by a given paper
+   * - ``search_semantic_scholar``
+     - Search across Semantic Scholar's paper index
+
+Each Semantic Scholar tool accepts a ``check_library`` parameter, ``True`` by default, which annotates each result with whether the paper is already in your local Zotero library.
+
+Write Tools
+~~~~~~~~~~~
+
+The write tools are opt-in. To enable them:
+
+1. Obtain a persistent local API key, choosing "Always Allow" in Zotero's dialog:
+
+    .. code-block:: bash
+
+        pyzotero authorize --app-name "Claude Desktop"
+
+   The key and the Zotero server ID are stored in ``$XDG_CONFIG_HOME/pyzotero/local-api-key.json`` (``~/.config/pyzotero/local-api-key.json`` if that variable is unset), readable only by you. The server reads the key from that file.
+
+2. Add the ``--enable-writes`` flag to the server's arguments:
+
+    .. code-block:: json
+
+        {
+          "mcpServers": {
+            "zotero": {
+              "command": "pyzotero-mcp",
+              "args": ["--enable-writes"]
+            }
+          }
+        }
+
+3. Optional: to supply the key some other way, set ``PYZOTERO_LOCAL_API_KEY`` in the server's ``env`` block, and ``PYZOTERO_LOCAL_SERVER_ID`` beside it to save one request at startup. The environment takes precedence over the key file. ``pyzotero authorize --no-store`` prints a key without writing the file.
+
+With ``--enable-writes``, the server registers these tools:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 75
+
+   * - Tool
+     - Description
+   * - ``list_item_fields``
+     - List the fields and creator types valid for an item type
+   * - ``create_item``
+     - Create a new item
+   * - ``update_item``
+     - Update fields on an existing item
+   * - ``add_tags``
+     - Add tags to an existing item
+   * - ``create_collection``
+     - Create a collection, optionally nested
+   * - ``update_collection``
+     - Rename a collection, or move it under another collection or to the top level
+   * - ``add_to_collection``
+     - File an existing item under a collection
+   * - ``remove_from_collection``
+     - Remove an item from a collection; the item itself is unchanged
+   * - ``move_to_collection``
+     - Move an item from one collection to another in one step
+   * - ``add_attachment``
+     - Attach a file on disk to an existing item
+   * - ``create_note``
+     - Create a note, attached to an item or standalone, from plain text or HTML
+   * - ``update_note``
+     - Replace the text of a note
+   * - ``add_by_identifier``
+     - Add items by DOI, arXiv ID or ISBN, looking up their metadata, and optionally attach open-access PDFs
+   * - ``import_items``
+     - Add items from BibTeX or CSL JSON, given inline or as a file
+   * - ``merge_items``
+     - Merge duplicates into one item, as Zotero's "Merge Items" does; the duplicates move to the trash
+   * - ``set_related``
+     - Add or remove "related item" links, in both directions
+   * - ``delete_item``
+     - Permanently delete an item. Requires ``--enable-deletes``
+
+How the write tools behave
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Without ``--enable-writes``, the write tools are not merely disabled: they are never registered, so they do not appear in the model's tool list at all, and content in your library cannot induce a call to one.
+
+``add_attachment`` requires an **absolute** path. The server runs as a subprocess of your MCP client, so its working directory is not yours, and a relative path would resolve somewhere unintended; relative paths are rejected. The file is copied into Zotero's storage, and syncs with the library if sync is enabled. Attaching a file that is already attached to the item is reported as unchanged rather than duplicated.
+
+``delete_item`` is behind a second flag because deletion via the local API is irreversible: items are erased outright rather than moved to the trash, and the deletion propagates on sync. ``--enable-deletes`` implies ``--enable-writes``. It also deletes notes.
+
+Wherever a tool takes a collection, you can give its key, its name, or its path from the top level, such as ``"Physics/Quantum"``. Names are matched exactly first, then without regard to case. A name that more than one collection has is refused, and the error lists their paths and keys.
+
+``add_by_identifier`` is the only write tool that contacts services other than Zotero. It takes DOIs, arXiv IDs and ISBNs in any mix, and recognises each by its form:
+
+* A DOI's metadata comes from ``doi.org`` as CSL JSON, which passes the request to the DOI's registration agency (Crossref, DataCite or mEDRA).
+* An arXiv ID (``2001.00001``, ``arXiv:hep-th/9901001``, or an arxiv.org URL; any version suffix is dropped) goes through the DOI that arXiv registers for every paper, ``10.48550/arXiv.<id>``, and becomes a preprint.
+* An ISBN (ISBN-10 or ISBN-13, with or without hyphens; the check digit must be valid) is looked up on Open Library, and then on Google Books if Open Library has no record.
+
+With ``attach_pdf=True`` it also looks for an open-access PDF of each new article or preprint: on arXiv for an arXiv paper, and otherwise through Semantic Scholar, which gives the paper's arXiv ID or another open-access location. The PDF is downloaded from that location and attached as "Full Text PDF". A location that serves a web page rather than a PDF is skipped, and each item's result says what happened.
+
+``add_by_identifier`` and ``import_items`` map each record to the closest Zotero item type, following the CSL mappings in the `Zotero schema <https://github.com/zotero/zotero-schema>`_. A DOI, ISBN, ISSN, PMID, PMCID or citation key that the item type has no field for is kept in Extra as a ``Label: value`` line, which Zotero reads back as that field. Other values that the type does not accept are dropped, and the result lists them. Before each item is created, the library is searched for it: by DOI, or for a record without one, by title and year. When both the new record and a title match have ISBNs, they must share one, so that another edition of a book is not taken for a duplicate. ``if_exists`` decides what happens to a match: ``"skip"`` (the default) reports the existing key and changes nothing, ``"file"`` adds the existing item to the collections and tags that the call gives, and ``"create"`` adds a duplicate anyway.
+
+``merge_items`` follows Zotero's own merge. The kept item gets the duplicates' notes and attachments, tags, collections and related items, and any field that it has empty and a duplicate has filled. The duplicates then move to Zotero's trash, so a merge can be undone by restoring them. Without ``confirm=True`` the tool changes nothing and returns what it would do. When the library's zotero.org ID is known (see below), the kept item also records that it replaces the duplicates, so that citations of a duplicate in a word processor document still resolve.
+
+``set_related`` writes links in both directions, as Zotero's Related pane does. Related-item links identify items by their zotero.org URI, which contains the library's ID. Zotero reports a personal library's ID only when it is signed in to a zotero.org account, so for an unsigned personal library ``set_related`` is refused. Group libraries always have an ID.
+
+``create_note`` and ``update_note`` take plain text by default, which is escaped, with a paragraph for each blank-line-separated block. Pass ``is_html=True`` to store HTML as given. To move a note or attachment to another parent, use ``update_item`` with ``{"parentItem": "<key>"}``; ``{"parentItem": false}`` makes it standalone.
+
+Group Libraries
+~~~~~~~~~~~~~~~
+
+By default the server uses your personal library. To use a group library instead, pass its numeric ID with ``--group``:
+
+    .. code-block:: json
+
+        {
+          "mcpServers": {
+            "zotero-lab-group": {
+              "command": "pyzotero-mcp",
+              "args": ["--group", "1234567"]
+            }
+          }
+        }
+
+The ID is the number in the group's URL on zotero.org (``https://www.zotero.org/groups/1234567/...``). Every tool then reads from, and writes to, that group. To use several libraries, add a server entry for each.
+
+.. _mcp-http:
+
+HTTP Transport
+~~~~~~~~~~~~~~
+
+For MCP clients that connect over HTTP rather than starting a subprocess, pass ``--transport streamable-http`` (or ``--transport sse`` for older clients). The server listens on ``127.0.0.1:8000`` by default; ``--host`` and ``--port`` change this. On a loopback address, the server rejects requests whose ``Host`` header names any other host, as a guard against DNS rebinding.
+
+    .. code-block:: bash
+
+        pyzotero-mcp --transport streamable-http --port 8000
+        # the endpoint is http://127.0.0.1:8000/mcp
+
+The HTTP server has no authentication: anything that can reach the address can use every registered tool. For that reason ``--enable-writes`` and ``--enable-deletes`` are refused unless ``--host`` is a loopback address.
+
+
+Building Documentation
+----------------------
+If you wish to build Pyzotero's documentation for offline use, it can be built from the ``doc`` directory of a local git repo by running ``make`` followed by the desired output format(s) (``html``, ``epub``, ``latexpdf`` etc.)
+
+This functionality requires Sphinx.
+See the `Sphinx documentation <http://sphinx.pocoo.org/tutorial.html#running-the-build>`_ for full details.
+
+
+Reporting issues
+----------------
+If you encounter an error while using Pyzotero, please open an issue on its `Github issues page <https://github.com/urschrei/pyzotero/issues>`_.
+
+
+=====================
+General Usage
+=====================
+
+.. important::
+    A ``Zotero`` instance is bound to the library or group used to create it. Thus, if you create a ``Zotero`` instance with a ``library_id`` of ``67`` and a ``library_type`` of ``group``, its item methods will only operate upon that group. Similarly, if you create a ``Zotero`` instance with your own ``library_id`` and a ``library_type`` of ``user``, the instance will be bound to your Zotero library.
+
+
+First, create a new Zotero instance:
+
+
+    .. py:class:: Zotero(library_id, library_type[, api_key, preserve_json_order, locale, local, client, upload_timeout, server_id, local_api_key])
+
+        :param str library_id: a valid Zotero API user ID
+        :param str library_type: a valid Zotero API library type: **user** or **group**
+        :param str api_key: a valid Zotero API user key
+        :param bool preserve_json_order: Load JSON returns with OrderedDict to preserve their order
+        :param str locale: Set the `locale <https://www.zotero.org/support/dev/web_api/v3/types_and_fields#zotero_web_api_item_typefield_requests>`_, allowing retrieval of localised item types, field types, and creator types. Defaults to "en-US".
+        :param str local: use the local Zotero http server instead of the remote API. See :ref:`localapi`
+        :param httpx2.Client client: the HTTP client for API requests. If it is ``None`` (the default), Pyzotero creates a client with its default timeout. In local mode, that client ignores proxy settings from the environment. Pyzotero sends its default headers with each request: ``Authorization`` (if you supply ``api_key``), ``Zotero-API-Version`` and ``User-Agent``. They replace headers of the same name on the client. Pyzotero does not change a client that you supply, and the client keeps its own proxy settings. To use the local API when your environment sets a proxy, create the client with ``trust_env=False``
+        :param int/float upload_timeout: timeout in seconds for file uploads to storage (default: 120). Increase this for very large files or slow connections.
+        :param str server_id: a local API server ID retained from a previous session. Only meaningful when ``local`` is ``True``; see :ref:`localapi`
+        :param str local_api_key: a persistent local API key retained from a previous session, obtained from :py:meth:`Zotero.authorize_local()`. Only meaningful when ``local`` is ``True``
+
+
+Example:
+
+    .. code-block:: python
+        :emphasize-lines: 4
+
+        from pyzotero import Zotero
+        zot = Zotero('123', 'user', 'ABC1234XYZ')
+        # we now have a Zotero object, zot, and access to all its methods
+        first_ten = zot.items(limit=10)
+        # a list containing dicts of the ten most recently modified library items
+
+
+.. _read:
+
+Errors
+------
+Where possible, any ``ZoteroError`` which is raised will preserve the underlying error in its ``__cause__`` and ``__context__`` properties, should you wish to work with these directly.
+
+The local API reuses several status codes for more than one condition, so Pyzotero
+inspects the response body and raises a more specific exception. Each subclasses the
+exception the status code alone would have produced, so existing handlers are unaffected:
+
+    * :py:class:`LocalAPIKeyRequiredError` (401, subclasses ``UserNotAuthorisedError``): no valid local API key. Call :py:meth:`Zotero.authorize_local()`.
+    * :py:class:`LocalAPIDeniedError` (403, subclasses ``UserNotAuthorisedError``): the user denied an authorisation request.
+    * :py:class:`ServerIDMismatchError` (412, subclasses ``PreConditionFailedError``): the request reached a different Zotero instance or database.
+    * :py:class:`ServerIDRequiredError` (428, subclasses ``PreConditionRequiredError``): a local write carried no ``Zotero-Server-ID`` header.
+
+
+====================
+Read API Methods
+====================
+
+.. note::
+    All search/request parameters inside square brackets are **optional**. Methods such as :py:meth:`Zotero.top()`, :py:meth:`Zotero.items()` etc. can be called with no additional parameters if you wish.
+
+.. tip::
+    The Read API returns 25 results by default (the API documentation claims 50). In the interests of usability, Pyzotero returns 100 items by default, by setting the API ``limit`` parameter to 100, unless it's set by the user. If you wish to retrieve e.g. all top-level items without specifying a ``limit`` parameter, you'll have to wrap your call with :py:meth:`Zotero.everything()`: ``results = zot.everything(zot.top())``.
+
+Search / Request Parameters for Read API calls
+----------------------------------------------
+
+Additional parameters may be set on Read API methods **following any required parameters**, or set using the :py:meth:`Zotero.add_parameters()` method detailed below.
+
+The following two examples produce the same result:
+
+    .. code-block:: python
+
+        # set parameters on the call itself
+        z = zot.top(limit=7, start=3)
+
+        # set parameters using explicit method
+        zot.add_parameters(limit=7, start=3)
+        z = zot.top()
+
+The following parameters are **optional**.
+
+**You may also set a search term here, using the 'itemType', 'q', 'qmode', or 'tag' parameters**.
+
+This area of the Zotero Read API is under development, and may change frequently. See `the API documentation <https://www.zotero.org/support/dev/web_api/v3/basics#read_requests>`_ for the most up-to-date details of search syntax usage and export format details.
+
+
+
+    .. py:method:: Zotero.add_parameters([format=None, itemKey=None, itemType=None, q=None, qmode=None, since=None, tag=None, sort=None, direction=None, limit=None, start=None, [content=None[ ,style=None]]])
+
+        :param str format: "atom", "bib", "bibtex", json", "keys", "versions". Pyzotero retrieves and decodes JSON responses by default
+
+        .. attention::
+
+          Setting ``format='bib'`` will remove the ``limit`` parameter if it's been set, as **the API does not allow a limit on bibliography output**; it instead enforces a limit of 150 items, and if the set of items you are trying to generate a bibliography for exceeds 150, an error will be raised.
+
+        :param str itemKey: A comma-separated list of item keys. Valid only for item requests. Up to 50 items can be specified in a single request
+
+        Search parameters:
+
+        :param str itemType: item type search. See the `Search Syntax <https://www.zotero.org/support/dev/web_api/v3/basics#search_syntax>`_ for details
+        :param str q: Quick search. Searches titles and individual creator fields by default. Use the ``qmode`` parameter to change the mode. Currently supports phrase searching only
+        :param str qmode: Quick search mode. To include full-text content in the search, use ``everything``. Defaults to ``titleCreatorYear``. Searching of other fields will be possible in the future
+        :param int since: default ``0``. Return only objects modified after the specified library version
+        :param str tag: tag search. See the `Search Syntax <https://www.zotero.org/support/dev/web_api/v3/basics#search_syntax>`_ for details. More than one tag may be passed by passing a list of strings – These are treated as ``AND`` search terms, meaning only items which include all of the specified tags are returned. You can search for items matching any tag in a list by using ``OR``: ``"tag1 OR tag2"``, and all items which exclude a tag: ``"-tag"``.
+
+        The following parameters can be used for search requests:
+
+        :param str sort: The name of the field by which entries are sorted: (``dateAdded``, ``dateModified``, ``title``, ``creator``, ``type``, ``date``, ``publisher``, ``publicationTitle``, ``journalAbbreviation``, ``language``, ``accessDate``, ``libraryCatalog``, ``callNumber``, ``rights``, ``addedBy``, ``numItems``, ``tags``)
+        :param str direction: ``asc`` or ``desc``
+        :param int limit: 1 – 100 or None
+        :param int start: 1 – total number of items in your library or None
+
+
+        If you wish to retrieve citation or bibliography entries, use the following parameters:
+
+        :param str content: 'bib', 'html', or one of the export formats (see below). If 'bib' is passed, you may **also** pass:
+        :param str style: Any valid CSL style in the Zotero style repository
+        :param str linkwrap: Set this to "1" to have URLs in bibliography entries (see below) wrapped in ``<a>`` tags.
+        :rtype: list of HTML strings or None.
+
+
+.. note::
+
+    Any parameters you set will be valid **for the next call only**. Any parameters set using ``add_parameters()`` will be overridden by parameters you pass in the call itself.
+
+
+A note on the ``content`` and ``style`` parameters:
+
+Example:
+
+    .. code-block:: python
+
+        zot.add_parameters(content='bib', style='mla')
+
+
+If these are set, the return value is a list of UTF-8 formatted HTML ``div`` elements, each containing an item:
+
+``['<div class="csl-entry">(content)</div>']``.
+
+You may also set ``content='citation'`` if you wish to retrieve citations. Similar to ``bib``, the result will be a list of one or more HTML ``span`` elements.
+
+
+If you select one of the available `export formats <https://www.zotero.org/support/dev/web_api/v3/basics#export_formats>`_ as the ``content`` parameter, pyzotero will in most cases return a list of unicode strings in the format you specified. The exception is the ``csljson`` format, which is parsed into a list of dicts. Please note that you must provide a ``limit`` parameter if you specify one of these export formats. Multiple simultaneous retrieval of particular formats, e.g. ``content="json,coins"`` is not currently supported.
+
+If you set ``format='keys'``, a newline-delimited string containing item keys will be returned
+
+If you set ``format='bibtex'``, a `bibtexparser <https://bibtexparser.readthedocs.io/en/main/bibtexparser.html>`_ object containing citations will be returned. You can access the citations as a list of dicts using the ``.entries`` property. The bibtexparser object also implements a `dump method <https://bibtexparser.readthedocs.io/en/main/customize.html#formatting-options-for-writing>`_, if you'd like to write your citations to a ``.bib`` file.
+
+.. py:method:: Zotero.key_info()
+
+    Returns info about the user and group library permissions associated with the current ``Zotero`` instance, based on the API key. Together with :py:meth:`Zotero.groups()`, this allows all accessible resources to be determined.
+
+    :rtype: dict
+
+Retrieving Items
+----------------
+
+.. tip::
+    In contrast to the v1 API, a great deal of additional metadata is now returned. In most cases, simply accessing items by referring to their ``item['data']`` key will suffice.
+
+
+The following methods will retrieve either user or group items, depending on the value (``user`` or ``group``) used to create the ``Zotero`` instance:
+
+
+    .. py:method:: Zotero.items([search/request parameters])
+
+        Returns Zotero library items
+
+        :rtype: list of dicts
+
+    .. py:method:: Zotero.settings([since])
+
+        Returns synced Zotero user library settings such as feeds and PDF reading progress. Use the optional ``since`` parameter to specify the retrieval of changes since a known previous library version.
+
+        :rtype: list of dicts
+
+    .. py:method:: Zotero.count_items()
+
+        Returns a count of all items in a library / group
+
+        :rtype: int
+
+    .. py:method:: Zotero.top([search/request parameters])
+
+        Returns top-level Zotero library items
+
+        :rtype: list of dicts
+
+    .. py:method:: Zotero.publications([search/request parameters])
+
+        Returns the publications from the "My Publications" collection of a user's library. Only available on ``user`` libraries.
+
+        :rtype: list of dicts
+
+    .. py:method:: Zotero.trash([search/request parameters])
+
+        Returns library items from the library's trash
+
+        :rtype: list of dicts
+
+    .. py:method:: Zotero.deleted([search/request parameters])
+
+        Returns deleted collections, library items, tags, searches and settings (requires "since=" parameter)
+
+        :rtype: list of dicts
+
+    .. py:method:: Zotero.item(itemID[, search/request parameters])
+
+        Returns a specific item
+
+        :param str itemID: a zotero item ID
+        :rtype: list of dicts
+
+    .. py:method:: Zotero.children(itemID[, search/request parameters])
+
+        Returns the child items of a specific item
+
+        :param str itemID: a zotero item ID
+        :rtype: list of dicts
+
+
+    .. py:method:: Zotero.collection_items(collectionID[, search/request parameters])
+
+        Returns items from the specified collection. This does not include items in sub-collections
+
+        :param str collectionID: a Zotero collection ID
+        :rtype: list of dicts
+
+
+    .. py:method:: Zotero.collection_items_top(collectionID[, search/request parameters])
+
+        Returns top-level items from the specified collection.
+
+        :param str collectionID: a Zotero collection ID
+        :rtype: list of dicts
+
+    .. py:method:: Zotero.get_subset(itemIDs[, search/request parameters])
+
+        Retrieve an arbitrary set of non-adjacent items. Limited to 50 items per call.
+
+        :param list itemIDs: a list of Zotero Item IDs
+        :rtype: list of dicts
+
+.. _returned:
+
+Example of returned item data:
+
+
+    .. code-block:: python
+
+
+        [{u'data': {u'ISBN': u'0810116820',
+                   u'abstractNote': u'',
+                   u'accessDate': u'',
+                   u'archive': u'',
+                   u'archiveLocation': u'',
+                   u'callNumber': u'HIB 828.912 BEC:3g N9',
+                   u'collections': [u'2UNGXMU9'],
+                   u'creators': [{u'creatorType': u'author',
+                                  u'firstName': u'Daniel',
+                                  u'lastName': u'Katz'}],
+                   u'date': u'1999',
+                   u'dateAdded': u'2010-01-04T14:50:40Z',
+                   u'dateModified': u'2014-08-06T11:28:41Z',
+                   u'edition': u'',
+                   u'extra': u'',
+                   u'itemType': u'book',
+                   u'key': u'VDNIEAPH',
+                   u'language': u'',
+                   u'libraryCatalog': u'library.catalogue.tcd.ie Library Catalog',
+                   u'numPages': u'',
+                   u'numberOfVolumes': u'',
+                   u'place': u'Evanston, Ill',
+                   u'publisher': u'Northwestern University Press',
+                   u'relations': {u'dc:replaces': u'http://zotero.org/users/436/items/9TXN8QUD'},
+                   u'rights': u'',
+                   u'series': u'',
+                   u'seriesNumber': u'',
+                   u'shortTitle': u'Saying I No More',
+                   u'tags': [{u'tag': u'Beckett, Samuel', u'type': 1},
+                             {u'tag': u'Consciousness in literature', u'type': 1},
+                             {u'tag': u'English prose literature', u'type': 1},
+                             {u'tag': u'Ireland', u'type': 1},
+                             {u'tag': u'Irish authors', u'type': 1},
+                             {u'tag': u'Modernism (Literature)', u'type': 1},
+                             {u'tag': u'Prose', u'type': 1},
+                             {u'tag': u'Self in literature', u'type': 1},
+                             {u'tag': u'Subjectivity in literature', u'type': 1}],
+                   u'title': u'Saying I No More: Subjectivity and Consciousness in The Prose of Samuel Beckett',
+                   u'url': u'',
+                   u'version': 792,
+                   u'volume': u''},
+         u'key': u'VDNIEAPH',
+         u'library': {u'id': 436,
+                      u'links': {u'alternate': {u'href': u'https://www.zotero.org/urschrei',
+                                                u'type': u'text/html'}},
+                      u'name': u'urschrei',
+                      u'type': u'user'},
+         u'links': {u'alternate': {u'href': u'https://www.zotero.org/urschrei/items/VDNIEAPH',
+                                   u'type': u'text/html'},
+                    u'self': {u'href': u'https://api.zotero.org/users/436/items/VDNIEAPH',
+                              u'type': u'application/json'}},
+         u'meta': {u'creatorSummary': u'Katz',
+                   u'numChildren': 0,
+                   u'parsedDate': u'1999-00-00'},
+         u'version': 792}]
+
+
+
+See :ref:`'Hello World' <hello-world>` example, above
+
+Retrieving Files
+----------------
+
+    .. py:method:: Zotero.file(itemID[, search/request parameters])
+
+        Returns the raw file content of an item. This can be dumped like so:
+
+        .. code-block:: python
+
+          with open('article.pdf', 'wb') as f:
+            f.write(zot.file('BM8MZJBB'))
+
+        :param str itemID: a zotero item ID
+        :rtype: binary string
+
+    .. py:method:: Zotero.dump(itemID[, filename, path])
+
+      A convenient wrapper around :py:meth:`Zotero.file()`. Writes an attachment to disk using the optional path and filename.
+      If neither are supplied, the file is written to the current working
+      directory, and a :py:meth:`Zotero.item()` call is first made to determine the attachment
+      filename. No error checking is done regarding the path. If successful, the full path including the file name is returned.
+
+      .. note:: HTML snapshots will be dumped as zip files. These will be named with their API item key, and a .zip extension.
+
+      .. code-block:: python
+
+        # write a file to the current working directory using the stored filename
+        zot.dump('BM8MZJBB')
+        # write the same file to a different path, with a new name
+        zot.dump('BM8MZJBB', 'article_1.pdf', '/home/beckett/pdfs')
+
+      :param str itemID: a zotero item ID
+      :param str filename: (optional) an alternate filename
+      :param str path: (optional) a valid path for the file
+      :rtype: String
+
+
+File retrieval and dumping should work for most common document, audio and video file formats. If you encounter an error, `please open an issue <https://github.com/urschrei/pyzotero/issues>`_.
+
+Retrieving Collections
+----------------------
+    .. py:method:: Zotero.collections([search/request parameters])
+
+        Returns a library's collections. **This includes subcollections**.
+
+        :rtype: list of dicts
+
+    .. py:method:: Zotero.collections_top([search/request parameters])
+
+        Returns a library's top-level collections.
+
+        :rtype: list of dicts
+
+    .. py:method:: Zotero.collection(collectionID[, search/request parameters])
+
+        Returns a specific collection
+
+        :param str collectionID: a Zotero library collection ID
+        :rtype: dict
+
+    .. py:method:: Zotero.collections_sub(collectionID[, search/request parameters])
+
+        Returns the sub-collections of a specific collection
+
+        :param str collectionID: a Zotero library collection ID
+        :rtype: list of dicts
+
+    .. py:method:: Zotero.all_collections([collectionID])
+
+        Returns either all collections and sub-collections in a flat list, or, if a collection ID is specified, that collection and all of its sub-collections. This method can be called at any collection "depth".
+
+        :param str collectionID: a Zotero library collection ID (optional)
+        :rtype: list of dicts
+
+Example of returned collection data:
+
+    .. code-block:: python
+
+        [{u'data': {u'key': u'5TSDXJG6',
+                    u'name': u'Critical GIS',
+                    u'parentCollection': False,
+                    u'relations': {},
+                    u'version': 778},
+          u'key': u'5TSDXJG6',
+          u'library': {u'id': 436,
+                       u'links': {u'alternate': {u'href': u'https://www.zotero.org/urschrei',
+                                                 u'type': u'text/html'}},
+                       u'name': u'urschrei',
+                       u'type': u'user'},
+          u'links': {u'alternate': {u'href': u'https://www.zotero.org/urschrei/collections/5TSDXJG6',
+                                    u'type': u'text/html'},
+                     u'self': {u'href': u'https://api.zotero.org/users/436/collections/5TSDXJG6',
+                               u'type': u'application/json'}},
+          u'meta': {u'numCollections': 0, u'numItems': 1},
+          u'version': 778}]
+
+
+Retrieving groups
+-----------------
+    .. py:method:: Zotero.groups([search/request parameters])
+
+        Retrieve the Zotero group data to which the current library_id and api_key has access
+
+        :rtype: list of dicts
+
+Example of returned group data:
+
+    .. code-block:: python
+
+        [{u'data': {u'description': u'',
+                    u'fileEditing': u'admins',
+                    u'hasImage': 1,
+                    u'id': 169947,
+                    u'libraryEditing': u'admins',
+                    u'libraryReading': u'members',
+                    u'members': [1177919, 1408658],
+                    u'name': u'smart_cities',
+                    u'owner': 436,
+                    u'type': u'Private',
+                    u'url': u'',
+                    u'version': 0},
+          u'id': 169947,
+          u'links': {u'alternate': {u'href': u'https://www.zotero.org/groups/169947',
+                                    u'type': u'text/html'},
+                     u'self': {u'href': u'https://api.zotero.org/groups/169947',
+                               u'type': u'application/json'}},
+          u'meta': {u'created': u'2013-05-22T11:22:46Z',
+                    u'lastModified': u'2013-05-22T11:26:50Z',
+                    u'numItems': 817},
+          u'version': 0}]
+
+
+Retrieving Tags
+---------------
+
+    .. py:method:: Zotero.tags([search/request parameters])
+
+        Returns a library's tags
+
+        :rtype: list of strings
+
+    .. py:method:: Zotero.item_tags(itemID[, search/request parameters])
+
+        Returns tags from a specific item
+
+        :param str itemID: a valid Zotero library Item ID
+        :rtype: list of strings
+
+Example of returned tag data:
+
+    .. code-block:: python
+
+        ['Authority in literature', 'Errata']
+
+Retrieving Version Information
+------------------------------
+
+The `Zotero API <https://www.zotero.org/support/dev/web_api/v3/syncing>`_ recommends requesting version information for all (or all changed) items and collections when implementing syncing.  The following convenience methods (which by default return an unlimited number of responses) simplify this process.
+
+The return values of these methods associate each item / collection with the last version (or greater) at which the item / collection was modified.  By passing the keyword argument ``since=versionNum`` only items / collections which have been modified since ``versionNum`` are included in the response. Thus, an application which previously sucessfully synced with the server at ``versionNum`` can use these methods to determine which items / collections need to be retrieved from the server.
+
+    .. py:method:: Zotero.item_versions([search/request parameters])
+
+        Returns a dict containing version information for items in the library
+
+        :rtype: dict: string -> integer
+
+    .. py:method:: Zotero.collection_versions(itemID[, search/request parameters])
+
+        Returns a dict containing version information for collections in the library
+
+        :rtype: dict: string -> integer
+
+Example of returned version data:
+
+    .. code-block:: python
+
+        {'C9KW275P': 3915, 'IB489TKM': 4025 }
+
+
+Full–Text Content
+-----------------
+
+These methods allow the retrieval of full–text content for given library items
+
+    .. py:method:: Zotero.new_fulltext(since)
+
+    Returns a dict containing item keys and library versions newer than
+    ``since`` (a library version string, e.g. ``"1085"``)
+
+    :rtype: dict: string -> integer
+
+Example of returned data:
+
+    .. code-block:: python
+
+        {
+            u'229QED6I': 747,
+            u'22TGJFS2': 769,
+            u'23SZWREM': 764
+        }
+
+    .. py:method:: Zotero.fulltext_item(itemID[, search/request parameters])
+
+    Returns a dict containing full-text data for the given attachment item.
+    ``indexedChars`` and ``totalChars`` are used for text documents, while ``indexedPages`` and ``totalPages`` are used for PDFs.
+
+Example of returned data:
+
+    .. code-block:: python
+
+        {
+        "content": "This is full-text content.",
+        "indexedPages": 50,
+        "totalPages": 50
+        }
+
+    .. py:method:: Zotero.set_fulltext(itemID, payload)
+
+    Set full-text data for an item
+
+    :rtype: boolean
+
+    ``itemID`` should correspond to an existing attachment item.
+
+    ``payload``: a dict containing three keys:
+
+        ``content``: the full-text content, and either
+
+        For text documents, ``indexedChars`` and ``totalChars`` OR
+
+        For PDFs, ``indexedPages`` and ``totalPages``.
+
+Example payload:
+
+    .. code-block:: python
+
+        {
+        "content": "This is full-text content.",
+        "indexedPages": 50,
+        "totalPages": 50
+        }
+
+The ``follow()``, and ``everything()`` methods
+----------------------------------------------
+
+These methods (currently experimental) aim to make Pyzotero a little more RESTful. Following any Read API call which can retrieve **multiple items**, calling ``follow()`` will repeat that call, but for the next *x* number of items, where *x* is either a number set by the user for the original call, or 50 by default. Each subsequent call to ``follow()`` will extend the offset.
+
+.. py:method:: Zotero.follow()
+
+    Returns ``None`` once all available items have been retrieved.
+
+Example:
+
+    .. code-block:: python
+
+        from pyzotero import Zotero
+        zot = Zotero(library_id, library_type, api_key)
+        # only retrieve a single item
+        # this will retrieve the most recently added/modified top-level item
+        first_item = zot.top(limit=1)
+        # now we can start retrieving subsequent items
+        next_item = zot.follow()
+        third_item = zot.follow()
+
+    ``follow()`` can thus be used to page through an entire library:
+
+    .. code-block:: python
+
+        items = zot.items()
+        while items:
+            for item in items:
+                # do stuff with the item
+                ...
+            items = zot.follow()
+
+
+.. py:method:: Zotero.everything()
+
+Example:
+
+    .. code-block:: python
+
+        from pyzotero import Zotero
+        zot = Zotero(library_id, library_type, api_key)
+        # retrieve all top-level items
+        toplevel = zot.everything(zot.top())
+
+The ``everything()`` method should work with all Pyzotero Read API calls which can return multiple items, but has not yet been extensively tested. `Feedback is welcomed <https://github.com/urschrei/pyzotero/issues>`_.
+
+Related generator methods
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The :py:meth:`Zotero.iterfollow()` and :py:meth:`Zotero.makeiter()` methods are available for users who prefer to work directly with generators:
+
+
+.. py:method:: Zotero.iterfollow()
+
+    :rtype: a generator over the :py:meth:`follow()` method.
+
+Example:
+
+    .. code-block:: python
+
+        z = zot.top(limit=5)
+        lazy = zot.iterfollow()
+        next(lazy) # the next() call has returned the next five items
+
+.. py:method:: Zotero.makeiter(API call)
+
+    Returns a generator over a Read API method
+
+    :param function API call: a Pyzotero Read API method capable of returning multiple items
+    :rtype: generator
+
+Example:
+
+    .. code-block:: python
+
+        gen = zot.makeiter(zot.top(limit=5))
+        next(gen) # this will return the first five items
+        next(gen) # this will return the next five items
+
+
+
+.. warning:: The ``follow()``, ``everything()`` and ``makeiter()`` methods are only valid for methods which can return multiple library items. For instance, you cannot use ``follow()`` after an ``item()`` call. The generator methods will raise a ``StopIteration`` error when all available items retrievable by your chosen API call have been exhausted.
+
+Retrieving item counts
+----------------------
+
+If you wish to retrieve item counts for subsets of a library, you can use the following methods:
+
+.. py:method:: Zotero.num_items()
+
+    Returns the count of top-level items in the library
+
+    :rtype: int
+
+.. py:method:: Zotero.num_collectionitems(collectionID)
+
+    Returns the count of items in the specified collection
+
+    :rtype: int
+
+Retrieving last modified version
+--------------------------------
+
+If you wish to retrieve the last modified version of a user or group library, you can use the following method:
+
+.. py:method:: Zotero.last_modified_version()
+
+    Returns the last modified version of the library
+
+    :rtype: int
+
+.. _localapi:
+
+====================
+The Local Zotero API
+====================
+
+Setting ``local=True`` directs Pyzotero at the HTTP API served by a running Zotero
+installation (``http://127.0.0.1:23119/api``) instead of ``api.zotero.org``. It must
+first be enabled in Zotero, under Settings > Advanced > "Allow other applications on
+this computer to communicate with Zotero".
+
+Read requests need no authentication. Write requests need two things: a server ID,
+which Pyzotero handles for you, and a local API key, which requires the user's consent.
+
+This section is organised in three parts: :ref:`localapi-explanation` covers the
+concepts behind local write access, :ref:`localapi-howto` gives step-by-step recipes
+for common tasks, and :ref:`localapi-reference` describes the attribute, the method,
+and the behavioural differences from the web API.
+
+.. _localapi-explanation:
+
+How local write access works
+----------------------------
+
+Server IDs
+~~~~~~~~~~
+
+Every local API response carries a ``Zotero-Server-ID`` header identifying the Zotero
+instance the data came from. It persists with the user's database. Pyzotero caches it
+from the first local response and sends it back on subsequent requests, so that a
+request made against a different instance — or the same one after a database restore —
+is rejected with :py:class:`ServerIDMismatchError` rather than silently mixing data.
+You never need to fetch the ID yourself: Pyzotero obtains it automatically before the
+first write. It matters to you only if your program persists data between runs, in
+which case see the warning below and :ref:`localapi-howto-persist`.
+
+Versions
+~~~~~~~~
+
+.. warning::
+    Versions reported by the local API are scoped to a server ID. They bear **no relation**
+    to web API versions, nor to versions from any other Zotero instance, and because local
+    changes need no sync they are typically **lower** than the versions the local API
+    reported before write support was added. Any program that persists objects or versions
+    retrieved from the local API — for ``since=`` queries, or its own change tracking —
+    must partition that data by ``server_id``, and should discard data cached against a
+    different one. A mismatch raises :py:class:`ServerIDMismatchError`.
+
+Local API keys
+~~~~~~~~~~~~~~
+
+Local API keys are unrelated to zotero.org API keys: they are granted by the running
+Zotero application itself, and only with the user's consent. Requesting one makes
+Zotero display a dialog offering three choices. "Allow" grants a **single-use** key:
+the first successful write consumes it, and the next write fails with
+:py:class:`LocalAPIKeyRequiredError`. "Always Allow" grants a persistent key, which
+the caller may store and reuse across sessions. "Deny" raises
+:py:class:`LocalAPIDeniedError`.
+
+.. _localapi-howto:
+
+How-to guides
+-------------
+
+How to make your first local write
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. Create a client with ``local=True``.
+2. Call :py:meth:`Zotero.authorize_local()` and approve the dialog Zotero displays.
+3. Call any write method.
+
+.. code-block:: python
+
+    from pyzotero import Zotero
+
+    zot = Zotero('0', 'user', local=True)
+    zot.authorize_local('My Application')  # Zotero prompts the user
+    zot.create_items([item])
+
+.. _localapi-howto-persist:
+
+How to keep write access across sessions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. Call :py:meth:`Zotero.authorize_local()` and have the user choose "Always Allow".
+2. Check the ``remember`` flag on the returned dict: it is ``True`` only for a
+   persistent key. Store the key together with :py:attr:`Zotero.server_id`.
+3. On a later run, pass both back to the constructor.
+
+.. code-block:: python
+
+    auth = zot.authorize_local('My Application')
+    if auth['remember']:
+        save_somewhere(zot.server_id, auth['key'])
+
+    # on a later run
+    zot = Zotero('0', 'user', local=True,
+                 server_id=saved_server_id, local_api_key=saved_key)
+
+How to recover from a consumed or revoked key
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A single-use key is consumed by the first successful write, and the user can revoke a
+persistent key in Zotero's settings. In both cases the next write raises
+:py:class:`LocalAPIKeyRequiredError`. Catch it and re-authorise:
+
+.. code-block:: python
+
+    from pyzotero import Zotero, LocalAPIKeyRequiredError
+
+    try:
+        zot.create_items([item])
+    except LocalAPIKeyRequiredError:
+        zot.authorize_local('My Application')
+        zot.create_items([item])
+
+How to add a file attachment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:py:meth:`Zotero.attachment_simple()` and :py:meth:`Zotero.attachment_both()` are
+unavailable in local mode (see :ref:`localapi-differences`). Build the attachment
+dict yourself and pass it to :py:meth:`Zotero.upload_attachments()`, which works
+normally:
+
+.. code-block:: python
+
+    attachment = {
+        'itemType': 'attachment',
+        'linkMode': 'imported_file',
+        'title': 'paper.pdf',
+        'filename': '/path/to/paper.pdf',
+        'contentType': 'application/pdf',
+        'charset': '',
+        'note': '',
+        'tags': [],
+        'relations': {},
+    }
+    zot.upload_attachments([attachment], parent_item_key)
+
+.. _localapi-reference:
+
+Reference
+---------
+
+    .. py:attribute:: Zotero.server_id
+
+        The local API's server ID, or ``None`` if it is not yet known. Readable and
+        writable: a program can persist it alongside its own data and supply it on a
+        later run via the ``server_id`` constructor argument. Pyzotero fetches it
+        automatically before the first write if it is not already set.
+
+    .. py:method:: Zotero.authorize_local(app_name)
+
+        Request a local API key. Zotero displays a dialog offering "Allow" (one-time
+        access), "Always Allow" (persistent access) and "Deny". On approval the key is
+        stored on the instance as ``local_api_key`` and sent with subsequent local writes.
+
+        :param str app_name: the caller's display name, shown to the user in the dialog
+        :rtype: dict containing a ``key`` string and a ``remember`` boolean
+
+        ``remember`` is ``True`` only for a persistent key; a single-use key must be
+        replaced by a further call once a write has consumed it.
+
+        Raises :py:class:`LocalAPIDeniedError` if the user denies the request. Zotero
+        rate-limits this endpoint, so it must not be called in a retry loop.
+
+The exceptions specific to the local API — :py:class:`LocalAPIKeyRequiredError`,
+:py:class:`LocalAPIDeniedError`, :py:class:`ServerIDMismatchError` and
+:py:class:`ServerIDRequiredError` — are listed under `Errors`_.
+
+.. _localapi-differences:
+
+Differences from the web API
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* :py:meth:`Zotero.item_template()` is unavailable: the local API implements the item
+  type and field endpoints, but not ``/items/new``. Zotero may add it in future, in which
+  case the method starts working with no change to Pyzotero. Build item dicts directly and pass
+  them to :py:meth:`Zotero.create_items()`, using :py:meth:`Zotero.item_types()` and
+  :py:meth:`Zotero.item_type_fields()` to discover the valid fields. Calling it in local
+  mode raises :py:class:`CallDoesNotExistError`.
+* For the same reason :py:meth:`Zotero.attachment_simple()` and
+  :py:meth:`Zotero.attachment_both()`, which build an attachment template internally, are
+  unavailable. Use :py:meth:`Zotero.upload_attachments()` with a hand-built attachment
+  dict instead: see :ref:`localapi-howto`.
+* Keyed writes require a concurrency precondition: either a ``version`` on each object,
+  which objects retrieved from the API already carry, or an explicit ``last_modified``
+  argument. Payloads built by hand without either are rejected.
+* Item type and field endpoints return names in the user's locale; the ``locale``
+  parameter is ignored. :py:meth:`Zotero.creator_fields()` always returns English.
+* Atom is not supported, and there are no rate limits on ordinary requests.
+* Results are not paginated by default, so :py:meth:`Zotero.everything()` is rarely needed.
+* Requests go to ``127.0.0.1``, not ``localhost``: Zotero listens on the IPv4 loopback
+  address only. The default client ignores proxy settings from the environment
+  (``HTTP_PROXY``, ``ALL_PROXY`` and the system proxy configuration).
+
+For the full list, see the `local API documentation
+<https://github.com/zotero/zotero/blob/main/chrome/content/zotero/xpcom/server/server_localAPI.js>`_.
+
+.. _write:
+
+=================
+Write API Methods
+=================
+
+Saved Searches
+--------------
+Pyzotero allows you to retrieve, delete, or modify saved searches:
+
+    .. py:method:: Zotero.searches()
+
+        Retrieve all saved searches. Note that this retrieves saved search *metadata*, as opposed to *content*; saved searches cannot currently (January 2019) be run using the API.
+
+        :rtype: list of dicts
+
+    .. py:method:: Zotero.saved_search(name, conditions)
+
+        Create a new saved search. `conditions` is a list of one or more dicts, each of which must contain the following three string keys:
+        `condition`, `operator`, `value`. See the `documentation <https://www.zotero.org/support/dev/web_api/v3/write_requests#saved_search_requests>`_ for an example.
+
+        :param str name: the name of the search
+        :param list conditions: one or more dicts containing search conditions and operators
+        :rtype: dict showing creation success status
+
+    .. py:method:: Zotero.delete_saved_search(search_keys)
+
+        Delete one or more saved searches. `search_keys` is a list of one or more search keys. These can be retrievd using :py:meth:`Zotero.searches()`
+
+        :param list search_keys: list of unique saved search keys
+        :rtype: None
+
+    .. py:method:: Zotero.show_operators()
+
+        Show available saved search operators
+
+        :rtype: list
+
+    .. py:method:: Zotero.show_conditions()
+
+        Show available saved search conditions
+
+        :rtype: list
+
+    .. py:method:: Zotero.show_condition_operators(condition)
+
+        Show available operators for a given saved search condition
+
+        :param str condition: a valid saved search condition
+        :rtype: list
+
+Item Methods
+------------
+
+    .. py:method:: Zotero.item_types()
+
+        Returns a dict containing all available item types
+        
+        :rtype: dict
+
+    .. py:method:: Zotero.item_fields()
+
+        Returns a dict of all available item fields
+
+        :rtype: dict
+
+    .. py:method:: Zotero.item_creator_types(itemtype)
+
+        Returns a dict of all valid creator types for the specified item type
+
+        :param str itemtype: a valid Zotero item type. A list of available item types can be obtained by the use of :py:meth:`item_types()`
+        :rtype: dict
+
+    .. py:method:: Zotero.creator_fields()
+
+        Returns a dict containing all localised creator fields
+
+        :rtype: dict
+
+    .. py:method:: Zotero.item_type_fields(itemtype)
+
+        Returns all valid fields for the specified item type
+
+        :param str itemtype: a valid Zotero item type. A list of available item types can be obtained by the use of :py:meth:`item_types()`
+        :rtype: list of dicts
+
+    .. py:method:: Zotero.item_template(itemtype, linkmode)
+
+        Returns an item creation template for the specified item type
+
+        :param str itemtype: a valid Zotero item type. A list of available item types can be obtained by the use of :py:meth:`item_types()`
+        :param str linkmode: either None (default) or a valid Zotero linkMode value required when itemtype is attachment. A list of available link modes can be obtained by the use of :py:meth:`item_attachment_link_modes()`
+        :rtype: dict
+
+Creating and Updating Items
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    .. py:method:: Zotero.create_items(items[, parentid, last_modified])
+
+        Create Zotero library items
+
+        :param list items: one or more dicts containing item data
+        :param str parentid: A Parent item ID. This will cause the item(s) to become the child items of the given parent ID
+        :param str/int last_modified: If not None will set the value of the If-Unmodified-Since-Version header. 
+        :rtype: list of dicts
+
+        Returns a copy of the created item(s), if successful. Use of :py:meth:`item_template` is recommended in order to first obtain a dict with a structure which is known to be valid.
+
+        Before calling this method, the use of :py:meth:`check_items()` is encouraged, in order to confirm that the item to be created contains only valid fields.
+
+        Note that if any items contain a key field matching an existing item on the server it will be updated (any properties not in the dict will be left unmodified).
+
+Example:
+
+    .. code-block:: python
+
+        template = zot.item_template('book')
+        template['creators'][0]['firstName'] = 'Monty'
+        template['creators'][0]['lastName'] = 'Cantsin'
+        template['title'] = 'Maris Kundzins: A Life'
+        resp = zot.create_items([template])
+
+
+If successful, ``resp`` will be a dict containing the creation status of each item:
+
+    .. code-block:: python
+
+        {'failed': {}, 'success': {'0': 'ABC123'}, 'unchanged': {}}
+
+    .. py:method:: Zotero.update_item(item [, last_modified])
+
+        Update an item in your library
+
+        :param dict item: a dict containing item data.  Fields not in item will be left unmodified.
+        :param str/int last_modified: If not ``None``, will set the value of the If-Unmodified-Since-Version header.  If unspecified/None then If-Unmodified-Since-Version will be set to the version property of item.
+        :rtype: Boolean
+
+        Will return ``True`` if the request was successful, or will raise an error.
+
+Example:
+
+    .. code-block:: python
+
+        i = zot.items()
+        # see above for example of returned item structure
+        # modify the latest item which was added to your library
+        i[0]['data']['title'] = 'The Sheltering Sky'
+        i[0]['data']['creators'][0]['firstName'] = 'Paul'
+        i[0]['data']['creators'][0]['lastName'] = 'Bowles'
+        zot.update_item(i[0])
+
+  .. py:method:: Zotero.update_items(items[, last_modified])
+
+      Update items in your library. The API only accepts 50 items per call, so longer updates are chunked
+
+      :param list items: a list of dicts containing Item data. Fields not in item will be left unmodified.
+      :param int last_modified: optional library version, sent as ``If-Unmodified-Since-Version``. Only needed when the dicts carry no ``version`` of their own; the local API rejects keyed writes that have neither.
+      :rtype: Boolean
+
+      Will return ``True`` if the request was successful, or will raise an error.
+
+  .. py:method:: Zotero.check_items(items)
+
+      Check whether items to be created on the server contain only valid keys. This method first creates a set of valid keys by calling :py:meth:`item_fields()`, then compares the user-created dicts to it. If any keys in the user-created dicts are unknown, a ``InvalidItemFields`` exception is raised, detailing the invalid fields.
+
+      ``deleted`` is a valid key: the API returns it on trashed objects, and accepts it on write.
+
+      :param list items: one or more dicts containing item data
+      :rtype: List. Each list item is a valid dict containing item data.
+
+
+Uploading files
+~~~~~~~~~~~~~~~
+
+    .. warning:: Attachment methods are in beta.
+
+    .. py:method:: Zotero.attachment_simple(files[, parentid])
+
+        Create one or more file attachment items.
+
+        :param list files: a list containing one or more file paths: ``['/path/to/file/file.pdf', … ]``
+        :param string parentid: a library Item ID. If this is specified, attachments will be created as child items of this ID.
+        :rtype: Dict. Showing status of each requested upload.
+
+    .. py:method:: Zotero.attachment_both(files[, parentid])
+
+        Create one or more file attachment items, specifying names for uploaded files
+
+        :param list files: a list containing one or more lists or tuples in the following format: ``(file name, file path)``
+        :param string parentid: a library Item ID. If this is specified, attachments will be created as child items of this ID.
+        :rtype: Dict. Showing status of each requested upload.
+
+    .. py:method:: Zotero.upload_attachments(attachments[, parentid, basedir=None])
+
+        Upload files to their corresponding attachments.  If the attachments lack the ``key`` property they are assumed not to exist and will be created.  The ``parentid`` parameter is **not compatible** with existing attachments.  In order for uploads to succeed, the filename parameter of each attachment must resolve.
+
+        This method is really only required in cases where a sync has been interrupted, leaving your library with attachment items that don't have corresponding files attached. It *may* also work for uploading modified files, though **this is untested**.
+
+        :param list attachments: A list of dicts representing zotero imported files which may or may not already have their key fields filled in.
+        :param string parentid: a library Item ID. If this is specified and key fields are not included, attachments will be created as child items of this ID.
+        :param string/path basedir: A string or path object to which the filenames specified in attachments will be evaluated relative to.  If unspecified the filenames are evaluated as they are.
+        :rtype: Dict. Showing status of each requested upload.
+
+    .. code-block:: python
+
+            # example of the return type
+            {
+                'success': [attach1, attach2...],
+                'failure': [attach3, attach4...],
+                'unchanged': [attach4, attach5...]
+            }
+
+    .. note::
+        unlike the space-saving responses from the server, the return value here eschews the complex index / key lookup and simply passes back the ``imported_file`` item template populated with keys (if created successfully or passed in) corresponding to each result. This is the return type for all of these methods. Entries additionally carry the item's current ``version`` (as reported by the server after the item's final write step), so a follow-up :py:meth:`Zotero.update_item()` call can be made without refetching the item first.
+
+    .. note::
+        the ``filename`` you pass is used to locate the file on disk (relative to ``basedir``, if given), so it may be a path. The API doesn't accept a directory path in a stored-file item's ``filename`` field, so only the basename is sent when the attachment item is created. Entries returned under ``failure`` because the server rejected the item at creation time contain the server's reason under an ``error`` key, e.g. ``{'code': 400, 'message': '…'}``.
+
+Deleting items
+~~~~~~~~~~~~~~
+
+    .. py:method:: Zotero.delete_item(item[, last_modified])
+
+        Delete one or more items from your library
+
+        :param list item: a list of one or more dicts containing item data. You must first retrieve the item(s) you wish to delete, as ``version`` data is required.
+        :param str/int last_modified: If not ``None``, will set the value of the If-Unmodified-Since-Version header. 
+
+    .. note::
+        :py:meth:`delete_item()` is permanent. To move an item to the trash instead, set ``deleted`` to ``1`` on it and pass it to :py:meth:`update_item()`. Setting ``deleted`` to ``0`` restores it.
+
+    .. code-block:: python
+
+        item = zot.item('ABC123')
+        item['data']['deleted'] = 1
+        zot.update_item(item['data'])
+
+Deleting tags
+~~~~~~~~~~~~~
+
+    .. py:method:: Zotero.delete_tags(tag_a[, tag …])
+
+        Delete one or more tags from your library
+
+        :param string tag: the tag(s) you'd like to delete
+
+        You may also pass a list using ``zot.delete_tags(*[tag_list])``
+
+Adding tags
+-----------
+
+    .. py:method:: Zotero.add_tags(item, tag[, tag …])
+
+        Add one or more tags to an item, and update it on the server
+
+        :param dict item: a dict containing item data
+        :param string tag: the tag(s) you'd like to add to the item
+        :rtype: list of dicts
+
+        You may also pass a list using ``zot.add_tags(item, *[tag_list])``
+
+Example:
+
+    .. code-block:: python
+
+        z = zot.top(limit=1)
+        # we've now retrieved the most recent top-level item
+        updated = zot.add_tags(z[0], 'tag1', 'tag2', 'tag3')
+        # updated now contains a representation of the updated server item
+
+
+Collection Methods
+------------------
+
+    .. py:method:: Zotero.create_collections(dicts[, last_modified])
+
+        Create a new collection in the Zotero library
+
+        :param list dicts: list of dicts each containing the key ``name``, with each value being a new collection name you wish to create. Each dict may optionally contain a ``parentCollection`` key, the value of which is the ID of an existing collection. If this is set, the collection will be created as a child of that collection.
+        :param str/int last_modified: If not None will set the value of the If-Unmodified-Since-Version header. 
+        :rtype: list of dicts
+        :rtype: Boolean
+
+    .. py:method:: Zotero.create_collection(dicts[, last_modified])
+
+        Alias for :py:meth:`Zotero.create_collections()` to preserve backward compatibility
+
+    .. py:method:: Zotero.addto_collection(collection, item)
+
+        Add the specified item(s) to the specified collection
+
+        :param str collection: a collection key
+        :param dict item: an item dict retrieved using an API call
+        :rtype: Boolean
+
+        Collection keys can be obtained by a call to :py:meth:`collections()` (see details above).
+
+    .. py:method:: Zotero.deletefrom_collection(collection, item)
+
+        Remove the specified item from the specified collection
+
+        :param str collection: a collection key
+        :param dict item: a dict containing item data
+        :rtype: Boolean
+
+        See the :py:meth:`delete_item()` example for multiple-item removal.
+
+    .. py:method:: Zotero.moveto_collection(from_collection, to_collection, item)
+
+        Move the specified item from one collection to another, in a single request
+
+        :param str from_collection: the key of the collection to remove the item from
+        :param str to_collection: the key of the collection to add the item to
+        :param dict item: an item dict retrieved using an API call
+        :rtype: Boolean
+
+        The item's membership of other collections is unchanged. If the item is not in ``from_collection``, it is still added to ``to_collection``. Calling :py:meth:`deletefrom_collection()` followed by :py:meth:`addto_collection()` does not work for this: the first call changes the item's version, so the second call fails its version check.
+
+        .. code-block:: python
+
+            item = zot.item("ITEMKEY")
+            zot.moveto_collection("OLDCOLL", "NEWCOLL", item)
+
+    .. py:method:: Zotero.update_collection(collection , last_modified])
+
+        Update existing collection metadata (name etc.)
+
+        :param dict collection: a dict containing collection data, previously retrieved using one of the Collections calls (e.g. :py:meth:`collections()`)
+        :rtype: Boolean
+
+    .. py:method:: Zotero.update_collections(collection_items[, last_modified])
+
+        Update multiple existing collection metadata. The API only accepts 50 collections per call, so longer updates are chunked
+
+        :param list collection_items: a list of dicts containing Collection data. Fields not in collection_item will be left unmodified.
+        :param int last_modified: optional library version, sent as ``If-Unmodified-Since-Version``. Only needed when the dicts carry no ``version`` of their own; the local API rejects keyed writes that have neither.
+        :rtype: Boolean
+
+        Will return ``True`` if the request was successful, or will raise an error.
+
+    .. py:method:: Zotero.collection_tags(collectionID[, search/request parameters])
+
+        Retrieve all tags for a given collection
+
+        :param str collectionID: a collection ID
+        :rtype: list of strings
+
+Examples:
+
+    .. code-block:: python
+
+            # get existing collections, which will return a list of dicts
+            c = zot.collections()
+            # rename the last collection created in the library
+            c[0]['name'] = 'Whither Digital Humanities?'
+            # update collection name on the server
+            zot.update_collection(c[0])
+
+
+    .. py:method:: Zotero.delete_collection(collection[, last_modified])
+
+        Delete a collection from the Zotero library
+
+        :param dict collection: a dict containing collection data, previously retrieved using one of the Collections calls (e.g. :py:meth:`collections()`). Alternatively, you may pass a **list** of collection dicts.
+        :param str/int last_modified: If not None will set the value of the If-Unmodified-Since-Version header.
+        :rtype: Boolean
+
+
+
+=====
+Notes
+=====
+Most Read API methods return **lists** of **dicts** or, in the case of tag methods, **lists** of **strings**. Most Write API methods return either ``True`` if successful, or raise an error. See ``zotero_errors.py`` for a full listing of these.
+
+.. warning:: URL parameters will supersede API calls which should return e.g. a single item: ``https://api.zotero.org/users/436/items/ABC?start=50&limit=10`` will return 10 items beginning at position 50, even though ``ABC`` does not exist. Be aware of this, and don't pass URL parameters which do not apply to a given API method.
+
+=======
+License
+=======
+Pyzotero is licensed under the `Blue Oak Model Licence <https://opensource.org/license/blue-oak-model-license>`_  license.
+
+
+===========
+Cat Picture
+===========
+This is The Grinch.
+
+.. figure:: cat.png
+
+    *Orangecat*
+
+.. [*] This isn't strictly true: you only need an API key for personal libraries and non-public group libraries.

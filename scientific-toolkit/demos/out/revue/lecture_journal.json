@@ -1,0 +1,51 @@
+{
+  "nom": "Remédiation en lecture",
+  "question": "Quelle est l'efficacité des programmes de remédiation en lecture au primaire ?",
+  "horodatage": "2026-10-22T18:30:41+00:00",
+  "criteres_inclusion": [
+    "lecture|reading"
+  ],
+  "criteres_exclusion": [
+    "rodent|animal"
+  ],
+  "journal": [
+    {
+      "etape": "import",
+      "fichier": "data/corpus_exemple.csv",
+      "n": 12
+    },
+    {
+      "etape": "deduplication",
+      "avant": 12,
+      "apres": 7,
+      "supprimes": 5
+    },
+    {
+      "etape": "criblage",
+      "cribles": 7,
+      "inclus": 5,
+      "exclus": 2
+    },
+    {
+      "etape": "acces",
+      "avec_pdf_oa": 4,
+      "sans_pdf_oa": 1
+    }
+  ],
+  "exclus": [
+    {
+      "titre": "Homework and academic achievement: evidence from a longitudinal study",
+      "doi": "10.1000/homework.2020.07",
+      "annee": 2020,
+      "motif": "aucun critère d'inclusion",
+      "regle": "inclusion"
+    },
+    {
+      "titre": "Animal models of reading difficulty in rodents",
+      "doi": "10.1000/animal.2018.02",
+      "annee": 2018,
+      "motif": "critère d'exclusion : rodent|animal",
+      "regle": "rodent|animal"
+    }
+  ]
+}

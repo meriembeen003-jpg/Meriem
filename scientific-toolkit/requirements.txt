@@ -1,0 +1,26 @@
+# ── Cœur de recherche (recommandé) ────────────────────────────────────────────
+requests>=2.31
+pyalex>=0.14
+habanero>=1.2
+arxiv>=2.1
+semanticscholar>=0.8
+pybliometrics>=3.5          # nécessite une clé Elsevier (Scopus)
+unpywall>=0.2
+pyzotero>=1.5
+bibtexparser>=1.4
+
+# ── Lecture et extraction PDF ────────────────────────────────────────────────
+pymupdf>=1.24
+pdfplumber>=0.11
+camelot-py[cv]>=0.11        # tableaux ; requiert Ghostscript
+pypdf>=4.0
+
+# ── Outils scientifiques ─────────────────────────────────────────────────────
+pandas>=2.0
+numpy>=1.26
+scipy>=1.12                 # non requis par scitk.audit (stdlib), utile ailleurs
+scikit-learn>=1.4
+matplotlib>=3.8
+
+# ── Tests ────────────────────────────────────────────────────────────────────
+pytest>=8.0

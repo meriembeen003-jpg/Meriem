@@ -1,0 +1,50 @@
+schema_version: '1.0'
+publisher:
+  name: Sage
+  id: sage
+  description: 'SAGE Publications journal patterns and mappings.
+
+
+    SAGE Publications is a major academic publisher. All SAGE journals are now served
+
+    from the unified journals.sagepub.com platform using DOI-based PDF URLs. The
+
+    legacy per-journal subdomains (e.g. acb.sagepub.com) are no longer in service.
+
+
+    URL Pattern: https://journals.sagepub.com/doi/pdf/{DOI}
+
+
+    SAGE aggressively blocks automated access (HTTP 403), so verification will be
+
+    denied even when the constructed URL is correct. FindIt''s job is to construct
+
+    the URL; downloading is left to the caller (use verify=False).
+
+
+    Dance Function: the_doi_slide'
+url_patterns:
+  doi_template: https://journals.sagepub.com/doi/pdf/{doi}
+dance_function: the_doi_slide
+journals:
+  simple_list:
+  - Acupunct Electrother Res
+  - Ann Clin Biochem
+  - Angiology
+  - Assessment
+  - Autism
+  - Clin Appl Thromb Hemost
+  - Clin Pediatr
+  - Clin Pediatr (Phila)
+  - J Aging Health
+  - J Child Neurol
+  - J Dent Res
+  - J Hum Lact
+  - J Renin Angiotensin Aldosterone Syst
+  - Lupus
+metadata:
+  evidence_date: '2026-06-08'
+  verification_notes: 'Migrated from the_vip_shake (legacy *.sagepub.com VIP subdomains,
+    now dead/403) to the_doi_slide using journals.sagepub.com/doi/pdf/{doi}. Added
+    journal "Autism" (issue #156). DOI PDF URL confirmed via CrossRef metadata.'
+  special_handling: []

@@ -1,0 +1,44 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.mlava/scholar-sidekick-mcp",
+  "title": "Scholar Sidekick",
+  "description": "Catch AI-fabricated citations (real DOI + fake title). Retraction, open-access, 10,000+ CSL styles.",
+  "websiteUrl": "https://scholar-sidekick.com/mcp",
+  "icons": [
+    {
+      "src": "https://scholar-sidekick.com/icon-512.png",
+      "mimeType": "image/png",
+      "sizes": [
+        "512x512"
+      ]
+    },
+    {
+      "src": "https://scholar-sidekick.com/icon.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": [
+        "any"
+      ]
+    }
+  ],
+  "repository": {
+    "url": "https://github.com/mlava/scholar-sidekick-mcp",
+    "source": "github"
+  },
+  "version": "0.8.13",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "scholar-sidekick-mcp",
+      "version": "0.8.13",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://scholar-sidekick.com/api/mcp"
+    }
+  ]
+}

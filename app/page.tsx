@@ -1,49 +1,626 @@
-export default function Home() {
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { auditTexte, auditerDescriptifs, type Audit, type LigneDescriptif } from "@/lib/audit";
+import { rechercher, versBibtex, versCsv, type Travail } from "@/lib/search";
+
+// ─────────────────────────── données annexes ───────────────────────────
+interface Outil {
+  repo: string;
+  categorie: string;
+  note: string;
+  etoiles: number | null;
+  licence: string | null;
+  dernier_push: string | null;
+  archive: boolean;
+  archive_localement: boolean;
+  url: string;
+}
+
+const CATEGORIES: Record<string, string> = {
+  decouverte: "Découverte & métadonnées",
+  fulltext: "Texte intégral",
+  parsing: "Extraction & structuration",
+  synthese: "Synthèse & RAG",
+  revue_systematique: "Revue systématique",
+  audit: "Audit & intégrité",
+  mcp: "MCP & agents",
+  donnees: "Données & dépôts",
+  metascience: "Corpus & méta-science",
+};
+
+const EXEMPLE_ARTICLE = `Le groupe programme différait du groupe contrôle, t(28) = 1.85, p = .042.
+Une analyse secondaire montrait un effet sur la fluence, t(38) = 2.15, p = .034.
+L'interaction était significative, F(2, 45) = 3.21, p = .049.
+La relation entre motivation et score valait r(28) = .41, p = .021.
+Le modèle nul était significatif, F(1, 20) = 9.5, p = .000.`;
+
+type Onglet = "recherche" | "audit" | "tableau" | "catalogue";
+
+export default function Console() {
+  const [onglet, setOnglet] = useState<Onglet>("recherche");
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-center gap-8 py-32 px-16 bg-white dark:bg-black">
-        <svg
-          viewBox="0 0 69 26"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="fill-black dark:fill-white"
-        >
-          <path d="M13.7917 24.3604C12.4622 25.3549 10.7895 25.8884 8.82032 25.8884C6.66971 25.8884 4.87412 25.3543 3.47587 24.3604H13.7917Z"></path>
-          <path d="M27.8204 24.3604C26.802 25.2894 25.534 25.8884 24.1756 25.8884C22.4188 25.8884 21.02 25.339 20.108 24.3604H27.8204Z"></path>
-          <path d="M44.5726 24.3604C43.0194 25.3511 41.0762 25.8884 38.8367 25.8884C36.5972 25.8884 34.6541 25.3511 33.1008 24.3604H44.5726Z"></path>
-          <path d="M6.10452 21.7838C6.64469 22.5408 7.32257 23.0964 8.12748 23.4234H2.40008C1.94592 22.9414 1.55318 22.3936 1.22435 21.7838H6.10452Z"></path>
-          <path d="M15.9753 21.7838C15.6457 22.3936 15.2602 22.9415 14.8213 23.4234H11.8608C12.7015 23.0973 13.4264 22.543 14.0227 21.7838H15.9753Z"></path>
-          <path d="M23.2016 21.7838C23.3205 22.5267 23.6272 23.0906 24.0875 23.4234H19.4507C19.2008 22.9377 19.0348 22.3887 18.9611 21.7838H23.2016Z"></path>
-          <path d="M29.6415 21.7838C29.3929 22.3649 29.0672 22.9198 28.6798 23.4234H26.2913C26.809 23.0921 27.2884 22.5303 27.6965 21.7838H29.6415Z"></path>
-          <path d="M34.7756 21.7838C35.1876 22.498 35.7076 23.0447 36.3327 23.4234H31.8901C31.3725 22.9406 30.9182 22.3925 30.5327 21.7838H34.7756Z"></path>
-          <path d="M47.1403 21.7838C46.7548 22.3925 46.3005 22.9406 45.7829 23.4234H41.3477C41.9765 23.0447 42.5011 22.4979 42.9178 21.7838H47.1403Z"></path>
-          <path d="M4.97293 19.2072C5.1237 19.8073 5.31836 20.3552 5.55486 20.8468H0.788749C0.585257 20.3346 0.420002 19.7875 0.293988 19.2072H4.97293Z"></path>
-          <path d="M16.9458 19.2072C16.8042 19.7876 16.6278 20.3347 16.4179 20.8468H14.6376C14.9063 20.3562 15.1356 19.8083 15.3244 19.2072H16.9458Z"></path>
-          <path d="M23.146 20.8468H18.9172V19.2072H23.146V20.8468Z"></path>
-          <path d="M33.879 19.2072C33.9937 19.8097 34.1454 20.3562 34.3337 20.8468H30.0171C30.0067 20.8251 29.9961 20.8035 29.9859 20.7817C29.9802 20.8034 29.9741 20.8251 29.9682 20.8468H28.1326C28.3289 20.3505 28.4984 19.8012 28.6354 19.2072H33.879Z"></path>
-          <path d="M48.2582 19.2072C48.1017 19.7867 47.8998 20.3339 47.6561 20.8468H43.3651C43.5558 20.3562 43.71 19.8097 43.8264 19.2072H48.2582Z"></path>
-          <path d="M4.61127 16.6306C4.63883 17.207 4.69545 17.7543 4.78 18.2703H0.128844C0.056725 17.7466 0.0134713 17.1997 0 16.6306H4.61127Z"></path>
-          <path d="M17.2781 17.2464C17.2423 17.5969 17.1958 17.9383 17.1392 18.2703H15.5758C15.6704 17.8506 15.7479 17.4096 15.8073 16.9484L17.2781 17.2464Z"></path>
-          <path d="M23.146 18.2703H18.9172V16.6306H23.146V18.2703Z"></path>
-          <path d="M33.6225 16.6306C33.6374 17.2111 33.6755 17.7576 33.7361 18.2703H28.8183C28.902 17.7493 28.9618 17.2012 28.9946 16.6306H33.6225Z"></path>
-          <path d="M48.643 16.6306C48.6191 17.199 48.5595 17.7459 48.4664 18.2703H43.9719C44.0335 17.7576 44.072 17.211 44.0873 16.6306H48.643Z"></path>
-          <path d="M23.146 6.89115H28.9193V8.56739H23.146V15.6937H18.9172V8.56739H15.8592L16.4324 14.49L14.9983 14.6762C14.0055 9.75933 13.1963 8.00865 9.8132 7.85966C6.45181 7.85968 4.61542 10.5441 4.592 15.6937H0.00268892C0.175472 9.48821 3.32011 6.14613 8.93079 6.14613C9.77653 6.14614 10.7326 6.25781 11.8725 6.51853C13.152 6.78855 14.2702 6.89115 15.697 6.89115C19.7286 6.89112 21.3074 4.20914 22.0796 0H23.146V6.89115Z"></path>
-          <path d="M38.8367 6.14613C44.6383 6.14616 48.4971 9.86614 48.6497 15.6937H44.092C44.0101 10.6034 42.1785 7.97132 38.8367 7.97128C35.5308 7.97128 33.6998 10.6034 33.618 15.6937H29.0235C29.1761 9.86611 33.0351 6.14613 38.8367 6.14613Z"></path>
-          <path
-            fillRule="evenodd"
-            clipRule="evenodd"
-            d="M58.5142 19.14C59.5559 19.14 60.9024 19.5091 60.9532 22.5701H58.3236C57.7138 22.5701 57.3201 22.734 57.3709 23.3763C57.5233 25.2074 57.9934 25.385 58.6413 25.385C59.3145 25.385 59.937 25.18 60.2545 23.9229C60.28 23.8546 60.4706 23.8545 60.5468 23.8545C60.6103 23.8545 60.8389 23.8546 60.8135 23.9229C60.4197 25.6993 59.6702 26 58.6413 26C57.5996 26 55.9862 25.631 55.9862 22.5701C55.9862 19.4954 57.536 19.14 58.5142 19.14ZM58.5142 19.5773C57.9044 19.5773 57.4217 19.9736 57.3455 22.0917H59.5813C59.5051 19.9737 59.1367 19.5773 58.5142 19.5773Z"
-          ></path>
-          <path d="M63.258 19.2631C63.3215 19.2631 63.3342 19.4543 63.3342 19.509C63.3342 19.55 63.3216 19.7276 63.258 19.7276C62.6737 19.7276 62.7118 20.083 62.8262 20.5066C62.9913 21.1899 63.5121 22.9663 63.6137 23.4309C63.6391 23.5676 63.7662 23.5539 63.817 23.4309L65.0238 20.1786C65.0365 20.124 65.1763 20.124 65.2525 20.124C65.3287 20.124 65.4685 20.124 65.4939 20.1786L66.6625 23.4309C66.7006 23.5539 66.8404 23.5539 66.8658 23.4309L67.6661 20.5203C67.7931 20.083 67.8186 19.7276 67.2342 19.7276C67.1834 19.7276 67.1707 19.5773 67.1707 19.509C67.1707 19.427 67.1834 19.2631 67.2342 19.2631H68.9238C68.9746 19.2631 69 19.427 69 19.509C69 19.5773 68.9746 19.7276 68.9238 19.7276C68.3903 19.7276 68.2378 20.1239 68.1235 20.5339C67.9965 20.9438 66.5613 25.8484 66.5482 25.9043C66.5228 25.959 66.4339 25.959 66.3704 25.959C66.3069 25.959 66.2179 25.9317 66.2052 25.9043C66.1036 25.426 65.0619 22.6247 64.9222 22.1054C64.9095 21.9824 64.7443 21.9824 64.7062 22.1191C64.6554 22.2286 63.3347 25.8485 63.3216 25.9043C63.3089 25.959 63.2326 25.959 63.1564 25.959C63.0802 25.959 63.004 25.959 62.9786 25.9043L61.4033 20.5339C61.2763 20.0693 61.1111 19.7276 60.5649 19.7276C60.5268 19.7276 60.5014 19.591 60.5014 19.509C60.5014 19.4133 60.5268 19.2631 60.5649 19.2631H63.258Z"></path>
-          <path d="M53.2441 19.1264C54.0064 19.1264 55.2766 19.3724 55.2766 21.2718V24.5105C55.2766 24.9204 55.3275 25.3167 55.8991 25.3167C55.9499 25.3167 55.9627 25.4807 55.9627 25.549C55.9627 25.631 55.9499 25.795 55.8991 25.795H53.2823C53.2441 25.795 53.2187 25.6584 53.2187 25.5627C53.2187 25.4671 53.2314 25.3167 53.2823 25.3167C53.8666 25.3167 53.892 24.9204 53.892 24.5105V21.5178C53.892 19.9053 53.4347 19.8507 53.0536 19.8507C52.4184 19.8507 52.2024 20.3699 52.0119 20.7525V24.5105C52.0119 24.9341 52.0627 25.3167 52.6598 25.3167C52.7106 25.3167 52.7233 25.508 52.7233 25.549C52.7233 25.6037 52.6979 25.795 52.6598 25.795H49.8777C49.8269 25.795 49.8015 25.6583 49.8015 25.549C49.8015 25.4671 49.8269 25.3168 49.8777 25.3167C50.6526 25.3167 50.7034 24.9068 50.7034 24.5105V20.5476C50.7034 20.0693 50.5764 19.7413 49.8777 19.7413C49.8269 19.7413 49.8015 19.6047 49.8015 19.4954C49.8015 19.3861 49.8269 19.2631 49.8777 19.2631H51.6308C51.8213 19.2631 51.9611 19.3314 51.9992 19.673C52.0119 19.7687 52.0754 19.796 52.1389 19.7276C52.3422 19.4817 52.6598 19.1264 53.2441 19.1264Z"></path>
-          <path d="M48.0394 25.9621H46.8V24.629H48.0394V25.9621Z"></path>
+    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 lg:py-12">
+      <EnTete />
+      <nav className="flex flex-wrap gap-2">
+        {([
+          ["recherche", "Recherche"],
+          ["audit", "Audit d'article"],
+          ["tableau", "GRIM / tableau"],
+          ["catalogue", "Catalogue · 142 outils"],
+        ] as [Onglet, string][]).map(([cle, libelle]) => (
+          <button
+            key={cle}
+            onClick={() => setOnglet(cle)}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              onglet === cle
+                ? "bg-teal-400 text-slate-950 shadow-lg shadow-teal-500/20"
+                : "border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
+            }`}
+          >
+            {libelle}
+          </button>
+        ))}
+      </nav>
+
+      {onglet === "recherche" && <PanneauRecherche />}
+      {onglet === "audit" && <PanneauAudit />}
+      {onglet === "tableau" && <PanneauTableau />}
+      {onglet === "catalogue" && <PanneauCatalogue />}
+
+      <footer className="mt-auto border-t border-white/10 pt-6 text-xs leading-relaxed text-slate-400">
+        Recherche fédérée exécutée depuis votre navigateur (OpenAlex, Crossref, Europe PMC).
+        L&apos;audit statistique reproduit le moteur Python <code className="rounded bg-white/10 px-1">scitk.audit</code> :
+        recalcul des p-values APA avec tolérance d&apos;arrondi, GRIM, bornes exactes de l&apos;écart-type (SPRITE).
+        Aucun texte n&apos;est envoyé à un serveur.
+      </footer>
+    </main>
+  );
+}
+
+function EnTete() {
+  return (
+    <header className="flex flex-col gap-3">
+      <div className="flex items-center gap-3">
+        <svg viewBox="0 0 32 32" className="h-9 w-9 text-teal-400" fill="none" stroke="currentColor" strokeWidth="1.6">
+          <path d="M16 2.5 28 9v14L16 29.5 4 23V9z" />
+          <path d="M16 10v8M16 21.5v.5" strokeLinecap="round" />
+          <circle cx="16" cy="16" r="2.2" className="text-teal-300" />
         </svg>
-        <div className="flex flex-col items-center text-center">
-          <h1 className="max-w-xs text-2xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            Ready for your first task
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">
+            Console de recherche &amp; d&apos;audit scientifiques
           </h1>
+          <p className="text-sm text-slate-400">
+            142 outils GitHub vérifiés · 74 archivés localement · audit statistique déterministe
+          </p>
         </div>
-      </main>
+      </div>
+    </header>
+  );
+}
+
+// ─────────────────────────── recherche ───────────────────────────
+function PanneauRecherche() {
+  const [requete, setRequete] = useState("reading remediation randomized controlled trial");
+  const [sources, setSources] = useState<string[]>(["openalex", "crossref", "europepmc"]);
+  const [limite, setLimite] = useState(15);
+  const [anneeMin, setAnneeMin] = useState<string>("");
+  const [charge, setCharge] = useState(false);
+  const [travaux, setTravaux] = useState<Travail[]>([]);
+  const [meta, setMeta] = useState<{ brut: number; doublons: number; parSource: Record<string, number>; erreurs: Record<string, string> } | null>(null);
+  const [erreur, setErreur] = useState<string | null>(null);
+  const [deja, setDeja] = useState(false);
+
+  async function lancer() {
+    if (!requete.trim() || sources.length === 0) return;
+    setCharge(true);
+    setErreur(null);
+    try {
+      const r = await rechercher({
+        requete,
+        sources: sources as ("openalex" | "crossref" | "europepmc")[],
+        limite,
+        anneeMin: anneeMin ? Number(anneeMin) : undefined,
+      });
+      setTravaux(r.travaux);
+      setMeta({ brut: r.brut, doublons: r.doublons, parSource: r.parSource, erreurs: r.erreurs });
+      setDeja(true);
+    } catch (e) {
+      setErreur(e instanceof Error ? e.message : String(e));
+    } finally {
+      setCharge(false);
+    }
+  }
+
+  function telecharger(contenu: string, nom: string, type: string) {
+    const blob = new Blob([contenu], { type });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = nom;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  return (
+    <section className="flex flex-col gap-4">
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <input
+              value={requete}
+              onChange={(e) => setRequete(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && lancer()}
+              placeholder="Mots-clés, titre, question de recherche…"
+              className="flex-1 rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-teal-400/60"
+            />
+            <button
+              onClick={lancer}
+              disabled={charge}
+              className="rounded-xl bg-teal-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-teal-300 disabled:opacity-50"
+            >
+              {charge ? "Recherche…" : "Rechercher"}
+            </button>
+          </div>
+          <div className="flex flex-wrap items-center gap-4 text-sm text-slate-300">
+            {[
+              ["openalex", "OpenAlex · 260 M"],
+              ["crossref", "Crossref · 160 M DOI"],
+              ["europepmc", "Europe PMC · 43 M"],
+            ].map(([cle, libelle]) => (
+              <label key={cle} className="flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={sources.includes(cle)}
+                  onChange={(e) =>
+                    setSources((s) => (e.target.checked ? [...s, cle] : s.filter((x) => x !== cle)))
+                  }
+                  className="h-4 w-4 accent-teal-400"
+                />
+                {libelle}
+              </label>
+            ))}
+            <label className="flex items-center gap-2">
+              Depuis
+              <input
+                value={anneeMin}
+                onChange={(e) => setAnneeMin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                placeholder="1990"
+                className="w-20 rounded-lg border border-white/10 bg-slate-950/60 px-2 py-1 text-center text-white outline-none focus:border-teal-400/60"
+              />
+            </label>
+            <label className="flex items-center gap-2">
+              Limite
+              <select
+                value={limite}
+                onChange={(e) => setLimite(Number(e.target.value))}
+                className="rounded-lg border border-white/10 bg-slate-950/60 px-2 py-1 text-white outline-none"
+              >
+                {[10, 15, 25, 50].map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      {erreur && <p className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-200">{erreur}</p>}
+
+      {meta && (
+        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+          <span>{meta.brut} résultats bruts</span>
+          <span>·</span>
+          <span>{meta.doublons} doublons fusionnés</span>
+          {Object.entries(meta.parSource).map(([s, n]) => (
+            <span key={s} className="rounded-full border border-white/10 bg-white/5 px-2 py-1">
+              {s} : {n}
+            </span>
+          ))}
+          {Object.entries(meta.erreurs).map(([s, m]) => (
+            <span key={s} className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-1 text-amber-200">
+              {s} : {m}
+            </span>
+          ))}
+          {travaux.length > 0 && (
+            <span className="ml-auto flex gap-2">
+              <button
+                onClick={() => telecharger(versBibtex(travaux), "resultats.bib", "text/plain")}
+                className="rounded-lg border border-white/10 px-2 py-1 hover:bg-white/10"
+              >
+                Export BibTeX
+              </button>
+              <button
+                onClick={() => telecharger(versCsv(travaux), "resultats.csv", "text/csv")}
+                className="rounded-lg border border-white/10 px-2 py-1 hover:bg-white/10"
+              >
+                Export CSV
+              </button>
+            </span>
+          )}
+        </div>
+      )}
+
+      {!deja && !charge && (
+        <p className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-slate-400">
+          Choisissez au moins une source puis lancez la recherche. Les requêtes partent directement
+          de votre navigateur : aucune donnée ne transite par cette application.
+        </p>
+      )}
+
+      <div className="flex flex-col gap-3">
+        {travaux.map((t, i) => (
+          <article key={`${t.doi}-${i}`} className="rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:border-teal-400/30">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <h2 className="max-w-3xl text-sm font-semibold leading-snug text-white sm:text-base">
+                {t.titre || "(sans titre)"}
+              </h2>
+              {t.oaUrl && (
+                <a href={t.oaUrl} target="_blank" rel="noreferrer"
+                   className="rounded-full bg-emerald-400/15 px-2 py-1 text-[11px] font-medium text-emerald-300">
+                  accès ouvert ↗
+                </a>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-slate-400">
+              {t.auteurs.slice(0, 4).join(", ")}
+              {t.auteurs.length > 4 ? " et al." : ""} · {t.revue || "revue non précisée"} · {t.annee ?? "s.d."}
+            </p>
+            {t.resume && <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-slate-400">{t.resume}</p>}
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
+              {t.doi && (
+                <a href={`https://doi.org/${t.doi}`} target="_blank" rel="noreferrer" className="rounded bg-white/5 px-2 py-1 font-mono hover:text-teal-300">
+                  {t.doi}
+                </a>
+              )}
+              {typeof t.citations === "number" && <span className="rounded bg-white/5 px-2 py-1">{t.citations} citations</span>}
+              {t.sources.map((s) => (
+                <span key={s} className="rounded bg-teal-400/10 px-2 py-1 text-teal-200">{s}</span>
+              ))}
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────── audit ───────────────────────────
+function PanneauAudit() {
+  const [texte, setTexte] = useState(EXEMPLE_ARTICLE);
+  const [audit, setAudit] = useState<Audit | null>(null);
+
+  const lancer = () => setAudit(auditTexte(texte));
+
+  function telecharger() {
+    if (!audit) return;
+    const blob = new Blob([JSON.stringify(audit, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "audit.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  const gravite = audit
+    ? audit.resultats.some((r) => r.constats.some((c) => c.severite === "critique")) || audit.constats.some((c) => c.severite === "critique")
+      ? "critique"
+      : audit.resultats.some((r) => r.constats.some((c) => c.severite === "majeur"))
+        ? "majeur"
+        : audit.resultats.some((r) => r.constats.some((c) => c.severite === "mineur")) ? "mineur" : "aucune"
+    : null;
+
+  return (
+    <section className="flex flex-col gap-4">
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5">
+        <label className="mb-2 block text-sm font-medium text-slate-300">
+          Texte de l&apos;article (résultats au format APA)
+        </label>
+        <textarea
+          value={texte}
+          onChange={(e) => setTexte(e.target.value)}
+          rows={9}
+          className="w-full resize-y rounded-xl border border-white/10 bg-slate-950/60 p-4 font-mono text-xs leading-relaxed text-slate-200 outline-none focus:border-teal-400/60"
+        />
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <button onClick={lancer} className="rounded-xl bg-teal-400 px-5 py-2.5 text-sm font-semibold text-slate-950 hover:bg-teal-300">
+            Analyser
+          </button>
+          {audit && (
+            <button onClick={telecharger} className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-slate-200 hover:bg-white/10">
+              Télécharger le JSON
+            </button>
+          )}
+          <span className="text-xs text-slate-500">
+            Extrait t, F, χ², r, z ; recalcule p ; compare à l&apos;intervalle d&apos;arrondi.
+          </span>
+        </div>
+      </div>
+
+      {audit && (
+        <>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+            <Carte libelle="Résultats" valeur={audit.nbResultats} />
+            <Carte libelle="Significatifs" valeur={audit.nbSignificatifs} />
+            <Carte libelle="Incohérences" valeur={audit.nbIncoherents} accent={audit.nbIncoherents > 0} />
+            <Carte libelle="Erreurs de décision" valeur={audit.nbErreursDecision} accent={audit.nbErreursDecision > 0} />
+            <Carte libelle="Score" valeur={`${audit.score}/100`} accent={audit.score < 60} />
+          </div>
+
+          <div className="flex items-center gap-3 text-sm">
+            <span className="text-slate-400">Gravité</span>
+            <Badge severite={gravite ?? "aucune"} />
+          </div>
+
+          <div className="overflow-hidden rounded-2xl border border-white/10">
+            <table className="w-full text-left text-xs sm:text-sm">
+              <thead className="bg-white/5 text-slate-400">
+                <tr>
+                  {["Test", "p rapportée", "p recalculée", "Intervalle", "Constats"].map((h) => (
+                    <th key={h} className="px-3 py-2 font-medium">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {audit.resultats.map((r, i) => (
+                  <tr key={i} className="text-slate-300">
+                    <td className="px-3 py-2 font-mono">{r.dfTexte} = {r.statistique}</td>
+                    <td className="px-3 py-2">{r.pRapportee !== undefined ? `${r.operateur} ${r.pRapportee}` : "—"}</td>
+                    <td className="px-3 py-2">{r.pCalculee !== undefined ? r.pCalculee.toFixed(4) : "—"}</td>
+                    <td className="px-3 py-2 text-slate-500">
+                      {r.intervalle ? `${r.intervalle[0].toFixed(4)} – ${r.intervalle[1].toFixed(4)}` : "—"}
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="flex flex-wrap gap-1">
+                        {r.constats.length === 0 && <span className="text-emerald-400">cohérent</span>}
+                        {r.constats.map((c, j) => (
+                          <span key={j} className={pastille(c.severite)}>{c.code}</span>
+                        ))}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <ul className="flex flex-col gap-2">
+            {audit.resultats.flatMap((r, i) =>
+              r.constats.map((c, j) => (
+                <li key={`${i}-${j}`} className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm">
+                  <Badge severite={c.severite} /> <span className="ml-2 text-slate-300">{c.message}</span>
+                </li>
+              )),
+            )}
+            {audit.constats.map((c, i) => (
+              <li key={`t-${i}`} className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm">
+                <Badge severite={c.severite} /> <span className="ml-2 text-slate-300">{c.message}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </section>
+  );
+}
+
+// ─────────────────────────── GRIM / tableau ───────────────────────────
+function PanneauTableau() {
+  const [lignes, setLignes] = useState<LigneDescriptif[]>([
+    { label: "Groupe programme", n: 60, mean: 3.77, sd: 0.31 },
+    { label: "Groupe contrôle", n: 60, mean: 3.11, sd: 0.44 },
+    { label: "Sous-groupe A", n: 25, mean: 4.37, sd: 0.42 },
+  ]);
+  const [lo, setLo] = useState(1);
+  const [hi, setHi] = useState(5);
+  const verdicts = useMemo(() => auditerDescriptifs(lignes, lo, hi), [lignes, lo, hi]);
+  const echecs = verdicts.filter((v) => !v.grimOk || v.spriteOk === false).length;
+
+  const maj = (i: number, champ: keyof LigneDescriptif, valeur: string) => {
+    setLignes((l) =>
+      l.map((x, j) =>
+        j === i
+          ? { ...x, [champ]: champ === "label" ? valeur : Number(valeur.replace(",", ".")) || 0 }
+          : x,
+      ),
+    );
+  };
+
+  return (
+    <section className="flex flex-col gap-4">
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5">
+        <p className="text-sm text-slate-300">
+          Si les données sont des entiers (Likert, score total, comptage), la moyenne et
+          l&apos;écart-type ne peuvent pas prendre n&apos;importe quelle valeur.
+          <span className="text-slate-500"> GRIM vérifie la somme ; SPRITE calcule les bornes exactes de l&apos;écart-type.</span>
+        </p>
+        <div className="mt-3 flex flex-wrap gap-4 text-sm text-slate-300">
+          <label className="flex items-center gap-2">
+            Minimum de l&apos;échelle
+            <input type="number" value={lo} onChange={(e) => setLo(Number(e.target.value))}
+              className="w-16 rounded-lg border border-white/10 bg-slate-950/60 px-2 py-1 text-center text-white" />
+          </label>
+          <label className="flex items-center gap-2">
+            Maximum
+            <input type="number" value={hi} onChange={(e) => setHi(Number(e.target.value))}
+              className="w-16 rounded-lg border border-white/10 bg-slate-950/60 px-2 py-1 text-center text-white" />
+          </label>
+          <span className={`ml-auto rounded-full px-3 py-1 text-xs ${echecs ? "bg-rose-500/15 text-rose-300" : "bg-emerald-500/15 text-emerald-300"}`}>
+            {echecs} ligne(s) impossible(s) sur {lignes.length}
+          </span>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto rounded-2xl border border-white/10">
+        <table className="w-full min-w-[720px] text-left text-sm">
+          <thead className="bg-white/5 text-slate-400">
+            <tr>
+              {["Libellé", "n", "Moyenne", "Écart-type", "Verdict"].map((h) => (
+                <th key={h} className="px-3 py-2 font-medium">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/5">
+            {lignes.map((l, i) => (
+              <tr key={i} className="text-slate-200">
+                <td className="px-3 py-2">
+                  <input value={l.label} onChange={(e) => maj(i, "label", e.target.value)}
+                    className="w-full rounded-lg border border-transparent bg-transparent px-2 py-1 hover:border-white/10 focus:border-teal-400/60 focus:outline-none" />
+                </td>
+                <td className="px-3 py-2">
+                  <input type="number" value={l.n} onChange={(e) => maj(i, "n", e.target.value)}
+                    className="w-20 rounded-lg border border-transparent bg-transparent px-2 py-1 hover:border-white/10 focus:border-teal-400/60 focus:outline-none" />
+                </td>
+                <td className="px-3 py-2">
+                  <input type="number" step="0.01" value={l.mean} onChange={(e) => maj(i, "mean", e.target.value)}
+                    className="w-24 rounded-lg border border-transparent bg-transparent px-2 py-1 hover:border-white/10 focus:border-teal-400/60 focus:outline-none" />
+                </td>
+                <td className="px-3 py-2">
+                  <input type="number" step="0.01" value={l.sd ?? 0} onChange={(e) => maj(i, "sd", e.target.value)}
+                    className="w-24 rounded-lg border border-transparent bg-transparent px-2 py-1 hover:border-white/10 focus:border-teal-400/60 focus:outline-none" />
+                </td>
+                <td className={`px-3 py-2 text-xs ${verdicts[i].grimOk && verdicts[i].spriteOk !== false ? "text-emerald-300" : "text-rose-300"}`}>
+                  {verdicts[i].message}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="flex gap-2">
+        <button
+          onClick={() => setLignes((l) => [...l, { label: `Ligne ${l.length + 1}`, n: 30, mean: 3.5, sd: 1 }])}
+          className="rounded-xl border border-white/10 px-4 py-2 text-sm text-slate-200 hover:bg-white/10"
+        >
+          Ajouter une ligne
+        </button>
+        {lignes.length > 1 && (
+          <button
+            onClick={() => setLignes((l) => l.slice(0, -1))}
+            className="rounded-xl border border-white/10 px-4 py-2 text-sm text-slate-400 hover:bg-white/10"
+          >
+            Retirer la dernière
+          </button>
+        )}
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────── catalogue ───────────────────────────
+function PanneauCatalogue() {
+  const [outils, setOutils] = useState<Outil[]>([]);
+  const [filtre, setFiltre] = useState("");
+  const [categorie, setCategorie] = useState("tous");
+
+  useEffect(() => {
+    fetch("/catalogue.json")
+      .then((r) => r.json())
+      .then((d: Outil[]) => setOutils(d))
+      .catch(() => setOutils([]));
+  }, []);
+
+  const liste = useMemo(() => {
+    const f = filtre.toLowerCase();
+    return outils
+      .filter((o) => categorie === "tous" || o.categorie === categorie)
+      .filter((o) =>
+        !f ||
+        o.repo.toLowerCase().includes(f) ||
+        o.note.toLowerCase().includes(f) ||
+        (o.licence ?? "").toLowerCase().includes(f),
+      )
+      .sort((a, b) => (b.etoiles ?? 0) - (a.etoiles ?? 0));
+  }, [outils, filtre, categorie]);
+
+  return (
+    <section className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <input
+          value={filtre}
+          onChange={(e) => setFiltre(e.target.value)}
+          placeholder="Filtrer par nom, rôle, licence…"
+          className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none placeholder:text-slate-500 focus:border-teal-400/60"
+        />
+        <select
+          value={categorie}
+          onChange={(e) => setCategorie(e.target.value)}
+          className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none"
+        >
+          <option value="tous">Toutes les catégories</option>
+          {Object.entries(CATEGORIES).map(([cle, nom]) => (
+            <option key={cle} value={cle}>{nom}</option>
+          ))}
+        </select>
+        <span className="text-xs text-slate-400">{liste.length} outils</span>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        {liste.map((o) => (
+          <article key={o.repo} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <a href={o.url} target="_blank" rel="noreferrer" className="font-mono text-sm font-semibold text-teal-300 hover:underline">
+                {o.repo}
+              </a>
+              <span className="shrink-0 text-xs text-slate-400">
+                {o.etoiles !== null ? `${o.etoiles.toLocaleString("fr-FR")} ★` : "—"}
+              </span>
+            </div>
+            <p className="mt-1.5 text-xs leading-relaxed text-slate-300">{o.note}</p>
+            <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
+              <span className="rounded bg-white/5 px-2 py-0.5 text-slate-400">
+                {CATEGORIES[o.categorie] ?? o.categorie}
+              </span>
+              {o.licence && <span className="rounded bg-white/5 px-2 py-0.5 text-slate-400">{o.licence}</span>}
+              {o.archive_localement && (
+                <span className="rounded bg-teal-400/15 px-2 py-0.5 text-teal-200">archivé ici</span>
+              )}
+              {o.archive && <span className="rounded bg-amber-400/15 px-2 py-0.5 text-amber-200">dépôt archivé</span>}
+            </div>
+          </article>
+        ))}
+      </div>
+      {liste.length === 0 && (
+        <p className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-slate-400">
+          Aucun outil ne correspond. Le catalogue complet est dans <code>scientific-toolkit/CATALOGUE.md</code>.
+        </p>
+      )}
+    </section>
+  );
+}
+
+// ─────────────────────────── éléments d'interface ───────────────────────────
+function Carte({ libelle, valeur, accent }: { libelle: string; valeur: string | number; accent?: boolean }) {
+  return (
+    <div className={`rounded-2xl border p-3 ${accent ? "border-rose-400/30 bg-rose-500/10" : "border-white/10 bg-white/5"}`}>
+      <div className={`text-lg font-semibold ${accent ? "text-rose-300" : "text-white"}`}>{valeur}</div>
+      <div className="text-[11px] uppercase tracking-wide text-slate-400">{libelle}</div>
     </div>
   );
+}
+
+function Badge({ severite }: { severite: string }) {
+  const styles: Record<string, string> = {
+    critique: "bg-rose-500/20 text-rose-300",
+    majeur: "bg-amber-500/20 text-amber-300",
+    mineur: "bg-yellow-500/15 text-yellow-200",
+    info: "bg-sky-500/15 text-sky-300",
+    aucune: "bg-emerald-500/15 text-emerald-300",
+  };
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${styles[severite] ?? styles.info}`}>
+      {severite}
+    </span>
+  );
+}
+
+function pastille(severite: string) {
+  const base = "rounded px-1.5 py-0.5 font-mono text-[10px]";
+  switch (severite) {
+    case "critique": return `${base} bg-rose-500/20 text-rose-300`;
+    case "majeur": return `${base} bg-amber-500/20 text-amber-300`;
+    case "mineur": return `${base} bg-yellow-500/15 text-yellow-200`;
+    default: return `${base} bg-sky-500/15 text-sky-300`;
+  }
 }

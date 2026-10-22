@@ -1,0 +1,2515 @@
+"""
+Tests for the Pyzotero module
+
+This file is part of Pyzotero.
+"""
+# ruff: noqa: N802
+
+import datetime
+import json
+import os
+import time
+import unittest
+from unittest.mock import MagicMock, patch
+from urllib.parse import parse_qs, urlencode, urlparse
+
+import httpx2
+import pytz
+import whenever
+from dateutil import parser
+
+from pyzotero._utils import MAX_RETRY_ATTEMPTS
+
+from .mock_client import MockClient
+
+try:
+    from pyzotero.pyzotero import zotero as z
+    from pyzotero.pyzotero.zotero import DEFAULT_ITEM_LIMIT
+except ModuleNotFoundError:
+    from pyzotero import zotero as z
+    from pyzotero.zotero import DEFAULT_ITEM_LIMIT
+
+
+class ZoteroTests(unittest.TestCase):
+    """Tests for pyzotero"""
+
+    cwd = os.path.dirname(os.path.realpath(__file__))
+
+    def get_doc(self, doc_name, cwd=cwd):
+        """Return the requested test document"""
+        with open(os.path.join(cwd, "api_responses", f"{doc_name}")) as f:
+            return f.read()
+
+    def setUp(self):
+        """Set stuff up"""
+        self.item_doc = self.get_doc("item_doc.json")
+        self.items_doc = self.get_doc("items_doc.json")
+        self.item_versions = self.get_doc("item_versions.json")
+        self.collection_versions = self.get_doc("collection_versions.json")
+        self.collections_doc = self.get_doc("collections_doc.json")
+        self.collection_doc = self.get_doc("collection_doc.json")
+        self.collection_tags = self.get_doc("collection_tags.json")
+        self.citation_doc = self.get_doc("citation_doc.xml")
+        # self.biblio_doc = self.get_doc('bib_doc.xml')
+        self.attachments_doc = self.get_doc("attachments_doc.json")
+        self.tags_doc = self.get_doc("tags_doc.json")
+        self.groups_doc = self.get_doc("groups_doc.json")
+        self.item_templt = self.get_doc("item_template.json")
+        self.item_types = self.get_doc("item_types.json")
+        self.item_fields = self.get_doc("item_fields.json")
+        self.keys_response = self.get_doc("keys_doc.txt")
+        self.creation_doc = self.get_doc("creation_doc.json")
+        self.item_file = self.get_doc("item_file.pdf")
+
+    def testBuildUrlCorrectHandleEndpoint(self):
+        """Url should be concat correctly by build_url"""
+        url = z.build_url("http://127.0.0.1:23119/api", "/users/0")
+        self.assertEqual(url, "http://127.0.0.1:23119/api/users/0")
+        url = z.build_url("http://127.0.0.1:23119/api/", "/users/0")
+        self.assertEqual(url, "http://127.0.0.1:23119/api/users/0")
+
+    def testFailWithoutCredentials(self):
+        """Instance creation should fail, because we're leaving out a
+        credential
+        """
+        mock = MockClient()
+        with self.assertRaises(z.ze.MissingCredentialsError):
+            z.Zotero("myuserID", client=mock.client)
+
+    def testRequestBuilder(self):
+        """Should url-encode all added parameters"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        zot.add_parameters(limit=0, start=7)
+        self.assertEqual(
+            parse_qs(f"start=7&limit={DEFAULT_ITEM_LIMIT}&format=json"),
+            parse_qs(urlencode(zot.url_params or {}, doseq=True)),
+        )
+
+    def testLocale(self):
+        """Should correctly add locale to request because it's an initial request"""
+        mock = MockClient()
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/items",
+            content_type="application/json",
+            body=self.item_doc,
+        )
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        _ = zot.items()
+        req = zot.request
+        self.assertIn("locale=en-US", str(req.url))
+
+    def testLocalePreservedWithMethodParams(self):
+        """Should preserve locale when methods provide their own parameters"""
+        mock = MockClient()
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/items/top",
+            content_type="application/json",
+            body=self.items_doc,
+        )
+        # Test with non-default locale
+        zot = z.Zotero(
+            "myuserID", "user", "myuserkey", locale="de-DE", client=mock.client
+        )
+        # Call top() with limit which internally adds parameters
+        _ = zot.top(limit=1)
+        req = zot.request
+        # Check that locale is preserved in the URL
+        self.assertIn("locale=de-DE", str(req.url))
+        # Also verify the method parameter is present
+        self.assertIn("limit=1", str(req.url))
+
+    def testRequestBuilderLimitNone(self):
+        """Should skip limit = 100 param if limit is set to None"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        zot.add_parameters(limit=None, start=7)
+        self.assertEqual(
+            parse_qs("start=7&format=json"), parse_qs(urlencode(zot.url_params or {}))
+        )
+
+    def testRequestBuilderLimitNegativeOne(self):
+        """Should skip limit = 100 param if limit is set to -1"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        zot.add_parameters(limit=-1, start=7)
+        self.assertEqual(
+            parse_qs("start=7&format=json"),
+            parse_qs(urlencode(zot.url_params or {}, doseq=True)),
+        )
+
+    # @httpretty.activate
+    # def testBuildQuery(self):
+    #     """ Check that spaces etc. are being correctly URL-encoded and added
+    #         to the URL parameters
+    #     """
+    #     orig = 'https://api.zotero.org/users/myuserID/tags/hi%20there/items?start=10&format=json'
+    #     zot = z.Zotero('myuserID', 'user', 'myuserkey')
+    #     zot.add_parameters(start=10)
+    #     query_string = '/users/{u}/tags/hi there/items'
+    #     query = zot._build_query(query_string)
+    #     self.assertEqual(
+    #         sorted(parse_qs(orig).items()),
+    #         sorted(parse_qs(query).items()))
+
+    def testParseItemJSONDoc(self):
+        """Should successfully return a list of item dicts, key should match
+        input doc's zapi:key value, and author should have been correctly
+        parsed out of the XHTML payload
+        """
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/items",
+            content_type="application/json",
+            body=self.item_doc,
+        )
+        items_data = zot.items()
+        self.assertEqual("X42A7DEE", items_data["data"]["key"])
+        self.assertEqual(
+            "Institute of Physics (Great Britain)",
+            items_data["data"]["creators"][0]["name"],
+        )
+        self.assertEqual("book", items_data["data"]["itemType"])
+        test_dt = parser.parse("2011-01-13T03:37:29Z")
+        incoming_dt = parser.parse(items_data["data"]["dateModified"])
+        self.assertEqual(test_dt, incoming_dt)
+
+    def testBackoff(self):
+        """Test that backoffs are correctly processed"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/items",
+            content_type="application/json",
+            body=self.item_doc,
+            headers={"backoff": 0.2},
+        )
+        zot.items()
+        # backoff_until should be in the future
+        self.assertGreater(zot.backoff_until, time.time())
+        time.sleep(0.3)
+        # backoff_until should now be in the past
+        self.assertLess(zot.backoff_until, time.time())
+
+    def testGetItemFile(self):
+        """
+        Should successfully return a binary string with a PDF content
+        """
+        mock = MockClient()
+        zot = z.Zotero("myuserid", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserid/items/MYITEMID/file",
+            content_type="application/pdf",
+            body=self.item_file,
+        )
+        items_data = zot.file("myitemid")
+        self.assertEqual(b"One very strange PDF\n", items_data)
+
+    def testParseAttachmentsJSONDoc(self):
+        """Ensure that attachments are being correctly parsed"""
+        mock = MockClient()
+        zot = z.Zotero("myuserid", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserid/items",
+            content_type="application/json",
+            body=self.attachments_doc,
+        )
+        attachments_data = zot.items()
+        self.assertEqual("1641 Depositions", attachments_data["data"]["title"])
+
+    def testParseKeysResponse(self):
+        """Check that parsing plain keys returned by format = keys works"""
+        mock = MockClient()
+        zot = z.Zotero("myuserid", "user", "myuserkey", client=mock.client)
+        zot.url_params = {"format": "keys"}
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserid/items?format=keys",
+            content_type="text/plain",
+            body=self.keys_response,
+        )
+        response = zot.items()
+        self.assertEqual("JIFWQ4AN", response[:8].decode("utf-8"))
+
+    def testParseItemVersionsResponse(self):
+        """Check that parsing version dict returned by format = versions works"""
+        mock = MockClient()
+        zot = z.Zotero("myuserid", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserid/items?format=versions",
+            content_type="application/json",
+            body=self.item_versions,
+        )
+        iversions = zot.item_versions()
+        self.assertEqual(iversions["RRK27C5F"], 4000)
+        self.assertEqual(iversions["EAWCSKSF"], 4087)
+        self.assertEqual(len(iversions), 2)
+
+    def testParseCollectionVersionsResponse(self):
+        """Check that parsing version dict returned by format = versions works"""
+        mock = MockClient()
+        zot = z.Zotero("myuserid", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserid/collections?format=versions",
+            content_type="application/json",
+            body=self.collection_versions,
+        )
+        iversions = zot.collection_versions()
+        self.assertEqual(iversions["RRK27C5F"], 4000)
+        self.assertEqual(iversions["EAWCSKSF"], 4087)
+        self.assertEqual(len(iversions), 2)
+
+    def testParseChildItems(self):
+        """Try and parse child items"""
+        mock = MockClient()
+        zot = z.Zotero("myuserid", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserid/items/ABC123/children",
+            content_type="application/json",
+            body=self.items_doc,
+        )
+        items_data = zot.children("ABC123")
+        self.assertEqual("NM66T6EF", items_data[0]["key"])
+
+    def testCitUTF8(self):
+        """Ensure that unicode citations are correctly processed by Pyzotero"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        url = "https://api.zotero.org/users/myuserID/items/GW8V2CK7"
+        mock.register(
+            "GET",
+            url,
+            content_type="application/atom+xml",
+            body=self.citation_doc,
+        )
+        cit = zot.item("GW8V2CK7", content="citation", style="chicago-author-date")
+        self.assertEqual(cit[0], "<span>(Ans\\xe6lm and Tka\\u010dik 2014)</span>")
+
+    # @httpretty.activate
+    # def testParseItemAtomBibDoc(self):
+    #     """ Should match a DIV with class = csl-entry
+    #     """
+    #     zot = z.Zotero('myuserID', 'user', 'myuserkey')
+    #     zot.url_params = 'content=bib'
+    #     HTTPretty.register_uri(
+    #         HTTPretty.GET,
+    #         'https://api.zotero.org/users/myuserID/items?content=bib&format=atom',
+    #         content_type='application/atom+xml',
+    #         body=self.biblio_doc)
+    #     items_data = zot.items()
+    #     self.assertEqual(
+    #         items_data[0],
+    #         u'<div class="csl-entry">Robert A. Caro. \u201cThe Power Broker\u202f: Robert Moses and the Fall of New York,\u201d 1974.</div>'
+    #         )
+
+    def testParseCollectionJSONDoc(self):
+        """Should successfully return a single collection dict,
+        'name' key value should match input doc's name value
+        """
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/collections/KIMI8BSG",
+            content_type="application/json",
+            body=self.collection_doc,
+        )
+        collections_data = zot.collection("KIMI8BSG")
+        self.assertEqual("LoC", collections_data["data"]["name"])
+
+    def testParseCollectionTagsJSONDoc(self):
+        """Should successfully return a list of tags,
+        which should match input doc's number of tag items and 'tag' values
+        """
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/collections/KIMI8BSG/tags",
+            content_type="application/json",
+            body=self.collection_tags,
+        )
+        collections_data = zot.collection_tags("KIMI8BSG")
+        self.assertEqual(3, len(collections_data))
+        for item in collections_data:
+            self.assertTrue(item in ["apple", "banana", "cherry"])
+
+    def testParseCollectionsJSONDoc(self):
+        """Should successfully return a list of collection dicts, key should
+        match input doc's zapi:key value, and 'title' value should match
+        input doc's title value
+        """
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/collections",
+            content_type="application/json",
+            body=self.collections_doc,
+        )
+        collections_data = zot.collections()
+        self.assertEqual("LoC", collections_data[0]["data"]["name"])
+
+    def testParseTagsJSON(self):
+        """Should successfully return a list of tags"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/tags?limit=1",
+            content_type="application/json",
+            body=self.tags_doc,
+        )
+        tags_data = zot.tags()
+        self.assertEqual("Community / Economic Development", tags_data[0])
+
+    def testUrlBuild(self):
+        """Ensure that URL parameters are successfully encoded by the http library"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/tags?limit=1",
+            content_type="application/json",
+            body=self.tags_doc,
+        )
+        _ = zot.tags(limit=1)
+        # Check that all expected parameters are present
+        url_str = str(zot.request.url)
+        self.assertIn("locale=en-US", url_str)
+        self.assertIn("limit=1", url_str)
+        self.assertIn("format=json", url_str)
+        self.assertTrue(
+            url_str.startswith("https://api.zotero.org/users/myuserID/tags?")
+        )
+
+    def testParseLinkHeaders(self):
+        """Should successfully parse link headers"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/tags?limit=1",
+            content_type="application/json",
+            body=self.tags_doc,
+            headers={
+                "Link": '<https://api.zotero.org/users/436/items/top?limit=1&start=1>; rel="next", <https://api.zotero.org/users/436/items/top?limit=1&start=2319>; rel="last", <https://www.zotero.org/users/436/items/top>; rel="alternate"'
+            },
+        )
+        zot.tags()
+        assert zot.links is not None
+        self.assertEqual(zot.links["next"], "/users/436/items/top?limit=1&start=1")
+        self.assertEqual(zot.links["last"], "/users/436/items/top?limit=1&start=2319")
+        self.assertEqual(zot.links["alternate"], "/users/436/items/top")
+
+    def testParseLinkHeadersPreservesAllParameters(self):
+        """Test that the self link preserves all parameters, not just the first 2"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/items/top",
+            content_type="application/json",
+            body=self.items_doc,
+            headers={
+                "Link": '<https://api.zotero.org/users/myuserID/items/top?start=1>; rel="next"'
+            },
+        )
+        # Call with multiple parameters including limit
+        zot.top(limit=1)
+        # The self link should preserve all parameters except format
+        assert zot.links is not None
+        self.assertIn("limit=1", zot.links["self"])
+        self.assertIn("locale=", zot.links["self"])
+        # format should be stripped
+        self.assertNotIn("format=", zot.links["self"])
+
+    def testParseGroupsJSONDoc(self):
+        """Should successfully return a list of group dicts, ID should match
+        input doc's zapi:key value, and 'total_items' value should match
+        input doc's zapi:numItems value
+        """
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/groups",
+            content_type="application/json",
+            body=self.groups_doc,
+        )
+        groups_data = zot.groups()
+        self.assertEqual("smart_cities", groups_data[0]["data"]["name"])
+
+    def testParamsReset(self):
+        """Should preserve existing URL parameters when add_parameters is called multiple times"""
+        zot = z.Zotero("myuserID", "user", "myuserkey")
+        zot.add_parameters(start=5, limit=10)
+        zot._build_query("/whatever")
+        zot.add_parameters(start=2)
+        # Should get default limit=100 since no limit specified in second call
+        self.assertEqual(
+            parse_qs(f"start=2&format=json&limit={DEFAULT_ITEM_LIMIT}"),
+            parse_qs(urlencode(zot.url_params or {}, doseq=True)),
+        )
+
+    def testParamsBlankAfterCall(self):
+        """self.url_params should be blank after an API call"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/items",
+            content_type="application/json",
+            body=self.items_doc,
+        )
+        zot.items()
+        self.assertEqual(None, zot.url_params)
+
+    def testResponseForbidden(self):
+        """Ensure that an error is properly raised for 403"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/items",
+            content_type="application/json",
+            body=self.items_doc,
+            status=403,
+        )
+        with self.assertRaises(z.ze.UserNotAuthorisedError):
+            zot.items()
+
+    def testTimeout(self):
+        """Ensure that an error is properly raised for 503"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/items",
+            content_type="application/json",
+            body=self.items_doc,
+            status=503,
+        )
+        with self.assertRaises(z.ze.HTTPError):
+            zot.items()
+
+    def testResponseUnsupported(self):
+        """Ensure that an error is properly raised for 400"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/items",
+            content_type="application/json",
+            body=self.items_doc,
+            status=400,
+        )
+        with self.assertRaises(z.ze.UnsupportedParamsError):
+            zot.items()
+
+    def testResponseNotFound(self):
+        """Ensure that an error is properly raised for 404"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/items",
+            body=self.items_doc,
+            content_type="application/json",
+            status=404,
+        )
+        with self.assertRaises(z.ze.ResourceNotFoundError):
+            zot.items()
+
+    def testResponseMiscError(self):
+        """Ensure that an error is properly raised for unspecified errors"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/items",
+            content_type="application/json",
+            body=self.items_doc,
+            status=500,
+        )
+        with self.assertRaises(z.ze.HTTPError):
+            zot.items()
+
+    def testGetItems(self):
+        """Ensure that we can retrieve a list of all items"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/itemTypes",
+            content_type="application/json",
+            body=self.item_types,
+        )
+        resp = zot.item_types()
+        self.assertEqual(resp[0]["itemType"], "artwork")
+
+    def testGetTemplate(self):
+        """Ensure that item templates are retrieved and converted into dicts"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/items/new?itemType=book",
+            content_type="application/json",
+            body=self.item_templt,
+        )
+        t = zot.item_template("book")
+        self.assertEqual("book", t["itemType"])
+
+    def testTemplateParamsDontLeak(self):
+        """item_template()'s parameters must not leak into later requests (#356)
+
+        Covers both the template-cache miss (first call) and hit (second call):
+        neither may leave itemType on the client, where it would filter e.g. a
+        subsequent children() call server-side.
+        """
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/items/new",
+            content_type="application/json",
+            body='{"itemType": "note", "note": "", "tags": []}',
+        )
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/items/ABCD1234/children",
+            content_type="application/json",
+            body=self.items_doc,
+        )
+        for pass_name in ("cache miss", "cache hit"):
+            zot.item_template("note")
+            zot.children("ABCD1234")
+            url = mock.last_request().url
+            self.assertNotIn("itemType", url, f"itemType leaked on {pass_name}")
+        # the template request itself must still carry its parameter
+        template_url = mock.latest_requests()[0].url
+        self.assertIn("itemType=note", template_url)
+
+    def testCreateCollectionError(self):
+        """Ensure that collection creation fails with the wrong dict"""
+        zot = z.Zotero("myuserID", "user", "myuserkey")
+        t = [{"foo": "bar"}]
+        with self.assertRaises(z.ze.ParamNotPassedError):
+            t = zot.create_collections(t)
+
+    def testNoApiKey(self):
+        """Ensure that pyzotero works when api_key is not set"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/items",
+            content_type="application/json",
+            body=self.item_doc,
+        )
+        items = zot.items()
+        self.assertEqual(len(items), 6)  # this isn't a very good assertion
+
+    # @httpretty.activate
+    # def testUpdateItem(self):
+    #     """ Test that we can update an item
+    #         This test is a kludge; it only tests that the mechanism for
+    #         internal key removal is OK, and that we haven't made any silly
+    #         list/dict comprehension or genexpr errors
+    #     """
+    #     import json
+    #     # first, retrieve an item
+    #     zot = z.Zotero('myuserID', 'user', 'myuserkey')
+    #     HTTPretty.register_uri(
+    #         HTTPretty.GET,
+    #         'https://api.zotero.org/users/myuserID/items',
+    #         body=self.items_doc)
+    #     items_data = zot.items()
+    #     items_data['title'] = 'flibble'
+    #     json.dumps(*zot._cleanup(items_data))
+
+    def testCollectionCreation(self):
+        """Tests creation of a new collection"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "POST",
+            "https://api.zotero.org/users/myuserID/collections",
+            body=self.creation_doc,
+            content_type="application/json",
+            status=200,
+        )
+        # now let's test something
+        resp = zot.create_collections([{"name": "foo", "key": "ABC123"}])
+        self.assertTrue("ABC123", resp["success"]["0"])
+        request = mock.last_request()
+        self.assertFalse("If-Unmodified-Since-Version" in request.headers)
+        self.assertEqual(request.headers["Content-Type"], "application/json")
+
+    def testCollectionCreationLastModified(self):
+        """Tests creation of a new collection with last_modified param"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "POST",
+            "https://api.zotero.org/users/myuserID/collections",
+            body=self.creation_doc,
+            content_type="application/json",
+            status=200,
+        )
+        # now let's test something
+        resp = zot.create_collections(
+            [{"name": "foo", "key": "ABC123"}], last_modified=5
+        )
+        self.assertEqual("ABC123", resp["success"]["0"])
+        request = mock.last_request()
+        self.assertEqual(request.headers["If-Unmodified-Since-Version"], "5")
+
+    def testCollectionUpdate(self):
+        """Tests update of a collection"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "PUT",
+            "https://api.zotero.org/users/myuserID/collections/ABC123",
+            body="",
+            content_type="application/json",
+            status=200,
+        )
+        # now let's test something
+        resp = zot.update_collection({"name": "foo", "key": "ABC123", "version": 3})
+        self.assertEqual(True, resp)
+        request = mock.last_request()
+        self.assertEqual(request.headers["If-Unmodified-Since-Version"], "3")
+        self.assertEqual(request.headers["Content-Type"], "application/json")
+
+    def testCollectionUpdateLastModified(self):
+        """Tests update of a collection with last_modified set"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "PUT",
+            "https://api.zotero.org/users/myuserID/collections/ABC123",
+            body="",
+            content_type="application/json",
+            status=200,
+        )
+        # now let's test something
+        resp = zot.update_collection(
+            {"name": "foo", "key": "ABC123", "version": 3}, last_modified=5
+        )
+        self.assertEqual(True, resp)
+        request = mock.last_request()
+        self.assertEqual(request.headers["If-Unmodified-Since-Version"], "5")
+
+    def testItemAttachmentLinkModes(self):
+        """Tests that item_attachment_link_modes returns expected values"""
+        # Should work as class method
+        modes = z.Zotero.item_attachment_link_modes()
+        self.assertEqual(
+            modes, ["imported_file", "imported_url", "linked_file", "linked_url"]
+        )
+        # Should also work on instance
+        zot = z.Zotero("myuserID", "user", "myuserkey")
+        modes_from_instance = zot.item_attachment_link_modes()
+        self.assertEqual(modes, modes_from_instance)
+
+    def testItemCreation(self):
+        """Tests creation of a new item using a template"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/items/new?itemType=book",
+            body=self.item_templt,
+            content_type="application/json",
+        )
+        template = zot.item_template("book")
+        mock.reset()
+        mock.register(
+            "POST",
+            "https://api.zotero.org/users/myuserID/items",
+            body=self.creation_doc,
+            content_type="application/json",
+            status=200,
+        )
+        # now let's test something
+        resp = zot.create_items([template])
+        self.assertEqual("ABC123", resp["success"]["0"])
+        request = mock.last_request()
+        self.assertFalse("If-Unmodified-Since-Version" in request.headers)
+        self.assertEqual(request.headers["Content-Type"], "application/json")
+
+    def testItemCreationWithParentId(self):
+        """Checks that parentItem is set in the POST payload when parentid is given"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "POST",
+            "https://api.zotero.org/users/myuserID/items",
+            body=self.creation_doc,
+            content_type="application/json",
+            status=200,
+        )
+        note = {"itemType": "note", "note": "A test note", "tags": []}
+        resp = zot.create_items([note], parentid="PARENT123")
+        self.assertEqual("ABC123", resp["success"]["0"])
+        request = mock.last_request()
+        request_body = json.loads(request.body.decode("utf-8"))
+        self.assertEqual(request_body[0]["parentItem"], "PARENT123")
+        # Should be a single POST, no PATCH requests
+        self.assertEqual(len(mock.latest_requests()), 1)
+
+    def testItemCreationLastModified(self):
+        """Checks 'If-Unmodified-Since-Version' header correctly set on create_items"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "POST",
+            "https://api.zotero.org/users/myuserID/items",
+            body=self.creation_doc,
+            content_type="application/json",
+            status=200,
+        )
+        # now let's test something
+        zot.create_items([{"key": "ABC123"}], last_modified=5)
+        request = mock.last_request()
+        self.assertEqual(request.headers["If-Unmodified-Since-Version"], "5")
+
+    def testItemCreationCustomTimeout(self):
+        """create_items propagates a caller-supplied timeout to the request"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "POST",
+            "https://api.zotero.org/users/myuserID/items",
+            body=self.creation_doc,
+            content_type="application/json",
+            status=200,
+        )
+        zot.create_items([{"key": "ABC123"}], timeout=60)
+        request = mock.last_request()
+        # httpx2 records per-request timeouts in request.extensions["timeout"]
+        # as a dict with connect/read/write/pool keys
+        timeout_ext = request.extensions.get("timeout")
+        self.assertIsNotNone(timeout_ext)
+        self.assertEqual(timeout_ext["read"], 60)
+
+    def testItemCreationDefaultTimeout(self):
+        """create_items uses the client's configured timeout when none is given"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "POST",
+            "https://api.zotero.org/users/myuserID/items",
+            body=self.creation_doc,
+            content_type="application/json",
+            status=200,
+        )
+        zot.create_items([{"key": "ABC123"}])
+        request = mock.last_request()
+        # No per-call override: the read timeout should be whatever the
+        # underlying httpx2.Client was configured with (httpx2 default for
+        # the MockClient in tests, DEFAULT_TIMEOUT for the real client).
+        timeout_ext = request.extensions.get("timeout")
+        self.assertIsNotNone(timeout_ext)
+
+    def testItemUpdate(self):
+        """Tests item update using update_item"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        update = {"key": "ABC123", "version": 3, "itemType": "book"}
+        mock.register(
+            "GET",
+            "https://api.zotero.org/itemFields",
+            body=self.item_fields,
+            content_type="application/json",
+        )
+        mock.register(
+            "PATCH",
+            "https://api.zotero.org/users/myuserID/items/ABC123",
+            body="",
+            content_type="application/json",
+            status=204,
+        )
+        # now let's test something
+        resp = zot.update_item(update)
+        self.assertEqual(resp, True)
+        request = mock.last_request()
+        self.assertEqual(request.headers["If-Unmodified-Since-Version"], "3")
+        self.assertEqual(request.headers["Content-Type"], "application/json")
+
+    def testItemUpdateLastModified(self):
+        """Tests item update using update_item with last_modified parameter"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        update = {"key": "ABC123", "version": 3, "itemType": "book"}
+        mock.register(
+            "GET",
+            "https://api.zotero.org/itemFields",
+            body=self.item_fields,
+            content_type="application/json",
+        )
+        mock.register(
+            "PATCH",
+            "https://api.zotero.org/users/myuserID/items/ABC123",
+            body="",
+            content_type="application/json",
+            status=204,
+        )
+        # now let's test something
+        resp = zot.update_item(update, last_modified=5)
+        self.assertEqual(resp, True)
+        request = mock.last_request()
+        self.assertEqual(request.headers["If-Unmodified-Since-Version"], "5")
+
+    def testCheckItemsAcceptsDeleted(self):
+        """A trashed item is returned carrying deleted, so it must validate"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/itemFields",
+            body=self.item_fields,
+            content_type="application/json",
+        )
+        trashed = json.loads(self.item_doc)
+        trashed["data"]["deleted"] = 1
+        checked = zot.check_items([trashed])
+        self.assertEqual(checked[0]["deleted"], 1)
+
+    def testItemUpdateTrashesItem(self):
+        """An item is moved to the trash by updating it with deleted set"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/itemFields",
+            body=self.item_fields,
+            content_type="application/json",
+        )
+        mock.register(
+            "PATCH",
+            "https://api.zotero.org/users/myuserID/items/ABC123",
+            body="",
+            content_type="application/json",
+            status=204,
+        )
+        update = {"key": "ABC123", "version": 3, "itemType": "book", "deleted": 1}
+        self.assertEqual(zot.update_item(update), True)
+        self.assertEqual(mock.last_request().json()["deleted"], 1)
+
+    def testTooManyItems(self):
+        """Should fail because we're passing too many items"""
+        itms = [i for i in range(51)]
+        zot = z.Zotero("myuserID", "user", "myuserkey")
+        with self.assertRaises(z.ze.TooManyItemsError):
+            zot.create_items(itms)
+
+    def testRateLimitWithBackoff(self):
+        """A persistent 429 is retried, then raises instead of returning the
+        error body as bytes (#352)
+        """
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/items",
+            status=429,
+            body="Too many requests. Slow down",
+            content_type="text/plain",
+            headers={"backoff": 0.1},
+        )
+        with self.assertRaises(z.ze.TooManyRetriesError):
+            zot.items()
+        # every allowed attempt was made before giving up
+        self.assertEqual(len(mock.latest_requests()), MAX_RETRY_ATTEMPTS)
+        # backoff_until should be in the future
+        self.assertGreater(zot.backoff_until, time.time())
+
+    def testRateLimitRetryReturnsPayload(self):
+        """A 429 followed by a success returns the real payload (#352)"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        attempts = []
+
+        def rate_limited_once(request, uri, headers):
+            attempts.append(uri)
+            if len(attempts) == 1:
+                headers["content-type"] = "text/plain"
+                headers["backoff"] = "0.1"
+                return [429, headers, "Too many requests. Slow down"]
+            return [200, headers, self.items_doc]
+
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/items",
+            body=rate_limited_once,
+        )
+        items = zot.items()
+        self.assertEqual(len(attempts), 2)
+        self.assertIsInstance(items, list)
+        self.assertEqual(items[0]["key"], "NM66T6EF")
+
+    def testRateLimitWriteRetried(self):
+        """A 429 on a write is retried instead of reporting success (#352)"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        attempts = []
+
+        def rate_limited_once(request, uri, headers):
+            attempts.append(uri)
+            if len(attempts) == 1:
+                headers["content-type"] = "text/plain"
+                headers["backoff"] = "0.1"
+                return [429, headers, "Too many requests. Slow down"]
+            return [204, headers, ""]
+
+        mock.register(
+            "PUT",
+            "https://api.zotero.org/users/myuserID/items/ABCD2345/fulltext",
+            body=rate_limited_once,
+        )
+        result = zot.set_fulltext("ABCD2345", {"content": "hi", "indexedChars": 2})
+        self.assertTrue(result)
+        self.assertEqual(len(attempts), 2)
+
+    def testDeleteTags(self):
+        """Tests deleting tags"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        # Mock the initial request to get version info
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/tags?limit=1",
+            content_type="application/json",
+            body=self.tags_doc,
+            headers={"last-modified-version": "42"},
+        )
+
+        # Mock the delete endpoint
+        mock.register(
+            "DELETE", "https://api.zotero.org/users/myuserID/tags", status=204
+        )
+
+        # Test tag deletion
+        resp = zot.delete_tags("tag1", "tag2")
+
+        # Verify the request
+        request = mock.last_request()
+        self.assertEqual(request.method, "DELETE")
+        self.assertEqual(request.headers["If-Unmodified-Since-Version"], "42")
+        self.assertTrue(resp)
+
+    def testAddToCollection(self):
+        """Tests adding an item to a collection"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        # Mock the PATCH endpoint for adding to collection
+        mock.register(
+            "PATCH",
+            "https://api.zotero.org/users/myuserID/items/ITEMKEY",
+            status=204,
+        )
+
+        # Create a test item
+        item = {"key": "ITEMKEY", "version": 5, "data": {"collections": []}}
+
+        # Test adding to collection
+        resp = zot.addto_collection("COLLECTIONKEY", item)
+
+        # Verify the request
+        request = mock.last_request()
+        self.assertEqual(request.method, "PATCH")
+        self.assertEqual(request.headers["If-Unmodified-Since-Version"], "5")
+
+        # Check the body contains the collection key
+
+        body = json.loads(request.body.decode("utf-8"))
+        self.assertEqual(body["collections"], ["COLLECTIONKEY"])
+
+        self.assertTrue(resp)
+
+    def testMoveToCollection(self):
+        """Tests moving an item between collections in one request"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "PATCH",
+            "https://api.zotero.org/users/myuserID/items/ITEMKEY",
+            status=204,
+        )
+        item = {
+            "key": "ITEMKEY",
+            "version": 5,
+            "data": {"collections": ["FROM", "OTHER"]},
+        }
+        resp = zot.moveto_collection("FROM", "TO", item)
+        request = mock.last_request()
+        self.assertEqual(request.method, "PATCH")
+        self.assertEqual(request.headers["If-Unmodified-Since-Version"], "5")
+        body = json.loads(request.body.decode("utf-8"))
+        # the source is gone, the destination is present, others are kept
+        self.assertEqual(body["collections"], ["OTHER", "TO"])
+        self.assertTrue(resp)
+
+    def testMoveToCollectionIsIdempotent(self):
+        """An item already in the destination is not listed there twice"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "PATCH",
+            "https://api.zotero.org/users/myuserID/items/ITEMKEY",
+            status=204,
+        )
+        item = {"key": "ITEMKEY", "version": 5, "data": {"collections": ["TO"]}}
+        zot.moveto_collection("FROM", "TO", item)
+        body = json.loads(mock.last_request().body.decode("utf-8"))
+        self.assertEqual(body["collections"], ["TO"])
+
+    def testDeleteItem(self):
+        """Tests deleting an item"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        # Mock the DELETE endpoint
+        mock.register(
+            "DELETE",
+            "https://api.zotero.org/users/myuserID/items/ITEMKEY",
+            status=204,
+        )
+
+        # Create a test item
+        item = {"key": "ITEMKEY", "version": 7}
+
+        # Test deletion
+        resp = zot.delete_item(item)
+
+        # Verify the request
+        request = mock.last_request()
+        self.assertEqual(request.method, "DELETE")
+        self.assertEqual(request.headers["If-Unmodified-Since-Version"], "7")
+
+        self.assertTrue(resp)
+
+    def testDeleteMultipleItems(self):
+        """Tests deleting multiple items at once"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        # Mock the DELETE endpoint for multiple items
+        mock.register(
+            "DELETE", "https://api.zotero.org/users/myuserID/items", status=204
+        )
+
+        # Create test items
+        items = [{"key": "ITEM1", "version": 5}, {"key": "ITEM2", "version": 3}]
+
+        # Test deletion
+        resp = zot.delete_item(items)
+
+        # Verify the request
+        request = mock.last_request()
+        self.assertEqual(request.method, "DELETE")
+        self.assertEqual(request.headers["If-Unmodified-Since-Version"], "5")
+
+        # Extract and parse the query string
+        parsed_url = urlparse(request.url)
+        query_params = parse_qs(parsed_url.query)
+
+        self.assertIn("itemKey", query_params)
+        self.assertEqual(query_params["itemKey"][0], "ITEM1,ITEM2")
+
+        self.assertTrue(resp)
+
+    def testFileUpload(self):
+        """Tests file upload process with attachments"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        # Create a temporary file for testing
+        temp_file_path = os.path.join(self.cwd, "api_responses", "test_upload_file.txt")
+        with open(temp_file_path, "w") as f:
+            f.write("Test file content for upload")
+
+        # Mock Step 0: Create preliminary item registration
+        prelim_response = {"success": {"0": "ITEMKEY123"}}
+        mock.register(
+            "POST",
+            "https://api.zotero.org/users/myuserID/items",
+            content_type="application/json",
+            body=json.dumps(prelim_response),
+            status=200,
+        )
+
+        # Create the upload payload
+        payload = [
+            {
+                "filename": "test_upload_file.txt",
+                "title": "Test File",
+                "linkMode": "imported_file",
+            }
+        ]
+
+        # Create mock auth data to be returned by _get_auth
+        mock_auth_data = {
+            "url": "https://uploads.zotero.org/",
+            "params": {
+                "key": "abcdef1234567890",
+                "prefix": "prefix",
+                "suffix": "suffix",
+            },
+            "uploadKey": "upload_key_123",
+        }
+
+        # Patch the necessary methods to avoid HTTP calls and file system checks
+        with (
+            patch.object(z.Zupload, "_verify", return_value=None),
+            patch.object(z.Zupload, "_get_auth", return_value=mock_auth_data),
+            patch.object(z.Zupload, "_upload_file", return_value=None),
+        ):
+            # Create the upload object and initiate upload
+            upload = z.Zupload(
+                zot, payload, basedir=os.path.join(self.cwd, "api_responses")
+            )
+            result = upload.upload()
+
+            # Verify the result structure
+            self.assertIn("success", result)
+            self.assertIn("failure", result)
+            self.assertIn("unchanged", result)
+            self.assertEqual(len(result["success"]), 1)
+            self.assertEqual(result["success"][0]["key"], "ITEMKEY123")
+
+        # Clean up
+        os.remove(temp_file_path)
+
+    def testFileUploadExists(self):
+        """Tests file upload process when the file already exists on the server"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        # Create a temporary file for testing
+        temp_file_path = os.path.join(self.cwd, "api_responses", "test_upload_file.txt")
+        with open(temp_file_path, "w") as f:
+            f.write("Test file content for upload")
+
+        # Mock Step 0: Create preliminary item registration
+        prelim_response = {"success": {"0": "ITEMKEY123"}}
+        mock.register(
+            "POST",
+            "https://api.zotero.org/users/myuserID/items",
+            content_type="application/json",
+            body=json.dumps(prelim_response),
+            status=200,
+        )
+
+        # Create the upload payload
+        payload = [
+            {
+                "filename": "test_upload_file.txt",
+                "title": "Test File",
+                "linkMode": "imported_file",
+            }
+        ]
+
+        # Create mock auth data to be returned by _get_auth with exists=True
+        mock_auth_data = {"exists": True}
+
+        # Patch the necessary methods to avoid HTTP calls and file system checks
+        with (
+            patch.object(z.Zupload, "_verify", return_value=None),
+            patch.object(z.Zupload, "_get_auth", return_value=mock_auth_data),
+        ):
+            # Create the upload object and initiate upload
+            upload = z.Zupload(
+                zot, payload, basedir=os.path.join(self.cwd, "api_responses")
+            )
+            result = upload.upload()
+
+            # Verify the result structure
+            self.assertIn("success", result)
+            self.assertIn("failure", result)
+            self.assertIn("unchanged", result)
+            self.assertEqual(len(result["unchanged"]), 1)
+            self.assertEqual(result["unchanged"][0]["key"], "ITEMKEY123")
+
+        # Clean up
+        os.remove(temp_file_path)
+
+    def testFileUploadPrelimRateLimitRetried(self):
+        """A 429 during upload step 0 is retried, not JSON-decoded (#352)"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        attempts = []
+
+        def rate_limited_once(request, uri, headers):
+            attempts.append(uri)
+            if len(attempts) == 1:
+                headers["content-type"] = "text/plain"
+                headers["backoff"] = "0.1"
+                return [429, headers, "Too many requests. Slow down"]
+            return [200, headers, json.dumps({"success": {"0": "ITEMKEY123"}})]
+
+        mock.register(
+            "POST",
+            "https://api.zotero.org/users/myuserID/items",
+            body=rate_limited_once,
+        )
+
+        payload = [
+            {
+                "filename": "test_upload_file.txt",
+                "title": "Test File",
+                "linkMode": "imported_file",
+            }
+        ]
+        mock_auth_data = {"exists": True}
+        with (
+            patch.object(z.Zupload, "_verify", return_value=None),
+            patch.object(z.Zupload, "_get_auth", return_value=mock_auth_data),
+        ):
+            upload = z.Zupload(zot, payload)
+            result = upload.upload()
+
+        self.assertEqual(len(attempts), 2)
+        self.assertEqual(result["unchanged"][0]["key"], "ITEMKEY123")
+
+    def testFileUploadRegisterRateLimitRaises(self):
+        """A persistent 429 registering an upload raises instead of silently
+        reporting success (#352)
+        """
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        mock.register(
+            "POST",
+            "https://api.zotero.org/users/myuserID/items/ITEMKEY123/file",
+            status=429,
+            body="Too many requests. Slow down",
+            content_type="text/plain",
+            headers={"backoff": 0.1},
+        )
+        upload = z.Zupload(zot, [{"filename": "nonexistent.txt"}])
+        with self.assertRaises(z.ze.TooManyRetriesError):
+            upload._register_upload({"uploadKey": "upload_key_123"}, "ITEMKEY123")
+        self.assertEqual(len(mock.latest_requests()), MAX_RETRY_ATTEMPTS)
+
+    def testFileUploadCapturesVersion(self):
+        """Uploaded entries carry the version set by upload registration (#354)"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        temp_file_path = os.path.join(self.cwd, "api_responses", "test_upload_file.txt")
+        with open(temp_file_path, "w") as f:
+            f.write("Test file content for upload")
+
+        # Step 0: creation response carries versions in 'successful'
+        prelim_response = {
+            "success": {"0": "ITEMKEY123"},
+            "successful": {"0": {"key": "ITEMKEY123", "version": 100}},
+            "unchanged": {},
+            "failed": {},
+        }
+        mock.register(
+            "POST",
+            "https://api.zotero.org/users/myuserID/items",
+            body=json.dumps(prelim_response),
+            headers={"last-modified-version": "100"},
+        )
+        # Step 3: registration bumps the item's version again
+        mock.register(
+            "POST",
+            "https://api.zotero.org/users/myuserID/items/ITEMKEY123/file",
+            status=204,
+            body="",
+            headers={"last-modified-version": "101"},
+        )
+
+        payload = [
+            {
+                "filename": "test_upload_file.txt",
+                "title": "Test File",
+                "linkMode": "imported_file",
+            }
+        ]
+        mock_auth_data = {
+            "url": "https://uploads.zotero.org/",
+            "params": {"key": "abcdef1234567890"},
+            "uploadKey": "upload_key_123",
+        }
+        s3_response = httpx2.Response(
+            201, request=httpx2.Request("POST", "https://uploads.zotero.org/")
+        )
+        with (
+            patch.object(z.Zupload, "_verify", return_value=None),
+            patch.object(z.Zupload, "_get_auth", return_value=mock_auth_data),
+            patch("pyzotero._upload.httpx2.post", return_value=s3_response),
+        ):
+            upload = z.Zupload(
+                zot, payload, basedir=os.path.join(self.cwd, "api_responses")
+            )
+            result = upload.upload()
+
+        # the registration step's version, not the creation step's
+        self.assertEqual(result["success"][0]["key"], "ITEMKEY123")
+        self.assertEqual(result["success"][0]["version"], 101)
+
+        os.remove(temp_file_path)
+
+    def testFileUploadExistsCapturesVersion(self):
+        """Entries for already-existing files carry the creation version (#354)"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        prelim_response = {
+            "success": {"0": "ITEMKEY123"},
+            "successful": {"0": {"key": "ITEMKEY123", "version": 100}},
+            "unchanged": {},
+            "failed": {},
+        }
+        mock.register(
+            "POST",
+            "https://api.zotero.org/users/myuserID/items",
+            body=json.dumps(prelim_response),
+            headers={"last-modified-version": "100"},
+        )
+
+        payload = [
+            {
+                "filename": "test_upload_file.txt",
+                "title": "Test File",
+                "linkMode": "imported_file",
+            }
+        ]
+        with (
+            patch.object(z.Zupload, "_verify", return_value=None),
+            patch.object(z.Zupload, "_get_auth", return_value={"exists": True}),
+        ):
+            upload = z.Zupload(zot, payload)
+            result = upload.upload()
+
+        self.assertEqual(result["unchanged"][0]["version"], 100)
+
+    def testFileUploadWithParentItem(self):
+        """Tests file upload process with a parent item ID"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        # Create a temporary file for testing
+        temp_file_path = os.path.join(self.cwd, "api_responses", "test_upload_file.txt")
+        with open(temp_file_path, "w") as f:
+            f.write("Test file content for upload")
+
+        # Mock Step 0: Create preliminary item registration
+        prelim_response = {"success": {"0": "ITEMKEY123"}}
+        mock.register(
+            "POST",
+            "https://api.zotero.org/users/myuserID/items",
+            content_type="application/json",
+            body=json.dumps(prelim_response),
+            status=200,
+        )
+
+        # Create the upload payload
+        payload = [
+            {
+                "filename": "test_upload_file.txt",
+                "title": "Test File",
+                "linkMode": "imported_file",
+            }
+        ]
+
+        # Test with parent ID
+        parent_id = "PARENTITEM123"
+
+        # Create mock auth data to be returned by _get_auth
+        mock_auth_data = {
+            "url": "https://uploads.zotero.org/",
+            "params": {
+                "key": "abcdef1234567890",
+                "prefix": "prefix",
+                "suffix": "suffix",
+            },
+            "uploadKey": "upload_key_123",
+        }
+
+        # Mock Step 1: Get upload authorization
+        mock.register(
+            "POST",
+            "https://api.zotero.org/users/myuserID/items/ITEMKEY123/file",
+            content_type="application/json",
+            body=json.dumps(mock_auth_data),
+            status=200,
+        )
+
+        # Patch the necessary methods to avoid file system checks and skip the actual upload
+        with (
+            patch.object(z.Zupload, "_verify", return_value=None),
+            patch.object(z.Zupload, "_upload_file", return_value=None),
+        ):
+            # Create the upload object with a parent ID and initiate upload
+            upload = z.Zupload(
+                zot,
+                payload,
+                parentid=parent_id,
+                basedir=os.path.join(self.cwd, "api_responses"),
+            )
+            result = upload.upload()
+
+            # Verify the result structure
+            self.assertIn("success", result)
+            self.assertEqual(len(result["success"]), 1)
+
+            # Check that the parentItem was added to the payload
+            # Get the latest request to the items endpoint
+            requests = mock.latest_requests()
+            item_request = None
+            for req in requests:
+                if req.url.endswith("/items"):
+                    item_request = req
+                    break
+
+            self.assertIsNotNone(item_request, "No request found to the items endpoint")
+            request_body = json.loads(item_request.body.decode("utf-8"))
+            self.assertEqual(request_body[0]["parentItem"], parent_id)
+
+        # Clean up
+        os.remove(temp_file_path)
+
+    def testFileUploadFailure(self):
+        """Tests file upload process when auth step fails"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        # Create a temporary file for testing
+        temp_file_path = os.path.join(self.cwd, "api_responses", "test_upload_file.txt")
+        with open(temp_file_path, "w") as f:
+            f.write("Test file content for upload")
+
+        # Mock Step 0: Create preliminary item registration
+        prelim_response = {"success": {"0": "ITEMKEY123"}}
+        mock.register(
+            "POST",
+            "https://api.zotero.org/users/myuserID/items",
+            content_type="application/json",
+            body=json.dumps(prelim_response),
+            status=200,
+        )
+
+        # Mock Step 1: Authorization fails with 403
+        mock.register(
+            "POST",
+            "https://api.zotero.org/users/myuserID/items/ITEMKEY123/file",
+            status=403,
+        )
+
+        # Create the upload payload
+        payload = [
+            {
+                "filename": "test_upload_file.txt",
+                "title": "Test File",
+                "linkMode": "imported_file",
+            }
+        ]
+
+        # Patch just the _verify method to avoid file system checks, but allow the real HTTP calls
+        with patch.object(z.Zupload, "_verify", return_value=None):
+            # Create the upload object and test for exception
+            upload = z.Zupload(
+                zot, payload, basedir=os.path.join(self.cwd, "api_responses")
+            )
+
+            # This should raise an error due to 403 status
+            with self.assertRaises(z.ze.UserNotAuthorisedError):
+                upload.upload()
+
+        # Clean up
+        os.remove(temp_file_path)
+
+    def testFileUploadSetsContentType(self):
+        """Tests that contentType is automatically set during upload based on file extension"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        # Create a temporary PDF file for testing
+        temp_file_path = os.path.join(self.cwd, "api_responses", "test_upload.pdf")
+        with open(temp_file_path, "w") as f:
+            f.write("Fake PDF content")
+
+        # Variable to capture the request body
+        captured_body = []
+
+        def request_callback(request, uri, response_headers):
+            body = json.loads(request.body)
+            captured_body.append(body)
+            return [200, response_headers, json.dumps({"success": {"0": "ITEMKEY123"}})]
+
+        mock.register(
+            "POST",
+            "https://api.zotero.org/users/myuserID/items",
+            body=request_callback,
+            content_type="application/json",
+        )
+
+        # Create payload with empty contentType (mimics Zotero API template)
+        payload = [
+            {
+                "filename": "test_upload.pdf",
+                "title": "Test PDF",
+                "linkMode": "imported_file",
+                "contentType": "",
+            }
+        ]
+
+        mock_auth_data = {"exists": True}
+
+        with (
+            patch.object(z.Zupload, "_verify", return_value=None),
+            patch.object(z.Zupload, "_get_auth", return_value=mock_auth_data),
+        ):
+            upload = z.Zupload(
+                zot, payload, basedir=os.path.join(self.cwd, "api_responses")
+            )
+            upload.upload()
+
+        # Verify contentType was automatically set to application/pdf
+        self.assertEqual(len(captured_body), 1)
+        self.assertEqual(captured_body[0][0].get("contentType"), "application/pdf")
+
+        os.remove(temp_file_path)
+
+    def testFileUploadPreservesUserContentType(self):
+        """Tests that user-provided contentType is not overridden"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        temp_file_path = os.path.join(self.cwd, "api_responses", "test_upload.txt")
+        with open(temp_file_path, "w") as f:
+            f.write("Test content")
+
+        captured_body = []
+
+        def request_callback(request, uri, response_headers):
+            body = json.loads(request.body)
+            captured_body.append(body)
+            return [200, response_headers, json.dumps({"success": {"0": "ITEMKEY123"}})]
+
+        mock.register(
+            "POST",
+            "https://api.zotero.org/users/myuserID/items",
+            body=request_callback,
+            content_type="application/json",
+        )
+
+        # Create payload WITH explicit contentType
+        payload = [
+            {
+                "filename": "test_upload.txt",
+                "title": "Test File",
+                "linkMode": "imported_file",
+                "contentType": "application/custom-type",
+            }
+        ]
+
+        mock_auth_data = {"exists": True}
+
+        with (
+            patch.object(z.Zupload, "_verify", return_value=None),
+            patch.object(z.Zupload, "_get_auth", return_value=mock_auth_data),
+        ):
+            upload = z.Zupload(
+                zot, payload, basedir=os.path.join(self.cwd, "api_responses")
+            )
+            upload.upload()
+
+        # Verify user-provided contentType was preserved
+        self.assertEqual(len(captured_body), 1)
+        self.assertEqual(
+            captured_body[0][0].get("contentType"), "application/custom-type"
+        )
+
+        os.remove(temp_file_path)
+
+    def testFileUploadWithPreexistingKeys(self):
+        """Tests file upload process when the payload already contains keys"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        # Create a temporary file for testing
+        temp_file_path = os.path.join(self.cwd, "api_responses", "test_upload_file.txt")
+        with open(temp_file_path, "w") as f:
+            f.write("Test file content for upload")
+
+        # Create the upload payload with preexisting key
+        payload = [
+            {
+                "key": "PREEXISTING123",
+                "filename": "test_upload_file.txt",
+                "title": "Test File",
+                "linkMode": "imported_file",
+            }
+        ]
+
+        # Create mock auth data to be returned by _get_auth
+        mock_auth_data = {
+            "url": "https://uploads.zotero.org/",
+            "params": {
+                "key": "abcdef1234567890",
+                "prefix": "prefix",
+                "suffix": "suffix",
+            },
+            "uploadKey": "upload_key_123",
+        }
+
+        # Patch the necessary methods to avoid HTTP calls and file system checks
+        with (
+            patch.object(z.Zupload, "_verify", return_value=None),
+            patch.object(z.Zupload, "_get_auth", return_value=mock_auth_data),
+            patch.object(z.Zupload, "_upload_file", return_value=None),
+        ):
+            # Create the upload object and initiate upload
+            upload = z.Zupload(
+                zot, payload, basedir=os.path.join(self.cwd, "api_responses")
+            )
+            result = upload.upload()
+
+            # Verify the result structure
+            self.assertIn("success", result)
+            self.assertEqual(len(result["success"]), 1)
+            self.assertEqual(result["success"][0]["key"], "PREEXISTING123")
+
+            # No need to check for endpoint calls since we're patching the methods
+
+        # Clean up
+        os.remove(temp_file_path)
+
+    def _run_register_upload(self, payload):
+        """Drive Zupload.upload through to the register step and return that request.
+
+        _get_auth is mocked to return valid auth data and the storage (S3) POST
+        is stubbed, so the only request reaching the items/<key>/file endpoint is
+        the Step 3 register-upload call whose headers we want to inspect.
+        """
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        temp_file_path = os.path.join(self.cwd, "api_responses", "test_upload_file.txt")
+        with open(temp_file_path, "w") as f:
+            f.write("Test file content for upload")
+
+        mock_auth_data = {
+            "url": "https://uploads.zotero.org/",
+            "params": {
+                "key": "abcdef1234567890",
+                "prefix": "prefix",
+                "suffix": "suffix",
+            },
+            "uploadKey": "upload_key_123",
+        }
+
+        # Step 3: register upload endpoint
+        mock.register(
+            "POST",
+            "https://api.zotero.org/users/myuserID/items/EXISTINGKEY/file",
+            content_type="application/json",
+            body=json.dumps({}),
+            status=200,
+        )
+
+        try:
+            with (
+                patch.object(z.Zupload, "_verify", return_value=None),
+                patch.object(z.Zupload, "_get_auth", return_value=mock_auth_data),
+                patch(
+                    "httpx2.post",
+                    return_value=httpx2.Response(
+                        201,
+                        request=httpx2.Request("POST", "https://uploads.zotero.org/"),
+                    ),
+                ),
+            ):
+                upload = z.Zupload(
+                    zot, payload, basedir=os.path.join(self.cwd, "api_responses")
+                )
+                upload.upload()
+        finally:
+            os.remove(temp_file_path)
+
+        # The register request is the one carrying the uploadKey in its body
+        for req in mock.latest_requests():
+            if req.url.endswith("/items/EXISTINGKEY/file") and b"upload" in req.body:
+                return req
+        return None
+
+    def testFileUpdateRegisterUsesIfMatch(self):
+        """Updating an existing file must send If-Match at the register step (#322)."""
+        existing_md5 = "0123456789abcdef0123456789abcdef"
+        payload = [
+            {
+                "key": "EXISTINGKEY",
+                "filename": "test_upload_file.txt",
+                "title": "Test File",
+                "linkMode": "imported_file",
+                "md5": existing_md5,
+            }
+        ]
+        register_request = self._run_register_upload(payload)
+        self.assertIsNotNone(register_request, "No register-upload request was made")
+        self.assertEqual(register_request.headers.get("If-Match"), existing_md5)
+        self.assertNotIn("If-None-Match", register_request.headers)
+
+    def testFileUploadRegisterUsesIfNoneMatch(self):
+        """Uploading a new file must send If-None-Match: * at the register step."""
+        payload = [
+            {
+                "key": "EXISTINGKEY",
+                "filename": "test_upload_file.txt",
+                "title": "Test File",
+                "linkMode": "imported_file",
+            }
+        ]
+        register_request = self._run_register_upload(payload)
+        self.assertIsNotNone(register_request, "No register-upload request was made")
+        self.assertEqual(register_request.headers.get("If-None-Match"), "*")
+        self.assertNotIn("If-Match", register_request.headers)
+
+    def testFileUploadInvalidPayload(self):
+        """Tests file upload process with invalid payload mixing items with and without keys"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        # Create a temporary file for testing
+        temp_file_path = os.path.join(self.cwd, "api_responses", "test_upload_file.txt")
+        with open(temp_file_path, "w") as f:
+            f.write("Test file content for upload")
+
+        # Create the invalid upload payload (mixing items with and without keys)
+        payload = [
+            {"key": "PREEXISTING123", "filename": "test_upload_file.txt"},
+            {"filename": "test_upload_file.txt"},  # No key
+        ]
+
+        # Patch the _verify method to avoid file system checks
+        with patch.object(z.Zupload, "_verify", return_value=None):
+            # Create the upload object and test for exception
+            upload = z.Zupload(
+                zot, payload, basedir=os.path.join(self.cwd, "api_responses")
+            )
+
+            # This should raise an UnsupportedParamsError
+            with self.assertRaises(z.ze.UnsupportedParamsError):
+                upload.upload()
+
+        # Clean up
+        os.remove(temp_file_path)
+
+    def testAttachmentSimple(self):
+        """Test attachment_simple method with a single file"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        # Create a temporary test file
+        temp_file_path = os.path.join(self.cwd, "api_responses", "test_attachment.txt")
+        with open(temp_file_path, "w") as f:
+            f.write("Test attachment content")
+
+        # Mock the item template response
+        mock.register(
+            "GET",
+            "https://api.zotero.org/items/new?itemType=attachment&linkMode=imported_file",
+            content_type="application/json",
+            body=json.dumps({"itemType": "attachment", "linkMode": "imported_file"}),
+        )
+
+        # Mock the item creation response
+        mock.register(
+            "POST",
+            "https://api.zotero.org/users/myuserID/items",
+            content_type="application/json",
+            body=json.dumps({"success": {"0": "ITEMKEY123"}}),
+        )
+
+        # Patch the necessary methods to avoid HTTP calls and file system checks
+        with (
+            patch.object(z.Zupload, "_verify", return_value=None),
+            patch.object(
+                z.Zupload,
+                "_get_auth",
+                return_value={
+                    "url": "https://uploads.zotero.org/",
+                    "params": {"key": "abcdef1234567890"},
+                    "uploadKey": "upload_key_123",
+                },
+            ),
+            patch.object(z.Zupload, "_upload_file", return_value=None),
+        ):
+            # Test attachment_simple with a single file
+            result = zot.attachment_simple([temp_file_path])
+
+            # Verify the result structure
+            self.assertIn("success", result)
+            self.assertEqual(len(result["success"]), 1)
+
+            # Verify that the correct attachment template was used
+            request = mock.last_request()
+            self.assertEqual(request.headers["Content-Type"], "application/json")
+            payload = json.loads(request.body.decode("utf-8"))
+            self.assertEqual(payload[0]["title"], "test_attachment.txt")
+            # the server rejects a filename containing a directory path (#341),
+            # so the basename is sent even though a full path was passed in
+            self.assertEqual(payload[0]["filename"], "test_attachment.txt")
+
+        # Clean up
+        os.remove(temp_file_path)
+
+    def testAttachmentSimpleWithParent(self):
+        """Test attachment_simple method with a parent ID"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        # Create a temporary test file
+        temp_file_path = os.path.join(self.cwd, "api_responses", "test_attachment.txt")
+        with open(temp_file_path, "w") as f:
+            f.write("Test attachment content")
+
+        # Mock the item template response
+        mock.register(
+            "GET",
+            "https://api.zotero.org/items/new?itemType=attachment&linkMode=imported_file",
+            content_type="application/json",
+            body=json.dumps({"itemType": "attachment", "linkMode": "imported_file"}),
+        )
+
+        # Patch the _attachment method to verify it's called correctly
+        with patch.object(z.Zotero, "_attachment") as mock_attachment:
+            # Set up the mock return value
+            mock_attachment.return_value = {"success": [{"key": "ITEMKEY123"}]}
+
+            # Test attachment_simple with a parent ID
+            result = zot.attachment_simple([temp_file_path], parentid="PARENT123")
+
+            # Verify the result structure matches the mock return value
+            self.assertEqual(result, {"success": [{"key": "ITEMKEY123"}]})
+
+            # Check that _attachment was called with the parent ID
+            mock_attachment.assert_called_once()
+            args = mock_attachment.call_args[0]
+            # First argument is the templates list, second is parent ID
+            self.assertEqual(len(args), 2)
+            self.assertEqual(args[1], "PARENT123")
+
+            # Verify the template was correctly set up
+            templates = args[0]
+            self.assertEqual(len(templates), 1)
+            self.assertEqual(templates[0]["title"], "test_attachment.txt")
+            self.assertEqual(templates[0]["filename"], temp_file_path)
+
+        # Clean up
+        os.remove(temp_file_path)
+
+    def testAttachmentBoth(self):
+        """Test attachment_both method with custom title and filename"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        # Create a temporary test file
+        temp_file_path = os.path.join(self.cwd, "api_responses", "test_attachment.txt")
+        with open(temp_file_path, "w") as f:
+            f.write("Test attachment content")
+
+        # Mock the item template response
+        mock.register(
+            "GET",
+            "https://api.zotero.org/items/new?itemType=attachment&linkMode=imported_file",
+            content_type="application/json",
+            body=json.dumps({"itemType": "attachment", "linkMode": "imported_file"}),
+        )
+
+        # Mock the item creation response
+        mock.register(
+            "POST",
+            "https://api.zotero.org/users/myuserID/items",
+            content_type="application/json",
+            body=json.dumps({"success": {"0": "ITEMKEY123"}}),
+        )
+
+        # Patch the necessary methods to avoid HTTP calls and file system checks
+        with (
+            patch.object(z.Zupload, "_verify", return_value=None),
+            patch.object(
+                z.Zupload,
+                "_get_auth",
+                return_value={
+                    "url": "https://uploads.zotero.org/",
+                    "params": {"key": "abcdef1234567890"},
+                    "uploadKey": "upload_key_123",
+                },
+            ),
+            patch.object(z.Zupload, "_upload_file", return_value=None),
+        ):
+            # Test attachment_both with custom title
+            custom_title = "Custom Attachment Title"
+            files = [(custom_title, temp_file_path)]
+            result = zot.attachment_both(files)
+
+            # Verify the result structure
+            self.assertIn("success", result)
+            self.assertEqual(len(result["success"]), 1)
+
+            # Verify that the correct attachment template was used
+            request = mock.last_request()
+            payload = json.loads(request.body.decode("utf-8"))
+            self.assertEqual(payload[0]["title"], custom_title)
+            # the server rejects a filename containing a directory path (#341),
+            # so the basename is sent even though a full path was passed in
+            self.assertEqual(payload[0]["filename"], "test_attachment.txt")
+
+        # Clean up
+        os.remove(temp_file_path)
+
+    def testAttachmentBothWithParent(self):
+        """Test attachment_both method with a parent ID"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        # Create a temporary test file
+        temp_file_path = os.path.join(self.cwd, "api_responses", "test_attachment.txt")
+        with open(temp_file_path, "w") as f:
+            f.write("Test attachment content")
+
+        # Mock the item template response
+        mock.register(
+            "GET",
+            "https://api.zotero.org/items/new?itemType=attachment&linkMode=imported_file",
+            content_type="application/json",
+            body=json.dumps({"itemType": "attachment", "linkMode": "imported_file"}),
+        )
+
+        # Patch the _attachment method to verify it's called correctly
+        with patch.object(z.Zotero, "_attachment") as mock_attachment:
+            # Set up the mock return value
+            mock_attachment.return_value = {"success": [{"key": "ITEMKEY123"}]}
+
+            # Test attachment_both with a parent ID
+            custom_title = "Custom Attachment Title"
+            files = [(custom_title, temp_file_path)]
+            result = zot.attachment_both(files, parentid="PARENT123")
+
+            # Verify the result structure matches the mock return value
+            self.assertEqual(result, {"success": [{"key": "ITEMKEY123"}]})
+
+            # Check that _attachment was called with the parent ID
+            mock_attachment.assert_called_once()
+            args = mock_attachment.call_args[0]
+            # First argument is the templates list, second is parent ID
+            self.assertEqual(len(args), 2)
+            self.assertEqual(args[1], "PARENT123")
+
+            # Verify the template was correctly set up
+            templates = args[0]
+            self.assertEqual(len(templates), 1)
+            self.assertEqual(templates[0]["title"], custom_title)
+            self.assertEqual(templates[0]["filename"], temp_file_path)
+
+        # Clean up
+        os.remove(temp_file_path)
+
+    def testAttachmentPathIsRetainedForLocalOperations(self):
+        """The prelim payload carries the basename, local steps get the path (#341)"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        temp_file_path = os.path.join(self.cwd, "api_responses", "test_attachment.txt")
+        with open(temp_file_path, "w") as f:
+            f.write("Test attachment content")
+
+        mock.register(
+            "GET",
+            "https://api.zotero.org/items/new?itemType=attachment&linkMode=imported_file",
+            content_type="application/json",
+            body=json.dumps({"itemType": "attachment", "linkMode": "imported_file"}),
+        )
+        mock.register(
+            "POST",
+            "https://api.zotero.org/users/myuserID/items",
+            content_type="application/json",
+            body=json.dumps({"success": {"0": "ITEMKEY123"}, "failed": {}}),
+        )
+
+        with (
+            patch.object(z.Zupload, "_verify", return_value=None),
+            patch.object(
+                z.Zupload,
+                "_get_auth",
+                return_value={
+                    "url": "https://uploads.zotero.org/",
+                    "params": {"key": "abcdef1234567890"},
+                    "uploadKey": "upload_key_123",
+                },
+            ) as mock_auth,
+            patch.object(z.Zupload, "_upload_file", return_value=None) as mock_upload,
+        ):
+            result = zot.attachment_both([("Custom Title", temp_file_path)])
+
+            # the item is registered with a bare filename, which is all the API accepts
+            sent = json.loads(mock.last_request().body.decode("utf-8"))
+            self.assertEqual(sent[0]["filename"], "test_attachment.txt")
+            # but the caller's payload and the local steps keep the full path
+            self.assertEqual(result["success"][0]["filename"], temp_file_path)
+            self.assertEqual(mock_auth.call_args[0][0], temp_file_path)
+            self.assertEqual(mock_upload.call_args[0][1], temp_file_path)
+
+        os.remove(temp_file_path)
+
+    def testUploadReportsPrelimRejection(self):
+        """A server rejection at step 0 is reported, not swallowed (#341)"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        rejection = {
+            "code": 400,
+            "message": "Stored-file filename '/abs/path/paper.pdf' cannot contain a directory path",
+        }
+        mock.register(
+            "POST",
+            "https://api.zotero.org/users/myuserID/items",
+            content_type="application/json",
+            body=json.dumps(
+                {"success": {}, "unchanged": {}, "failed": {"0": rejection}}
+            ),
+        )
+
+        payload = [{"filename": "test_upload_file.txt", "title": "Test File"}]
+        with patch.object(z.Zupload, "_verify", return_value=None):
+            upload = z.Zupload(
+                zot, payload, basedir=os.path.join(self.cwd, "api_responses")
+            )
+            result = upload.upload()
+
+        self.assertEqual(len(result["failure"]), 1)
+        self.assertEqual(result["failure"][0]["error"], rejection)
+        self.assertEqual(result["success"], [])
+
+    def tearDown(self):
+        """Tear stuff down"""
+        pass
+
+    def test_updated_template_comparison(self):
+        """Test that ONE_HOUR is properly used for template freshness check"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        # Test that ONE_HOUR constant matches code expectation
+        self.assertEqual(z.ONE_HOUR, 3600)
+
+        # Use a simplified approach to test checking template freshness
+        zot.templates = {}
+
+        # Create a template
+        template_name = "test_template"
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/items/new",
+            body=json.dumps({"success": True}),
+            content_type="application/json",
+        )
+
+        # The _cache method should create a template with a timestamp
+        zot._cache(MagicMock(json=lambda: {"data": "test"}), template_name)
+
+        # Verify template was created with a timestamp
+        self.assertIn(template_name, zot.templates)
+        self.assertIn("updated", zot.templates[template_name])
+
+    def test_template_cache_creation(self):
+        """Test template caching in the _cache method"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        # Create a mock response to cache
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"test": "data"}
+
+        # Call the _cache method
+        template_name = "test_key"
+        result = zot._cache(mock_response, template_name)
+
+        # Verify the template was stored correctly
+        self.assertIn(template_name, zot.templates)
+        self.assertEqual(zot.templates[template_name]["tmplt"], {"test": "data"})
+        self.assertIn("updated", zot.templates[template_name])
+
+        # Verify the return value is a deep copy
+        self.assertEqual(result, {"test": "data"})
+
+        # Modify the returned data and check it doesn't affect the cached template
+        result["modified"] = True
+        self.assertNotIn("modified", zot.templates[template_name]["tmplt"])
+
+    def test_striplocal_local_mode(self):
+        """Test _striplocal method in local mode"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", local=True, client=mock.client)
+
+        # Test stripping local API path
+        url = "http://127.0.0.1:23119/api/users/myuserID/items"
+        result = zot._striplocal(url)
+        self.assertEqual(result, "http://127.0.0.1:23119/users/myuserID/items")
+
+        # Test with more complex path
+        url = "http://127.0.0.1:23119/api/users/myuserID/collections/ABC123/items"
+        result = zot._striplocal(url)
+        self.assertEqual(
+            result, "http://127.0.0.1:23119/users/myuserID/collections/ABC123/items"
+        )
+
+    def test_striplocal_remote_mode(self):
+        """Test _striplocal method in remote mode (shouldn't change URL)"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", local=False, client=mock.client)
+
+        # Test without changing URL in remote mode
+        url = "https://api.zotero.org/users/myuserID/items"
+        result = zot._striplocal(url)
+        self.assertEqual(result, url)
+
+    def test_local_mode_ignores_environment_proxies(self):
+        """The default client in local mode sends requests directly"""
+        zot = z.Zotero("0", "user", local=True)
+        self.assertFalse(zot.client.trust_env)
+
+    def test_remote_mode_uses_environment_proxies(self):
+        """The default client in remote mode keeps the environment settings"""
+        zot = z.Zotero("myuserID", "user", "myuserkey")
+        self.assertTrue(zot.client.trust_env)
+
+    def test_supplied_client_sends_default_headers(self):
+        """A client that the caller supplies sends the default headers"""
+        mock = MockClient()
+        mock.register("GET", "https://api.zotero.org/users/myuserID/items", body="[]")
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        zot.items()
+        headers = mock.requests[0].headers
+        self.assertEqual(headers["Authorization"], "Bearer myuserkey")
+        self.assertEqual(headers["Zotero-API-Version"], "3")
+        self.assertTrue(headers["User-Agent"].startswith("Pyzotero/"))
+
+    def test_supplied_client_sends_default_headers_on_writes(self):
+        """Request headers and default headers go together on a write"""
+        mock = MockClient()
+        mock.register(
+            "POST",
+            "https://api.zotero.org/users/myuserID/collections",
+            body=json.dumps({"success": {"0": "COLLKEY"}}),
+        )
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        zot.create_collections([{"name": "Test"}])
+        headers = mock.requests[0].headers
+        self.assertEqual(headers["Authorization"], "Bearer myuserkey")
+        self.assertEqual(headers["Content-Type"], "application/json")
+        self.assertIn("Zotero-Write-Token", headers)
+
+    def test_supplied_client_is_not_changed(self):
+        """The client keeps its own headers and gets none of the defaults"""
+        mock = MockClient()
+        mock.client.headers["X-Custom"] = "kept"
+        mock.register("GET", "https://api.zotero.org/users/myuserID/items", body="[]")
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        zot.items()
+        self.assertEqual(mock.requests[0].headers["X-Custom"], "kept")
+        self.assertNotIn("Authorization", mock.client.headers)
+        self.assertNotIn("Zotero-API-Version", mock.client.headers)
+
+    def test_default_headers_replace_client_headers(self):
+        """A default header replaces a client header of the same name"""
+        mock = MockClient()
+        mock.client.headers["User-Agent"] = "custom"
+        mock.register("GET", "https://api.zotero.org/users/myuserID/items", body="[]")
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+        zot.items()
+        self.assertTrue(mock.requests[0].headers["User-Agent"].startswith("Pyzotero/"))
+
+    def test_client_authorization_kept_without_api_key(self):
+        """Without an API key, the Authorization header of the client is sent"""
+        mock = MockClient()
+        mock.client.headers["Authorization"] = "Bearer fromclient"
+        mock.register("GET", "https://api.zotero.org/users/myuserID/items", body="[]")
+        zot = z.Zotero("myuserID", "user", client=mock.client)
+        zot.items()
+        self.assertEqual(mock.requests[0].headers["Authorization"], "Bearer fromclient")
+
+    def test_set_fulltext(self):
+        """Test set_fulltext method for setting full-text data"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        # Mock response from Zotero API
+        mock.register(
+            "PUT",
+            "https://api.zotero.org/users/myuserID/items/ABCD1234/fulltext",
+            status=204,
+        )
+
+        # Test with PDF data
+        pdf_payload = {
+            "content": "This is the full text content",
+            "indexedPages": 5,
+            "totalPages": 10,
+        }
+
+        _ = zot.set_fulltext("ABCD1234", pdf_payload)
+
+        # Verify the request
+        request = mock.last_request()
+        self.assertEqual(request.method, "PUT")
+        self.assertEqual(json.loads(request.body.decode()), pdf_payload)
+        self.assertEqual(request.headers["Content-Type"], "application/json")
+
+    def test_new_fulltext(self):
+        """Test new_fulltext method for retrieving newer full-text content"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        # Mock response from Zotero API
+        mock_response = {
+            "ITEM1": {"version": 123, "indexedPages": 10, "totalPages": 10},
+            "ITEM2": {"version": 456, "indexedChars": 5000, "totalChars": 5000},
+        }
+
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/fulltext",
+            body=json.dumps(mock_response),
+            content_type="application/json",
+        )
+
+        # Set up a mock for the request attribute
+        zot.request = MagicMock()
+        zot.request.headers = {}
+
+        # Test the new_fulltext method
+        result = zot.new_fulltext(since=5)
+
+        # Verify the result
+        self.assertEqual(result, mock_response)
+
+        # Check that the correct parameters were sent
+        request = mock.last_request()
+        self.assertEqual(request.querystring.get("since"), ["5"])
+
+    def test_last_modified_version(self):
+        """Test the last_modified_version method"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        # Mock the response with a last-modified-version header
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/items",
+            body=self.items_doc,
+            content_type="application/json",
+            headers={"last-modified-version": "1234"},
+        )
+
+        # Test retrieving the last modified version
+        version = zot.last_modified_version()
+
+        # Verify the result
+        self.assertEqual(version, 1234)
+
+    def test_last_modified_version_preserves_pagination(self):
+        """last_modified_version() must not clobber pagination links (#348)"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        def items_callback(request, uri, headers):
+            # Mirror the real API: the "next" link echoes the request's limit
+            qs = parse_qs(urlparse(uri).query)
+            limit = int(qs.get("limit", ["25"])[0])
+            start = int(qs.get("start", ["0"])[0])
+            headers["Link"] = (
+                f"<https://api.zotero.org/users/myuserID/items"
+                f'?limit={limit}&start={start + limit}>; rel="next"'
+            )
+            headers["last-modified-version"] = "1234"
+            return [200, headers, self.items_doc]
+
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/items",
+            body=items_callback,
+            content_type="application/json",
+        )
+
+        zot.items(limit=100)
+        assert zot.links is not None
+        next_link = zot.links["next"]
+        self.assertIn("limit=100", next_link)
+
+        version = zot.last_modified_version()
+        self.assertEqual(version, 1234)
+
+        # The 'next' link used by follow() must be unchanged
+        self.assertEqual(zot.links["next"], next_link)
+
+    def test_follow_exhausted_returns_none(self):
+        """follow() must return None once pagination is exhausted (#350)"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        # Final page of results: no 'next' relation in the Link header
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/items",
+            body=self.items_doc,
+            content_type="application/json",
+        )
+
+        items = zot.items()
+        self.assertTrue(items)
+        request_count = len(mock.latest_requests())
+
+        # No 'next' link, so follow() must return None without
+        # making a request (previously it hit the bare API root,
+        # returning b'Nothing to see here.')
+        self.assertIsNone(zot.follow())
+        self.assertEqual(len(mock.latest_requests()), request_count)
+
+    def test_follow_without_previous_call_returns_none(self):
+        """follow() before any API call must return None, not raise"""
+        zot = z.Zotero("myuserID", "user", "myuserkey")
+        self.assertIsNone(zot.follow())
+
+    def test_makeiter(self):
+        """Test the makeiter method that wraps iterfollow"""
+        zot = z.Zotero("myuserID", "user", "myuserkey")
+
+        # Create a mock method that returns items
+        # This is a better approach than trying to test the generator directly
+        mock_items = [{"key": "ITEM1"}, {"key": "ITEM2"}]
+
+        with patch.object(zot, "iterfollow") as mock_iterfollow:
+            # Set up the mock to return our test items
+            mock_iterfollow.return_value = iter([mock_items])
+
+            # Test makeiter which wraps the iterfollow generator
+            # Set links manually since we're not actually calling the API
+            zot.links = {"self": "/test", "next": "/test?start=5"}
+
+            # This should call iterfollow internally
+            result = zot.makeiter(lambda: None)
+
+            # Verify makeiter sets the 'next' link to the 'self' link
+            assert zot.links is not None
+            self.assertEqual(zot.links["next"], zot.links["self"])
+
+            # Verify makeiter returns an iterable
+            self.assertTrue(hasattr(result, "__iter__"))
+
+            # Verify the mock was called
+            mock_iterfollow.assert_called_once()
+
+    def test_makeiter_preserves_limit_parameter(self):
+        """Test that makeiter preserves the limit parameter in the self link"""
+        zot = z.Zotero("myuserID", "user", "myuserkey")
+
+        # Simulate a self link with multiple parameters including limit
+        # This mimics what _extract_links() creates
+        test_self_link = "/users/myuserID/items/top?limit=1&locale=en-US"
+        zot.links = {
+            "self": test_self_link,
+            "next": "/users/myuserID/items/top?start=1",
+        }
+
+        # Call makeiter (with a dummy function since we're testing link manipulation)
+        with patch.object(zot, "iterfollow"):
+            zot.makeiter(lambda: None)
+
+        # Verify that the 'next' link was set to 'self' and still contains limit parameter
+        assert zot.links is not None
+        self.assertEqual(zot.links["next"], test_self_link)
+        self.assertIn("limit=1", zot.links["next"])
+        self.assertIn("locale=en-US", zot.links["next"])
+
+    def test_publications_user(self):
+        """Test the publications method for user libraries"""
+        mock = MockClient()
+        zot = z.Zotero("myuserID", "user", "myuserkey", client=mock.client)
+
+        # Mock the API response
+        mock.register(
+            "GET",
+            "https://api.zotero.org/users/myuserID/publications/items",
+            body=self.items_doc,
+            content_type="application/json",
+        )
+
+        # Get publications
+        items = zot.publications()
+
+        # Verify the result
+        self.assertEqual(items[0]["key"], "NM66T6EF")
+
+    def test_publications_group(self):
+        """Test that publications method raises error for group libraries"""
+        zot = z.Zotero("myGroupID", "group", "myuserkey")
+
+        # Publications API endpoint doesn't exist for groups
+        with self.assertRaises(z.ze.CallDoesNotExistError):
+            zot.publications()
+
+    def test_timezone_behavior_pytz_vs_whenever(self):
+        """Test that whenever implementation produces equivalent timezone behavior to pytz"""
+
+        # Test the old pytz behavior (what we were doing before)
+        old_dt = datetime.datetime.now(datetime.timezone.utc).replace(
+            tzinfo=pytz.timezone("GMT")
+        )
+
+        # Test the current whenever behavior
+        current_dt = whenever.ZonedDateTime.now("GMT").to_stdlib()
+
+        # Assert that both produce GMT timezone
+        assert old_dt.tzinfo is not None
+        assert current_dt.tzinfo is not None
+        self.assertEqual(getattr(old_dt.tzinfo, "zone", None), "GMT")
+        self.assertEqual(current_dt.tzinfo.tzname(None), "GMT")
+
+        # Assert that timezone names are equivalent
+        self.assertEqual(
+            getattr(old_dt.tzinfo, "zone", None), current_dt.tzinfo.tzname(None)
+        )
+
+    def test_timezone_behavior_instant_vs_zoned(self):
+        """Test that ZonedDateTime produces correct GMT while Instant produces UTC"""
+        # Test Instant behavior (should be UTC)
+        instant_dt = whenever.Instant.now().to_stdlib()
+
+        # Test ZonedDateTime behavior (should be GMT)
+        zoned_dt = whenever.ZonedDateTime.now("GMT").to_stdlib()
+
+        # Assert timezone differences
+        self.assertEqual(instant_dt.tzinfo.tzname(None), "UTC")
+        self.assertEqual(zoned_dt.tzinfo.tzname(None), "GMT")
+
+        # Assert they are different timezone implementations
+        self.assertNotEqual(
+            instant_dt.tzinfo.tzname(None), zoned_dt.tzinfo.tzname(None)
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -1,0 +1,82 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      user-agent:
+      - python-requests/2.31.0,pygbif/0.6.4
+    method: GET
+    uri: https://api.gbif.org/v1/species/search?q=mammalia&limit=1&hl=false&verbose=false
+  response:
+    body:
+      string: "{\"offset\":0,\"limit\":1,\"endOfRecords\":false,\"count\":3752,\"results\":[{\"key\":100559472,\"datasetKey\":\"16c3f9cb-4b19-4553-ac8e-ebb90003aa02\",\"scientificName\":\"Mammaliaformes\",\"canonicalName\":\"Mammaliaformes\",\"nameType\":\"SCIENTIFIC\",\"taxonomicStatus\":\"ACCEPTED\",\"origin\":\"SOURCE\",\"numDescendants\":0,\"numOccurrences\":0,\"extinct\":true,\"habitats\":[],\"nomenclaturalStatus\":[],\"threatStatuses\":[],\"descriptions\":[{\"description\":\"Sinoconodon
+        ist einer der fr\xFChesten bekannten s\xE4ugetierartigen Tiere (Mammaliaformes).
+        Fossilien dieses Tieres, darunter ein vollst\xE4ndig erhaltener Sch\xE4del,
+        wurden im s\xFCdlichen China gefunden und auf ein Alter von rund 200 Millionen
+        Jahren datiert.\"},{\"description\":\"Sinoconodon zeigt in seinem Sch\xE4delbau
+        \xDCbergangsmerkmale zwischen den synapsiden Vorfahren der S\xE4ugetiere und
+        den eigentlichen S\xE4ugern. Der Unterkiefer und der Bau des Ohres und des
+        Kiefergelenkes ist bereits s\xE4ugetierartig entwickelt, im Gegensatz zu diesen
+        kam es aber noch zu einem mehrmaligen Zahnwechsel und zu einem lebenslangen
+        Wachstum des Sch\xE4dels, was reptilienhafte Merkmale sind. Auch hatte Sinoconodon
+        nur eine Art von Backenz\xE4hnen und die Okklusion (das Ineinandergreifen
+        der Z\xE4hne des Ober- und Unterkiefers) war noch nicht vollst\xE4ndig ausgepr\xE4gt.
+        Diese Tiere waren gr\xF6\xDFer als vergleichbare fr\xFChe S\xE4ugetiere aus
+        der gleichen Epoche, die maximale Sch\xE4dell\xE4nge betrug 6 Zentimeter und
+        das Gewicht dieser Tiere wird auf bis zu 500 Gramm gesch\xE4tzt. Aufgrund
+        des lebenslangen Wachstums variieren die L\xE4ngen der gefundenen Sch\xE4del
+        von 2 bis 6 Zentimetern. Vom restlichen K\xF6rper dieser Tiere ist bislang
+        nichts bekannt.\"},{\"description\":\"Abgesehen von den sp\xE4rlichen Funden
+        von Adelobasileus cromptoni und den fr\xFChen Haramiyida ist Sinoconodon einer
+        der fr\xFChesten bekannten Vertreter der S\xE4ugetiere. Wegen der Unterschiede
+        zu den heutigen Vertretern dieser Gruppe werden Sinoconodon und andere fr\xFChe
+        Formen manchmal als Mammaliaformes (\u201ES\xE4ugetierartige\u201C) bezeichnet
+        oder als Mammalia sensu lato (im weiteren Sinn) zusammengefasst. Weitgehend
+        unbestritten ist, dass Sinoconodon und die heutigen S\xE4uger eine monophyletische
+        Gruppe bilden, wobei diese Gattung als Schwestertaxon der \xFCbrigen Vertreter
+        dieser Gruppe bildet. Ob man sie bereits als S\xE4ugetier oder noch als S\xE4ugetiervorfahren
+        bezeichnet, ist weitgehend Definitionsfrage. Es wurden mehrere Arten von Sinoconodon
+        beschrieben, darunter S. rigneyi, S. changchiawaensis, S. parringtoni und
+        S. youngi, die m\xF6glicherweise nur verschiedene Wachstumsstadien derselben
+        Art darstellen. Auch die Gattung Lufengoconodon d\xFCrfte nur ein Synonym
+        von Sinoconodon sein.\"}],\"vernacularNames\":[],\"higherClassificationMap\":{},\"synonym\":false}],\"facets\":[]}"
+    headers:
+      Accept-Ranges:
+      - bytes
+      Age:
+      - '0'
+      Cache-Control:
+      - public, max-age=600
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '2729'
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 04 Oct 2024 07:00:37 GMT
+      Expires:
+      - '0'
+      Pragma:
+      - no-cache
+      Vary:
+      - Origin, Access-Control-Request-Method, Access-Control-Request-Headers
+      Via:
+      - 1.1 varnish (Varnish/6.0)
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+      X-Varnish:
+      - '693077137'
+      X-XSS-Protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+version: 1

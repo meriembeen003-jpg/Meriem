@@ -1,0 +1,14 @@
+requests==2.31.0
+pandas==2.1.1
+python-dotenv==1.0.0
+
+# Visualization libraries
+matplotlib==3.8.0
+plotly==5.17.0
+seaborn==0.13.0
+
+# Static visualization rendering
+kaleido==0.2.1
+
+# Geo
+country_converter==1.0.0

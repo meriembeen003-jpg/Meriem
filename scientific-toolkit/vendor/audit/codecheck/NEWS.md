@@ -1,0 +1,563 @@
+# codecheck (development version)
+
+## New Features
+
+* New `generate_rules_pages()`, called by `register_render()`, writes a human-readable page per rules file to `docs/rules/<version>/`. The pages are reachable by direct URL only: not linked, not in the sitemap, `noindex`. The register's own `rules-*.yml` take precedence over the bundled copies.
+* New `publish_wikibase_pages()` rewrites every generated page on the CODECHECK Wikibase from the register and the instance as they are now, skipping pages that have not changed (`make wikibase` in the register, register#50).
+* The Wikibase Main Page is generated too, and lists every generated page, including `Project:Example queries` (register#50).
+* `Project:Certificates` links each certificate's Wikidata item, as recorded in `register.csv` (register#50).
+* `render_manifest_files()` includes Word (`.docx`) and RTF files in the certificate, also RTF saved as `.doc`, converted with pandoc (closes codecheckers/codecheck#99).
+* `Project:Wikidata export` lists the QuickStatements batches the edit log records as run, and whether `register.csv` holds each certificate's item (register#50).
+* New `extract_pdf_figures()` extracts the figures from the PDF of the checked article.
+* New `compare_figures()` puts each published figure and the reproduced one together in a labelled image.
+* New `render_figure_comparisons()` includes these comparisons in the certificate, and the Rmd and Quarto templates have an optional chunk for it.
+* The Rmd and Quarto templates no longer have a Summary section with placeholder text: the certificate's summary is the `summary` in `codecheck.yml`, shown in the summary table.
+* The Rmd and Quarto templates call the package's functions as `codecheck::fn()`, so it is clear which functions come from the package.
+* The Quarto template sets code and its output in 7pt and R's output width to 120, so that about 120 characters fit on a line.
+* `zenodo_policy_check()` reports the deposit's files as rules `CC-REP-007` to `CC-REP-010`, which replace `CC-REP-003` (closes codecheckers/codecheck#95).
+* `zenodo_policy_check()` accepts a Jupyter notebook (`.ipynb`) as certificate source (codecheckers/codecheck#95).
+* `upload_zenodo_certificate()` replaces an existing `codecheck.ipynb` source like an `.Rmd` or `.qmd` one, but no other notebook on the record (codecheckers/codecheck#95).
+* `zenodo_policy_check()` compares the record's certificate ID, codechecker names and ORCIDs with a given `configuration` (rules `CC-REP-004` to `CC-REP-006`) (codecheckers/codecheck#100).
+* `check_zenodo_record()` and `check_register_zenodo_policy()` compare each record with its certificate's `codecheck.yml` (codecheckers/codecheck#100).
+* `validate_register_rules()` checks that each `Issue` number is an issue of codecheckers/register (`CC-REG-006`) whose title names the certificate (`CC-REG-007`) (codecheckers/codecheck#100).
+* The `codecheck.yml` template declares the YAML version with `%YAML 1.1`, as the specification recommends (codecheckers/codecheck#100).
+* A manifest of a single item with only a `comment` declares a check without output files, and the certificate shows the comment instead of a warning box.
+* The README and the getting started vignette no longer offer OSF for publishing a certificate, because OSF accepts no new records; certificates already on OSF remain valid.
+* Rule `CC-CFG-005` `manifest-item-file` accepts a single manifest item with only a `comment`, for a check without output files.
+
+## Bug Fixes
+
+* The certificate's warning box shows a warning sign instead of a blank on each side of "WARNING".
+* `register_render(parallel = TRUE)` no longer fails random certificates, by requiring rmarkdown 2.32 or later (codecheckers/codecheck#88).
+* A failed page render no longer leaves temporary files or a `libs/` folder behind in the page's directory (codecheckers/codecheck#88).
+* The certificate summary tables no longer fail when `codecheck.yml` lists several `repository` URLs, and list all of them (closes codecheckers/codecheck#97).
+* `upload_zenodo_metadata()` adds every repository as a related identifier and to the description, not only the first (codecheckers/codecheck#97).
+* `latex_summary_of_manifest()` links output files on the default branch instead of `master`, only for GitHub and GitLab, and takes a `repository_url` to choose or turn off the link (codecheckers/codecheck#97).
+* The certificate summary table in the Rmd and Quarto templates labels the rows "Author"/"Authors" and "Codechecker"/"Codecheckers" by the number of people, instead of "Author(s)" and "Codechecker(s)".
+* `register_render()` no longer stops with "replacement has N rows, data has N+1" when a register row's repository has no `codecheck.yml`. `add_codechecker()` dropped the entry of such a row from the Codechecker column; it now keeps an empty one and still warns.
+* `Project:Wikidata export` says whether the export has run, instead of claiming nothing has been sent, and lists the certificates whose checked work has no DOI (register#50).
+* `zenodo_policy_check()` recognises membership in the Zenodo codecheck community by the community's UUID or its slug under `parent$communities$entries`, as the InvenioRDM API reports it. It reported every record as not a member before (#20).
+* The certificate's manifest table keeps spaces in file names, e.g. `Figure 1.png` instead of `Figure1.png` (closes codecheckers/codecheck#98).
+* `copy_manifest_files()` replaces whitespace with underscores in the names of the copies in `codecheck/outputs/`, so they can be included in the certificate, whose headings still show the original names, and warns when two files would get the same copy (codecheckers/codecheck#98).
+* Rule `CC-MET-005` `paper-title-match` accepts a paper title that includes the subtitle Crossref or DataCite registers separately from the main title OpenAlex holds (closes codecheckers/codecheck#96).
+* `zenodo_policy_check()` reports a deposit without a PDF, or with more than one of `codecheck.Rmd`, `codecheck.qmd` and `codecheck.ipynb`, as a warning instead of a failure, matching the rules' severity (codecheckers/codecheck#95).
+* Rule `CC-CFG-002` `explicit-document` accepts directives such as `%YAML 1.2`, comments and blank lines before the document marker `---` (closes codecheckers/codecheck#100).
+* Rule `CC-CFG-029` `reference-other-is-list` accepts a `reference-other` sequence of plain URLs, which it rejected as not a sequence (codecheckers/codecheck#100).
+* Rules `CC-CFG-030` and `CC-MET-009` check a `reference-other` sequence of plain URLs instead of skipping it (codecheckers/codecheck#100).
+* `validate_certificate_github_issue()` finds the certificate's issue beyond the newest 100 issues, and in an issue title naming a range of certificates (codecheckers/codecheck#100).
+* The bundled rule descriptions say what the checks do, for example that `CC-CFG-006` also rejects `..` in manifest paths (codecheckers/codecheck#100).
+* The register's near-duplicate check compares paper titles regardless of markup such as `<i>`, non-breaking spaces and the spacing around separators (codecheckers/codecheck#96).
+* Figures in a Quarto certificate are included by a path relative to the certificate, instead of an absolute path that Quarto rewrote into a broken `./home/...` (codecheckers/codecheck#93).
+* The certificate's "Citing this document" wraps the Zenodo DOI URL to the next line instead of running past the margin.
+* The certificate's manifest table continues on the next page with its header repeated, instead of being cut off (closes codecheckers/codecheck#93).
+* The certificate's summary table escapes `&`, `%`, `#` and `_` in the paper title and `summary`, leaving math and LaTeX commands alone, instead of failing to compile or losing text.
+* Manifest comments in the certificate escape `_` too, e.g. in file names such as `run_all.R`, but not in math or LaTeX commands.
+* `http(s)` URLs in the certificate's summary are links that break across lines, instead of running past the margin.
+* A certificate whose `codecheck.yml` lists no manifest files renders with a warning box instead of failing with "a character vector argument expected".
+* `copy_manifest_files()` and `list_manifest_files()` accept manifest items without the optional `comment`, instead of failing with "arguments imply differing number of rows".
+* The certificate's summary table and "Citing this document" escape `&`, `%`, `#` and `_` in the names of authors and codecheckers, instead of failing to compile.
+* `render_figure_comparisons()` links the images relative to a Quarto certificate, like `render_manifest_files()`, so that absolute paths in the certificate's directory work too (codecheckers/codecheck#93).
+
+# codecheck 0.31.0
+
+## New Features
+
+* The codechecker lists and the register's `persons.csv` take a `fediverse` account (`@user@instance`), shown as a `rel="me"` link on person pages, under `sameAs` in their Schema.org metadata and in their `index.json` (register#217).
+* `venues.csv` takes a `fediverse` account and `hashtags`, shown on venue pages and in their JSON (register#217).
+* `codecheck_spec_version()` uses the version a `codecheck.yml` names, including the historical `https://codecheck.org.uk/spec/1.0`, and otherwise the version current at its `check_time` or the new `modified` argument, instead of always the newest.
+* Person pages, their `stats.json` and their Schema.org metadata (`knowsAbout`) list a codechecker's fields and languages from `codecheckers.csv` (register#168).
+* The README and `DESCRIPTION` list the system libraries needed to install the package, e.g. `libpoppler-cpp-dev` and `libmagick++-dev` on Debian/Ubuntu (closes codecheckers/codecheck#91).
+* Rules `CC-MET-005` to `CC-MET-008` compare the paper metadata with OpenAlex instead of Crossref, which covers arXiv DOIs and holds far more author ORCIDs (closes codecheckers/codecheck#92).
+* The bundled rule files are refreshed from the register: `CC-MET-005` to `CC-MET-008` are renamed `paper-*`, keeping their identifiers (register#220).
+* New `validate_codecheck_yml_metadata()` runs those rules; `validate_codecheck_yml_crossref()` is deprecated and calls it (codecheck#92).
+* `validate_contents_references()` takes `validate_metadata` in place of the deprecated `validate_crossref` and returns `metadata_result` (codecheck#92).
+* `register_clear_cache()` takes certificate identifiers to refresh only what is cached about those certificates, keeping the rest of the cache (`make clean_cert CERT_ID=...` in the register).
+
+## Bug Fixes
+
+* The manifest table in the certificate escapes `&`, `%` and `#` in file comments and shows `missing` as the size of a missing file, instead of failing to compile (closes codecheckers/codecheck#93).
+* `DESCRIPTION` requires R 4.4.0, the version that added the `%||%` operator the package uses throughout, instead of claiming to work on R 4.0.0.
+* The link text of a fediverse account on person and venue pages is no longer turned into citation spans by pandoc (register#217).
+* A `persons.csv` whose `fediverse` column has no account in it no longer stops `register_render()` with "attempt to set an attribute on NULL" (register#217).
+* Writing `persons.csv` after resolving Wikidata items keeps the file's other columns and the rows without an item, instead of rewriting it with `orcid` and `wikidata` only (register#217).
+* Every render reads the codechecker lists fresh from GitHub, using the cached copy only when that fails, so a copy cached before the `fediverse` column no longer hides all accounts until the cache is cleared (register#217).
+* Rule `CC-MET-001` orcid-format now also checks an ORCID's check digit, so a mistyped ORCID is caught before it is looked up (register#209).
+* Rule `CC-MET-003` orcid-name-match no longer reports a name as different from its ORCID record only because of diacritics, e.g. Grišiūtė and Grisiute (register#209).
+
+# codecheck 0.30.0
+
+## New Features
+
+* The CODECHECK validation rules maintained in the register are bundled with the package and readable with `codecheck_rules()`, `codecheck_rule()` and `rule_severity()`, one set per version of the configuration file specification (register#209).
+* New `update_codecheck_rules()` refreshes the bundled rules from the register, and `codecheck_rules_provenance()` reports the register commit each bundled file came from and when it was fetched (register#209).
+* New `validate_codecheck_yml_rules()` validates a `codecheck.yml` against the rules of the specification version it declares, with one check function per rule and the severity taken from the rule file, so hardened requirements in 2.0 need no separate code path (register#209).
+* New `codecheck_spec_version()` reports which specification version a `codecheck.yml` declares, defaulting to the newest when the `version` node is absent (register#209).
+* New test asserting that every rule in the register's rule files is either implemented by a check function or explicitly recorded as not implemented, so a new rule cannot be ignored silently (register#209).
+* `validate_codecheck_yml()` now runs the rule checks instead of implementing the same requirements a second time, so its error messages name the rule that rejected a file, e.g. `CC-CFG-026 certificate-id-format` (register#209).
+* A rule reported on its own now carries the rule's description alongside its identifier, in both the per-rule report and the error messages; where several rules are listed at once, only identifiers and findings are shown (register#209).
+* The ORCID and Crossref comparisons, `CC-MET-002` to `CC-MET-008`, are now rules of `validate_codecheck_yml_rules()`, requesting each record once per file (register#209).
+* `validate_codecheck_yml_rules()` checks that the manifest files exist in the bundle (`CC-BUN-001`), and runs a selection of rules with its new `rules` argument (register#209).
+* New `validate_register_rules()` checks the certificate identifier sequence, the venue types and the venues of `register.csv` (`CC-REG-002`, `CC-REG-004`, `CC-REG-005`), and `register_check()` runs it (register#209).
+* The tagline of the persons page now splits the number of people into those who conducted checks and those who authored checked works, noting that some people are in both groups.
+
+## Bug Fixes
+
+* An unreachable or rate-limited ORCID or Crossref API no longer fails `validate_codecheck_yml_orcid()` or `validate_codecheck_yml_crossref()`; the comparisons are skipped instead (register#209).
+* `validate_codecheck_yml_orcid()` and `validate_codecheck_yml_crossref()` report at the rule's severity, so a missing codechecker, a codechecker without a name or a malformed ORCID now stops without `strict` (register#209).
+* `validate_codecheck_yml_orcid()` reads ORCID records from the public API only, and its `skip_on_auth_error` argument no longer has an effect (register#209).
+* `validate_codecheck_yml()` runs only the rules it enforces, so validating a certificate in `register_check()` no longer makes requests for the others (register#209).
+* A `codecheck.yml` that is not valid YAML or not UTF-8 is now reported as a failure of rule `CC-CFG-001` rather than as a parser error, and the remaining rules still report what they can (register#209).
+* Fix `R CMD check --as-cran` failing with an error about `man/wikidata_model.Rd` and `man/WIKIDATA_MODEL.Rd` differing only by case, which is not portable across platforms.
+* Fix a batch of `R CMD check` warnings and notes: non-ASCII characters in R sources, lost braces and an unknown `\n` macro in the generated documentation, undocumented and mismatched arguments, undeclared global variables, and `rprojroot` moving from Imports to Suggests (it is used by the shipped certificate templates, not by package code).
+* The certificate template's `Makefile` now ships as `Makefile.template` and is renamed when copied into a workspace, so its GNU make conditionals no longer trip the portability check.
+* `License: MIT` now names the accompanying `LICENSE` file, as CRAN requires.
+* Fix pandoc warning `Div at temp.md line 8 column 1 unclosed` for every certificate page, and align the JSON link with the cards.
+
+# codecheck 0.29.0
+
+## New Features
+
+* The register is now published as linked data, on Wikidata and on the CODECHECK Wikibase (register#50). All 132 certificates are items on Wikidata, e.g. [CODECHECK Certificate 2025-007](https://www.wikidata.org/wiki/Q141269712), each stating "review of" (`P6977`) on the work it checked, e.g. [the kite wind tunnel measurements](https://www.wikidata.org/wiki/Q141269452) - [one query](https://query-scholarly.wikidata.org/#SELECT%20%3Fcertificate%20%3FcertificateLabel%20%3Fwork%20%3FworkLabel%20WHERE%20%7B%0A%20%20%3Fcertificate%20wdt%3AP13046%20wd%3AQ116740071%20%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20wdt%3AP6977%20%3Fwork%20.%0A%20%20SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22.%20%7D%0A%7D) lists all 124 pairs. The staging instance <https://codecheck.wikibase.cloud> holds the same certificates plus the codecheckers and venues that are only ever linked on Wikidata, never created there: [certificate 2020-001](https://codecheck.wikibase.cloud/wiki/Item:Q89), the [work it reviews](https://codecheck.wikibase.cloud/wiki/Item:Q87), [Stephen J. Eglen](https://codecheck.wikibase.cloud/wiki/Item:Q18), [GigaScience](https://codecheck.wikibase.cloud/wiki/Item:Q83). It also carries the overview tables and the procedure, readable without R or a login: [Project:Data model](https://codecheck.wikibase.cloud/wiki/Project:Data_model) (every property and item next to its Wikidata counterpart), [Project:Certificates](https://codecheck.wikibase.cloud/wiki/Project:Certificates) (every certificate item beside its register page), and [Project:Wikidata export](https://codecheck.wikibase.cloud/wiki/Project:Wikidata_export) (what an export would do, before it is done). The step-by-step procedure is the vignette ["Export the register to Wikidata"](https://codecheck.org.uk/codecheck/articles/codecheck_wikidata.html).
+* The CODECHECK Wikibase now has a page of ready-to-run SPARQL examples, [Project:Example queries](https://codecheck.wikibase.cloud/wiki/Project:Example_queries), written by `bootstrap_wikibase()` (register#50). Ten of them query Wikidata itself, where the certificates are, and say which half of its split graph to send them to; three query the instance for the one thing Wikidata cannot answer, who did the checking, and are generated with the instance's own property numbers and prefixes.
+* The sort state of the register tables is now reflected in the page URL, so a particular view can be linked, bookmarked or cited: `?sort=-check-date` is the register sorted by check date, newest first (a leading `-` means descending, the column name is the header text slugified). A page with more than one sortable table numbers them in document order, `sort`, `sort2`, ..., e.g. a person page as `?sort=venue&sort2=-check-date`. The sort is applied on load and the URL updated on every header click via `history.replaceState()`, so the back button is unaffected; an unknown or unsortable column name is ignored and leaves the default order. Entirely in `inst/extdata/js/table-sort-init.js`, which is all a static GitHub Pages site needs.
+* The statistics dashboard now shows the spread of time between a work's publication and its CODECHECK certificate: a bucketed histogram and a per-certificate beeswarm plot (each dot linking to its certificate page), plus a summary line, computed by `compute_annual_stats()` from the existing `Work publication date`/`Check date` columns. Deliberately framed as a distribution rather than a speed metric - checking a decades-old work is as notable as a fast turnaround.
+* `add_openalex_work_fields()` now falls back to reading a work's publication date straight off its own reference URL when OpenAlex has no record for it at all: `citation_online_date`/`citation_publication_date`/`citation_date` HTML meta tags, schema.org `datePublished` JSON-LD, or - for a reference that is itself a PDF - the PDF's own `Created` metadata via `pdftools::pdf_info()`. New `get_page_publication_date_result()` and helpers in `R/utils_paper_publication_date.R`. A partial date (a bare year, or year+month) is resolved to its calendar midpoint rather than the 1st, so it does not skew interval calculations toward "early in the period". `xml2` moves from Suggests to Imports.
+* A render now warns when a certificate's `paper.reference` is a plain (non-archived) PDF link: such links carry no machine-readable publication metadata and are prone to rotting (two of the CMMID COVID-19 reports already 404). New `warn_if_pdf_reference()`, called from `add_openalex_ids()`; suggests a web.archive.org snapshot instead, matching the guidance added to the community workflow config spec.
+* A certificate's "Paper details" box now shows its `Work publication date` (when known) below the abstract, and a work's own landing page shows it in the metadata panel directly below the DOI. `Work publication date` joins the columns carried through to a work page for `generate_work_metadata_html()` (`CONFIG$REGISTER_COLUMNS$works$html`), same as `OpenAlex` already was.
+* `preview_wikidata_export()` splits a batch that would create more items than Wikidata's rate limit allows per minute into numbered files to paste in turn (register#50). A background QuickStatements run pushes as fast as the API accepts, so a larger batch stopped at the limit and reported the rest as "No success flag set in API result".
+* `quickstatements_submitted()` retires the `.qs` file a batch was pasted from, renaming it with a `.submitted` suffix, and `preview_wikidata_export()` removes a batch file once nothing is left to create (register#50). QuickStatements' `CREATE` is not idempotent, so a batch file left lying around after its run is one paste away from duplicating every item in it.
+* `preview_wikidata_export()` no longer tells you to run the works batch first when there is no works batch to run: certificates left without a `review of` statement once every resolvable work exists name a checked work that has no DOI (register#50).
+* `preview_wikidata_export()` writes the checked works to `wikidata-works.qs` rather than `wikidata-papers.qs`, matching the noun the register uses everywhere else (register#50).
+* `register_render()` keeps a register repo's `.zenodo.json` contributors current with every codechecker named in the register (register#58), crediting people whose work otherwise only appears on their own person page. New `build_zenodo_contributors()` and `update_zenodo_json()`. Zenodo's contributor vocabulary has no "reviewer"/"checker" term, so every entry is typed `"Other"`; a `.zenodo.json` that does not exist is left alone. Only the `contributors` array is touched - the rest of the file (title, creators, licence, ...) stays hand-maintained.
+
+* A certificate's "Time of check" is shown as a day, not a timestamp: `codecheck.yml` files record the check with whatever precision the codechecker had at hand, and the hour of a check is noise to a reader (the register tables already showed the day only). The machine-readable variants keep the recorded precision - the certificate's `index.json` and its schema.org JSON-LD `datePublished` carry the time of day in ISO 8601 where the `codecheck.yml` gave one, and a bare date where it did not, rather than an invented `00:00:00`. `register-full.json` gains a `Check time` field alongside the day-precision `Check date`. New internal helpers `format_check_date()`, `format_check_time_iso()` and `check_time_has_time_of_day()`.
+
+## Bug fixes
+
+* A venue whose `venues.csv` entry labels its identifiers "ISSN (print)" and "ISSN (online)" is now resolved on Wikidata; only the bare "ISSN" label was recognised, so those venues exported with no ISSN at all (register#50).
+* A full render is about three times faster (roughly 200 s to 65 s on a warm cache), from three changes: the certificate PDF links, one HTTP request per certificate, are now resolved up front and in parallel by the new `prefetch_cert_links()` and cached on disk rather than only for the session - resolving them one by one while writing `register.json` took 75 s of every render, and now takes 2.5 s; the pages of each filter (venues, works, persons, organisations) render in parallel when `register_render(parallel = TRUE)`, taking that phase from 96 s to 38 s; and `detect_report_platform()` caches where a report DOI resolves to, which also stops a failed request from silently reporting the platform as "doi.org" and moving the statistics between renders.
+* The test suite no longer empties the user's `R.cache` root: `test_register_check.R` called `register_clear_cache()` against the real cache, so every `build_install_test()` run left the next full render re-fetching every API lookup (about six minutes instead of one). It now uses a temporary cache root, as `test_organisations.R` already did.
+* `register_render(verbose = TRUE)` prefixes every log line with the seconds elapsed since the render started, so a phase that takes minutes between two summary lines is visible in a redirected log. New `with_elapsed_log()`; forked workers inherit the handler, so pages rendered in parallel are stamped too.
+* On a phone the register tables now hide their least important columns - the Report and DOI links, which each row's certificate or work page carries anyway, plus Type, ORCID, ROR, Country and the check-type bars - and say so in a note below the table. New `add_column_priority_classes()` marks the cells in the rendered HTML after `add_sortable_th_attributes()`; the markup keeps every column and the JSON, CSV and Markdown exports are untouched, so a wider window brings them back.
+* The register pages render properly on a phone: the navigation menu wraps instead of running off the screen, which left "Statistics" and "About" unreachable, and a table wider than the viewport scrolls in its own container instead of widening the whole document, which cut off the right-hand columns with no way to reach them. Also zeroes the body margin, which only the plain 404 and redirect templates ever saw, since Bootstrap sets it on every other page.
+
+# codecheck 0.28.0
+
+## New Features
+
+* New `bootstrap_wikibase()` creates the CODECHECK Wikibase's own properties and class items from the data model in `R/wikidata.R`, each carrying a "Wikidata entity" statement naming its counterpart (register#50). A Wikibase mints its own P-numbers, so that mapping is what lets the two sides line up; it is a dry run by default and idempotent, so the instance can be rebuilt from empty.
+* The bootstrap also creates the properties the model uses as qualifiers and references and one item per platform a certificate can be published on, without which those statements were dropped for want of a target.
+* Each statement in the model now names its Wikibase `datatype`, validated against `WIKIBASE_DATATYPES` and reported by `wikidata_properties()` - a property created with the wrong datatype cannot be changed afterwards.
+* The bootstrap writes a generated [Project:Data model](https://codecheck.wikibase.cloud/wiki/Project:Data_model) page listing every local entity next to its Wikidata counterpart.
+* `bootstrap_wikibase()` also writes [Project:About](https://codecheck.wikibase.cloud/wiki/Project:About) and [Project:Copyrights](https://codecheck.wikibase.cloud/wiki/Project:Copyrights), which the [wikibase.cloud hosting policy](https://www.wikibase.cloud/hosting-policy) requires of every hosted instance (register#50).
+* `bootstrap_wikibase()` brings an entity whose label has drifted from the model back in line, so a rerun converges on the model instead of only filling gaps.
+* The bootstrap retries a write the server asks it to repeat (`maxlag`, `ratelimited`, `readonly`, 429/503) with a capped doubling backoff, and names a contact in its User-Agent (`codecheck.contact` option).
+* New `load_wikibase_register()` writes the whole register to the CODECHECK Wikibase as items - people, venues, papers, then the certificates that refer to them - and generates a [Project:Certificates](https://codecheck.wikibase.cloud/wiki/Project:Certificates) index (register#50). Dry by default, and a rerun updates what it wrote instead of duplicating it.
+* New `preview_wikidata_export()` shows what an export to Wikidata would do without sending anything, writing the QuickStatements batches a person pastes in under their own account and publishing [Project:Wikidata export](https://codecheck.wikibase.cloud/wiki/Project:Wikidata_export) on the Wikibase (register#50).
+* The preview page's table of checked works gained a "Wikidata certificate" column, so each row names both the item Wikidata holds for the work and the item for the certificate that reviews it (register#50).
+* `preview_wikidata_export()` resolves against Wikidata through the Action API's `haswbstatement` search rather than the query service, which indexes a new item within minutes and sees every graph it might have landed in; `method = "sparql"` keeps the old path as a cross-check.
+* `preview_wikidata_export()` refuses to write a batch of `CREATE`s the edit log says was already submitted while its entities still do not resolve, since a second paste would duplicate every item; `force = TRUE` overrides it.
+* Checked works are now created on Wikidata as well as mirrored in the Wikibase, carrying their DOI, title, OpenAlex ID (`P10283`) and authors as `P2093` author name strings (register#50).
+* Enriching a work with its OpenAlex ID now also fetches the publication it appeared in and its publication date, as new `Paper ISSN` and `Work publication date` columns in `register.json`, so an exported work states `P1433` published in and `P577` publication date (register#50). New `add_openalex_work_fields()`.
+* The CODECHECK Wikibase gets an item for every publication the checked works appeared in, not only for the venues in `venues.csv` - those name the venues that commission checks, and 22 of the 25 publications the works name are not among them, so their works' "published in" statements had no target (register#50). Wikidata is unaffected: publications are resolved there, never created.
+* `register.json` and `register-full.json` carry each checked work's `Paper ISSN`, `Paper venue` and `Work publication date`, and the Wikidata export backfills them from cache when the register was rendered before those columns existed (register#50).
+* New `verify_wikidata_export()` checks what actually arrived: whether each certificate item exists, whether it is visible in the scholarly graph, and whether it states `review of` on the work it checked.
+* `verify_wikidata_export(update_register = TRUE)` records each certificate's Wikidata item in a `Wikidata` column of `register.csv`, editing the file line by line so its commented-out rows survive (register#50). Nothing else can re-derive the item offline, and the render needs it to link the exported record.
+* Certificate, work and person pages link their Wikidata record, as a signposting `describedby` link to `Special:EntityData` in the page head, as Schema.org `sameAs` in the JSON-LD, and as a `wikidata` field in the page's JSON (register#50). A certificate's item comes from `register.csv`, a work's is resolved from its DOI and a person's from their ORCID.
+* A certificate page's CODECHECK details box gained a "Certificate on Wikidata" entry linking the exported record, below "Full certificate"; the entry is left out entirely for a certificate that has not been exported (register#50).
+* Person and work landing pages show the Wikidata item in their metadata panel, next to ORCID and GitHub on a person page and next to the DOI on a work page, rather than only in the page's head and JSON (register#50).
+* The people with Wikidata items are recorded in the register's `persons.csv`, read before anything is resolved and written back after, so a clone renders the same links without network access. `register_render()` and `register_render_cert()` gained a `persons_file` argument.
+* Wikidata lookups are cached per identifier, a confirmed "no item" included, so only an identifier nobody has looked up yet costs a request. A failed lookup is not cached, so an outage does not become a lasting "no item".
+* New `quickstatements_write()` and `quickstatements_submitted()` keep an edit log of both halves of the export, the API writes to the Wikibase and the QuickStatements batches pasted into Wikidata by hand (register#50).
+* New vignette "Export the register to Wikidata", a step-by-step procedure for the whole export, written to be followed literally by a person or an assistant (register#50).
+* New `/organisations/` pages list the works authored and the checks conducted by each research organisation's people, identified by ROR (register#53). An organisation is only credited for a certificate where the person's ORCID profile placed them there at the time, and every page says so.
+* Organisation pages carry name, type, location and identifiers from ror.org and a logo from Wikidata, and cross-link with an institution venue that shares their ROR.
+* New `orcid_rors()` and `register_ror_coverage()` report which authors and codecheckers have a ROR-identified affiliation in their ORCID profile (register#53).
+* Every rendered page carries [FAIR Signposting](https://signposting.org/FAIR/) typed links, expressed as HTML `<link>` elements because GitHub Pages cannot set HTTP `Link` headers; certificate pages are Level 1 conformant (register#55). New `generate_page_signposting()` and one generator per page type.
+* Pages with Schema.org metadata now also write it to an `index.jsonld` next to the page, so the signposting `describedby` links resolve to a machine-readable document.
+* Register rendering announces the main register, the full export and each filter before rendering them, with a progress bar per page group (per-page timings under `verbose = TRUE`).
+* The filtered register CSVs are now written under their own log heading instead of silently.
+* The "all persons" table shows the per-venue-type stacked bar for checks conducted again (register#92); `index.json` carries the plain counts under `"Check types"`.
+
+## Bug Fixes
+
+* `curate_zenodo_record()` follows a record that Zenodo has superseded with a new version instead of failing with "Not found": the register stores the report DOI as it was published, and the id in it stops being the editable one once a new version exists (certificate 2023-011).
+* `curate_register_zenodo_records()` reports records deposited by another Zenodo account as their own category rather than as errors, and names the certificates concerned - the corrections for those are known and correct, they just have to be made by whoever owns the record.
+* A work landing page shows its OpenAlex ID again: the column was missing from the work pages' HTML column list, so the metadata panel's OpenAlex row never rendered even though `index.json` carried the ID.
+* `register_check()` warns when two certificates share a report DOI. The register renders both without trouble, so it is invisible there, but the report DOI identifies a certificate in the Wikidata export, where two certificates naming one archived record become a single item and the second silently overwrites the first. New `check_duplicate_reports()`.
+* `load_wikibase_register()` and `preview_wikidata_export()` refuse to run when two entities share the identifier the model resolves them on, naming the rows that collide, instead of writing one item for both. New `check_export_keys()`.
+* The Wikibase export no longer ends halfway through when a connection times out or drops: a request that never completed is now retried like a 503, rather than propagating as an error.
+* A certificate item's label includes its number again: mustache cannot address a key containing a space, so ``{{`Certificate ID`}}`` rendered as "CODECHECK Certificate" alone. Register columns are now offered to the model's templates under an underscored alias.
+* A rerun of `bootstrap_wikibase()` no longer relabels the properties it created, having counted each as colliding with its own label on the instance and planned `title` as `title (P1476)`.
+
+# codecheck 0.27.1
+
+## Bug Fixes
+
+* `register_render()`'s codechecker counts (the main `statistics.json`, every venue's `index.json`, and the statistics dashboard) no longer come back empty: `preprocess_register()` only built the underlying `Codechecker` column when `"codecheckers" %in% filter_by`, which stopped happening once 0.27.0 dropped `"codecheckers"` from the default `filter_by`. The column is now always built.
+* The statistics dashboard's "Codecheckers" summary card no longer links to the retired `/codecheckers/index.html`; it links to `/persons/index.html`.
+
+# codecheck 0.27.0
+
+## New Features
+
+* New data model for representing CODECHECK certificates as linked data, in the CODECHECK Wikibase and in Wikidata (register#50). `R/wikidata.R` holds only the model and its accessors, no HTTP or QuickStatements. A certificate carries `P13046` *publication type of scholarly work* so it resolves in the query service's cross-graph join, links to the checked paper via `P6977` *review of* rather than `P2860`, and gets a venue-derived `P31` (AGILE reproducibility reviews are typed separately from CODECHECKs). A checked work whose venue is `preprint` is typed Q580922 *preprint* rather than *scholarly article*; both values keep it in the scholarly graph beside its certificate. The certificate identifier is carried as `P528` *catalog code* qualified with `P972` *catalog* → Q141254857 (the register), until a dedicated external identifier property exists. Only certificates are created on Wikidata; papers, people and venues are resolved against existing items and otherwise created only in the mirroring CODECHECK Wikibase. New `wikidata_model()`, `wikidata_entity_kinds()`, `wikidata_statements()`, `wikidata_properties()`, `wikidata_endpoint()`, `wikidata_creates()`, `validate_wikidata_model()`, `wikidata_pending()`.
+* Register, venue, person, and work tables gain click-to-sort column headers (vendored `stupidtable.js`); columns holding a link/title rather than a plain value (Report, Work) are excluded. New `add_sortable_th_attributes()`.
+* New `/works/<DOI>/` landing page for a checked paper (register#150): lists every certificate that checked it, a metadata panel (DOI, OpenAlex, venues, authors linked to their own person page), Schema.org (`ScholarlyArticle` + `Review` graph), and an `index.json`/`register.json` API queryable by DOI - a paper with no DOI has no page. New `add_work_key()`, `normalize_work_key()`, `get_work_metadata_fields()`, `generate_work_metadata_html()`/`_yaml()`, `generate_work_schema_org()`, `create_all_works_table()`.
+* New `/persons/<ORCID>/` landing page (register#123), replacing `/codecheckers/`: covers both roles a person can have, showing "Works authored" and "Checks conducted" as two separate tables, with role counts in `stats.json` and a `Person` + `Review`/`ScholarlyArticle` Schema.org graph. Only ORCID-identified people get a page. New `add_person_records()`, `explode_person_records()`, `generate_person_metadata_html()`, `generate_person_schema_org()`, `create_all_persons_table()`. A new `docs/404.html` (`generate_404_page()`) redirects a stray `/codecheckers/<X>/` link to `/persons/<X>/` and, for an unmatched `/works/<DOI>`, explains that no CODECHECK has been registered for that DOI.
+* `register_render()`'s default `filter_by` is now `c("venues", "works", "persons")` (was `c("venues", "codecheckers")`).
+* Certificate pages link each ORCID-bearing paper author to their own `/persons/<ORCID>/` page (previously only linked if that author was also a codechecker) and link the paper title to its `/works/<DOI>/` page when it has one.
+* `register_check()` warns about two certificates that share a paper title but not a DOI-normalized work key (a likely same-paper duplicate that would otherwise render as two separate `/works/` pages, e.g. register#133/#149), and about an ORCID recorded under materially different names or a name recorded under different ORCIDs across the register. New `check_near_duplicate_works()`, `check_orcid_conflicts()`.
+* `register.md` is no longer generated for a person page, since its two tables (works authored, checks conducted) can't be represented as the one markdown table every other filter's `register.md` assumes. New `CONFIG$FILTERS_WITHOUT_MD`.
+* The "CSV source"/"CSV on GitHub" footer links (formerly "searchable CSV") now show only on the main, unfiltered register page.
+* The top navigation menu is now shown on every page, not just overview pages; each menu item and the logo gained hover text.
+* `.navbar-menu .nav-link` font size reduced from `2rem` to `0.95rem` and its breadcrumb counterpart matched to it.
+* Added a ResearchEquals collection link to the page footer, next to the Zenodo community link.
+
+* Venue landing pages show a metadata panel with website, contact, description, identifiers and logo, from new `venues.csv` columns (register#84).
+* A venue's `statistics.json` is renamed to `index.json`, since it now carries more than statistics (register#183).
+* `venues.csv` gained optional `logo_url`, `website_url`, `policy_url` and `publisher` columns.
+* New statistics dashboard page at `docs/statistics/index.html` with charts, a venue grid and a publisher table (addresses register#33, register#48). New `render_statistics_page()`.
+* Venue type colours are now pinned by name in `CONFIG$VENUE_TYPE_COLORS` instead of assigned by the order types appear in the data.
+* JSON/Markdown export links below register tables are now relative rather than absolute `codecheck.org.uk` URLs.
+* Venue and codechecker `register.md` exports carry their metadata as YAML frontmatter instead of embedded HTML.
+* Certificates published on ResearchEquals are now audited against the CODECHECK curation policy, including membership in the CODECHECK and Reproducible AGILE collections. New `check_researchequals_record()` and `researchequals_policy_check()`.
+* `register_render()` and `register_check()` gained `check_researchequals_policy` (default `TRUE`), the ResearchEquals counterpart of `check_zenodo_policy`.
+* A "Go to random certificate" button on the main register page jumps to a random certificate instead of the oldest one (register#188).
+* Certificate pages now carry Highwire Press citation metadata, so Google Scholar can index a certificate and Zotero saves it as a report (register#52).
+* Certificate pages describe themselves in their OpenGraph metadata instead of describing the register as a whole, and gained an `og:image` of the certificate's first page.
+* A certificate's title is now read from the platform it is published on rather than constructed as "CODECHECK Certificate \<ID\>".
+* A certificate's Schema.org JSON-LD gained `publisher`, `inLanguage`, the record DOI as `identifier` and the certificate PDF as `encoding`.
+* `register_render()` and `register_render_cert()` gained `prune_unavailable_metadata` (default `FALSE`), controlling whether an OpenAlex ID or abstract confirmed unavailable is removed from the rendered output.
+* Codechecker profiles are now looked up in the institutional and Reproducible AGILE codechecker lists as well as the volunteer one, so those codecheckers' pages show an avatar and GitHub link (register#215). New `get_institutional_codecheckers_data()` and `get_agile_codecheckers_data()`.
+* A codechecker's own page shows a metadata panel with their avatar, ORCID, GitHub profile and the venues they contributed checks to (register#74, register#189, register#83, register#75).
+* A codechecker's `stats.json` gained a `codechecker` field with their name, identifiers and contributed venues (register#78).
+* The all-codecheckers table gained a "Check types" column with a stacked bar per codechecker, and their own page the same breakdown as a donut (register#92, register#207).
+
+## Bug Fixes
+
+* A `codecheck.yml` that cannot be retrieved no longer aborts the whole register render: the affected entry is rendered without the metadata and a warning names the certificate and the error, instead of the render stopping at the first rate limited or unreachable repository.
+* `register_render()` rejects an empty register, or a `from`/`to` selection outside it, up front with a message saying so, instead of carrying rows of `NA` into the enrichment steps and failing later with an unrelated error.
+* The download of a `codecheck.yml` from OSF is now retried like the two OSF API calls preceding it, so a rejection from OSF's file server (e.g. `Forbidden (HTTP 403)` when the anonymous quota is exhausted) no longer ends the render.
+* The Zenodo DOI badge in the page footer no longer renders its raw URL as visible link text next to the badge image.
+* Codechecker and venue pages' Schema.org `Review` entities no longer embed markdown link syntax in `@id`, `url` and `name`.
+* Pages without Schema.org metadata of their own no longer emit an empty `<script type="application/ld+json">`; they fall back to the generic CODECHECK website metadata as intended.
+* A certificate's OpenAlex ID and abstract are now looked up once per certificate instead of three times, and a failed lookup no longer drops the field.
+* `researchequals_policy_check()` reports a missing reference to the checked paper as a warning, not a failure: ResearchEquals references cannot be added after publication.
+* ResearchEquals certificates whose main file is a document written in that platform's editor are downloaded correctly again (affects certificate 2026-014).
+* Codechecker pages' Schema.org JSON-LD includes each certificate's paper title and URL again.
+* `render_cert_htmls()` no longer emits a spurious `file("") only supports open = "w+"...` warning on every render.
+* Poppler's PDF parsing diagnostics are now captured and classified instead of printing raw to the console, and are reported under parallel rendering too.
+* Removed a duplicate definition of `convert_cert_pdf_to_png()` that existed identically in two files.
+* The venue table's `Report` and `Paper Title` column widths were fixed; Paper Title was the narrowest column despite carrying the most content.
+* The `<meta name="generator">` tag now shows just `codecheck <version>`, without the git commit hashes.
+* A codechecker's metadata panel no longer disappears entirely for an author-only person with no codecheckers.csv entry; it now falls back to showing their ORCID.
+* Fixed the navbar's border colour being silently overridden by a later shorthand `border-bottom` declaration at equal specificity, so it never actually rendered green.
+* Breadcrumbs on a venue type overview page (e.g. `/venues/journals/`) no longer collapse to a bare, unlinked "Venues"; they now show "Venues > Journals" like every other venue page.
+* `render_register_json()` and `register_update_stats()` no longer duplicate their venue/codechecker/work/person stats-building logic, which could otherwise drift between a full render and a stats-only update.
+
+# codecheck 0.26.0
+
+## New Features
+
+* `register_check()` now checks the register newest-first by default (closes codecheckers/codecheck#79). Pass `from = 1, to = nrow(register)` for the previous oldest-first order.
+* `register_check()` now also checks the checked repository itself: organisation/group membership, archived status, CODECHECK badge, license, and `codecheck` topic tag (closes codecheckers/codecheck#25, #75, #14).
+* The allowed GitHub organisations/GitLab groups for `check_repository_org()` are now configurable via `CONFIG$ALLOWED_REPO_ORGS`; `github.com/reproducible-agile` was added to the default list.
+* `validate_codecheck_yml()` now checks that `codecheck.yml` is valid UTF-8, starts with the YAML document marker, and has at least one `codechecker` entry; `register_check()` now rejects a register containing duplicate certificate IDs (closes codecheckers/codecheck#9).
+* `zenodo_policy_check()` gained three checks: the certificate ID must appear in the deposit title, a non-standard certificate PDF filename is now flagged, and deposit membership in the Zenodo `codecheck` community is checked (closes codecheckers/codecheck#20).
+* `register_render()` no longer accumulates stale `header-attrs-*` directories in `docs/libs`, and gained `prune_libs()` to remove other unreferenced library directories (closes codecheckers/codecheck#89).
+* Zenodo concept DOI checking is extended to also catch an outdated version-specific DOI, via new `is_zenodo_latest_version()` (closes codecheckers/codecheck#36).
+* Zenodo "concept DOIs" are now rejected in the `report` field of `codecheck.yml` (closes codecheckers/codecheck#36).
+* A Quarto certificate template (`codecheck.qmd`) is now shipped alongside the R Markdown one (closes codecheckers/codecheck#29).
+* Licence correction now keeps the licences already on a Zenodo record when adding the required CC-BY 4.0.
+* Curation findings that need human judgement (e.g. a non-standard title or repository) are now surfaced instead of guessed.
+* New `curate_register_zenodo_records()` applies mechanical Zenodo metadata corrections across a whole register in one batch.
+* `curate_zenodo_record()` gained `creator_overrides` to control how individual creator names are split or kept as an organisation.
+* Every Zenodo-hosted certificate is now audited against the CODECHECK community curation policy during `register_render()` and `register_check()`, with findings reported as a summary.
+* New `check_zenodo_record()` and `curate_zenodo_record()` audit and correct a single published Zenodo record's metadata against the curation policy.
+
+## Bug Fixes
+
+* `register_check()` no longer aborts the whole run when Zenodo rate-limits it. `is_zenodo_concept_doi()` and `is_zenodo_latest_version()` now query Zenodo's plain record endpoint directly instead of through zen4R's search-based lookups, which carried a much stricter, easily-tripped limit; requests are paced adaptively from Zenodo's own `X-RateLimit-*` response headers rather than a fixed guess, with a `cli` message logged whenever a wait is actually applied, and a 429 is retried automatically.
+* `is_zenodo_concept_doi()` no longer misreports a rate-limited lookup as a concept DOI.
+* `is_zenodo_latest_version()` no longer misreports a record's own latest version as outdated: it compared record IDs against a second, search-based lookup that is not reliably ordered by version, and could return a stale record even when the checked one was in fact current. It now reads the authoritative `is_latest` flag already present on the record itself.
+* `rprojroot` is now declared as a package dependency, fixing a missing-function error on a clean install.
+* The ORCID icon on certificate pages is now clickable and links to the ORCID profile.
+* The ORCID icon in the PDF certificate no longer silently goes missing (closes codecheckers/codecheck#37).
+* A creator recorded as an organisation is now reported as information, not an error, in the Zenodo curation policy check (raised in codecheckers/register#205).
+* ORCID name checks no longer fail a fresh, unauthenticated workspace.
+* A fresh workspace now passes strict CrossRef and ORCID name validation out of the box.
+* The register CSS is now written to the output directory rather than the working directory.
+* `create_codecheck_files()` now reports the correct target folder (closes #87).
+* OSF certificate retrieval now survives an OSF outage instead of failing with an unrelated parsing error.
+* Rendering no longer rewrites `docs/libs/PROVENANCE.csv` on every run when nothing changed.
+* A failed library download is no longer stored as if it were the library file.
+* ResearchEquals certificates can be downloaded again after that platform's API change.
+* A register in which no codechecker has an ORCID or GitHub identifier now renders correctly.
+* Zenodo curation no longer truncates titles that need a human's review.
+* A clear error message is now shown when a Zenodo token may not edit a record.
+* Codecheckers are now recorded as persons, not organisations, in Zenodo metadata.
+* Alternate identifiers are no longer silently dropped when uploading Zenodo metadata.
+* Record titles now match the curation policy ("CODECHECK Certificate \<ID\>").
+* A missing or non-DOI paper reference now raises a clear warning.
+
+# codecheck 0.25.0
+
+## New Features
+
+* New `register-full.json` and `register-full.csv` exports contain the complete certificate metadata, including authors, codecheckers, and abstracts (closes codecheckers/register#57).
+* New `register_render_cert()` renders a single certificate by ID without re-rendering the whole register (closes codecheckers/codecheck#84).
+* Visiting `/register/certs/` without a certificate ID now redirects to the main register page instead of showing a 404 (closes codecheckers/register#166).
+* Rendering output now uses structured, colored logging with progress bars and section headers.
+* Warnings raised during rendering are now collected and shown as a deduplicated summary at the end of the run.
+
+## Bug Fixes
+
+* Fixed stray `libs/` folders left behind by parallel rendering.
+* Fixed broken navigation links on venue type pages.
+* Fixed broken navigation and logo paths on venue type pages.
+* Removed the redundant venue label column from venue type pages.
+
+## Performance & Scalability
+
+* Log messages during certificate rendering are now prefixed with the certificate ID, making parallel-render logs easier to follow.
+
+# codecheck 0.24.0
+
+## Register Enhancements
+
+* Internal navigation links now use relative paths, enabling local development and testing.
+* The Paper Title column is wider and the Report column narrower, with shortened displayed URLs.
+* Certificate abstract and summary text now display in full, without a scrollable container.
+* Certificate preview images now auto-paginate every 5 seconds, pausing on user interaction.
+* Certificate pages now use the full viewport width.
+* All register outputs (HTML, Markdown, JSON) are now consistently sorted by certificate ID, except `featured.json`, which stays sorted by check date (closes codecheckers/register#160).
+* Certificate pages now include an interactive citation generator (APA, Vancouver, Harvard, BibTeX, BibLaTeX, RIS) (closes codecheckers/register#82).
+* JavaScript is now centralized into dedicated files, and the citation library is bundled locally instead of loaded from a CDN.
+* Navigation and breadcrumb text sizes were increased for readability.
+
+## Performance & Scalability
+
+* Certificate HTML can now be rendered in parallel across CPU cores via `register_render(parallel = TRUE)`, roughly 5-6x faster on 8 cores.
+
+## Bug Fixes
+
+* Fixed duplicate certificates appearing on the "no ORCID" codechecker page (closes codecheckers/register#153).
+* Codecheckers without an ORCID now appear on the "All codecheckers" page.
+* Fixed a crash from missing check dates in Schema.org metadata.
+* Fixed the certificate JSON page generator not being available for external use.
+* Fixed the citation generator, which previously loaded indefinitely.
+
+# codecheck 0.23.0 (2025-11-12)
+
+## Register Enhancements
+
+* Added a navigation header with the CODECHECK logo, and an overview menu on the main register pages.
+* Added breadcrumb navigation to all register pages (closes codecheckers/register#108).
+* Certificate pages now include a machine-readable `index.json` (closes codecheckers/register#143).
+* Certificate pages now include Schema.org JSON-LD metadata for search engines (closes codecheckers/register#182).
+* Codechecker profile pages now include Schema.org JSON-LD metadata.
+* Column ordering in register tables is now configurable per view (addresses #101).
+* CSV exports now include all fields available in the JSON output.
+* Added `sitemap.xml` and `robots.txt` for search engine discoverability (closes codecheckers/register#126).
+* Codecheckers without an ORCID now get their own page, keyed by GitHub username (closes codecheckers/register#130).
+* Overview pages now show build metadata (timestamp, version, commit) in the footer (closes #105).
+* Replaced inline SVG icons with icon fonts for ORCID, GitHub, and Zenodo.
+* Codechecker pages now display ORCID and GitHub profile links (closes #73).
+* Added a Zenodo community link to the footer.
+
+## Bug Fixes
+
+* Fixed a grouping error in the venue table.
+* Fixed a crash from a missing paper title during CSV generation.
+* Fixed icon font, JavaScript, CSS, and logo paths on nested pages.
+
+# codecheck 0.22.0.9000
+
+## Certificate Page Improvements
+
+* Codechecker names on certificate pages now link to their register page rather than their ORCID profile (closes #141).
+* Certificate pages now link the venue type and venue name (closes #142).
+* Certificate pages now include venue-based breadcrumb navigation.
+
+## Visual Improvements
+
+* ORCID icons now use the official ORCID brand color.
+* Updated the Zenodo icon to the official logo.
+* Improved icon alignment across register pages.
+
+## Infrastructure Improvements
+
+* Temporary HTML section files are now cleaned up after rendering.
+* Register CSS moved out of inline styles into a dedicated stylesheet.
+* External libraries (Bootstrap, Font Awesome, Academicons) are now managed locally instead of via CDN, with provenance tracking.
+
+## Bug Fixes
+
+* Fixed a rendering error from a missing table details name.
+* Fixed broken venue type hyperlinks.
+
+## Venue Configuration and Label Integration
+
+* Venue information now loads from `venues.csv` instead of being hardcoded.
+* Venue pages now link to their open GitHub issues.
+* Breaking change: `register_render()` now requires a `venues_file` parameter.
+
+## GitHub Issue Validation
+
+* Certificates are now validated against their GitHub issue: a missing issue fails validation, a closed or unassigned issue raises a warning.
+
+## ORCID Validation Improvements
+
+* ORCID validation now handles authentication failures gracefully, with a new `skip_on_auth_error` option for CI and offline use.
+
+## Manifest Rendering Enhancements
+
+* Certificates can now render more file formats in the manifest section, including TIF, GIF, EPS, SVG, JSON, TSV, and multi-page PDFs.
+* A missing or unsupported manifest file no longer fails the whole certificate; it now shows an error message in the PDF instead.
+
+# codecheck 0.22.0
+
+## Certificate Automation and Validation
+
+* Certificate IDs can now be retrieved automatically from the matching GitHub issue.
+* `codecheck.yml` can now be validated for syntax errors and auto-completed with missing fields.
+* Paper and author/codechecker metadata can now be validated against CrossRef and ORCID records.
+* Placeholder certificate IDs and report DOIs are now flagged with a visible warning in rendered PDFs.
+
+## Lifecycle Journal Integration
+
+* Article metadata can now be retrieved automatically from Lifecycle Journal to populate `codecheck.yml` (closes #82).
+
+## Bug Fixes
+
+* Fixed Zenodo certificate upload failing due to an API signature change.
+* Fixed ORCID icon links in PDF certificates.
+* Fixed handling of NULL/empty fields during certificate rendering.
+* Fixed Zenodo alternate identifiers not being set per the curation policy.
+
+## Enhancements
+
+* Zenodo certificate upload can now include additional files, including the certificate source (`.Rmd`/`.qmd`).
+* A new Zenodo record's DOI is now written back to `codecheck.yml` automatically, and the record is submitted to the CODECHECK community.
+* Zenodo metadata uploads now comply with the CODECHECK curation policy (publisher, resource type, identifiers).
+* DOI validation is now platform-agnostic (Zenodo, OSF, ResearchEquals, ...).
+
+# codecheck 0.21.0
+
+* Added a pkgdown documentation site.
+* Fixed a typo in abstract text retrieval.
+* Fixed repository URL validation to properly check HTTP responses.
+
+# codecheck 0.20.0
+
+* Renamed fields in register output for consistency.
+* Updated footer contact information and removed individual maintainer references.
+
+# codecheck 0.19.0
+
+* Fixed namespace issues.
+* Added support for specifying a from/to range when rendering the register.
+
+# codecheck 0.18.0
+
+* Added validation of the certificate identifier format (`NNNN-NNN`, e.g. "2024-001") in `validate_codecheck_yml()`.
+
+# codecheck 0.17.0
+
+* Added support for downloading certificates from the ResearchEquals platform.
+
+# codecheck 0.16.0
+
+* Added support for accessing `codecheck.yml` in a subdirectory of a GitHub repository via `github::org/repo|subpath`.
+* Added a TL;DR section to the README for template usage.
+
+# codecheck 0.15.0
+
+* Improved handling of PDF import in the certificate template.
+
+# codecheck 0.14.0
+
+* Added TU Delft Data Champion Centre (DCC) and eLife as venues; removed unused venue entries.
+* Fixed Zenodo hyperlinks in register output.
+* Hardened handling of missing ORCIDs in the codechecker field.
+* Added venue hyperlinks to register pages.
+* Fixed a missing codechecks column.
+
+# codecheck 0.12.0
+
+* Added support for retrieving `codecheck.yml` from Zenodo records via `zenodo::1234567` and `zenodo-sandbox::1234567`.
+
+# codecheck 0.11.6
+
+* Fixed JSON output including markdown hyperlinks by mistake.
+
+# codecheck 0.11.5
+
+* Fixed imports to reflect API changes in the zen4R package.
+
+# codecheck 0.11.4
+
+* Replaced a custom URL-check helper with `httr::http_error()`, improving URL validation.
+
+# codecheck 0.11.3
+
+* Added logging of cache usage for check and render operations.
+
+# codecheck 0.11.2
+
+* Fixed codechecker hyperlink generation when the ORCID ID is missing.
+
+# codecheck 0.11.1
+
+* Fixed certificate pages that have no certificate preview available.
+
+# codecheck 0.11.0
+
+* Added individual certificate HTML pages.
+* Added abstract retrieval from CrossRef and OpenAlex.
+
+# codecheck 0.10.1
+
+* Fixed venue type page hyperlinks.
+
+# codecheck 0.10.0
+
+* Fixed URL links in venue and venue type tables.
+
+# codecheck 0.9.0 / 0.8.0
+
+* Replaced the repository column in the register with platform-prefixed specifications (GitHub, OSF, GitLab, Zenodo).
+
+# codecheck 0.7.0
+
+* Added Amsterdam UMC as a venue.
+
+# codecheck 0.6.0
+
+* Split the register by type (journal, conference, community, institution).
+* Added filtered CSV files by venue and codechecker.
+
+# codecheck 0.5.0
+
+* Added support for multiple output formats (HTML, JSON, Markdown).
+
+# codecheck 0.4.0
+
+* Added codechecker-specific register views.
+
+# codecheck 0.3.0
+
+* Added remote configuration retrieval.
+
+# codecheck 0.2.0
+
+* Added register rendering functionality, supporting multiple venues and codecheckers.
+
+# codecheck 0.1.0
+
+* Initial release: basic CODECHECK workspace creation, certificate generation, and Zenodo integration.
+
+# codecheck 0.0.0.90xx
+
+* Added a `NEWS.md` file to track changes to the package.

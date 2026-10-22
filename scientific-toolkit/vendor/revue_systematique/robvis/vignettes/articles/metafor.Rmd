@@ -1,0 +1,106 @@
+---
+title: "Working with metafor"
+author: "Luke A McGuinness"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_document:
+    toc: yes
+    toc_depth: 4
+vignette: |
+  %\VignetteIndexEntry{Working with metafor} 
+  %\VignetteEngine{knitr::rmarkdown} 
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+`robvis` now provides some functionality to work with the results of meta-analyses performed using the [`metafor` package](https://wviechtb.github.io/metafor/index.html).
+
+First let's load the relevant packages and define our datasets:
+
+```{r setup, message=FALSE, warning=FALSE}
+library(robvis)
+library(metafor)
+library(dplyr)
+
+# Define your studies, using the BCG dataset included in the metadat package
+dat_bcg <- metadat::dat.bcg
+
+glimpse(dat_bcg)
+
+# Create some example data for ROB2 using rob_dummy(), and add it to the BCG
+# data.
+# We don't need a "Study" column for this example, so we set `study = FALSE`
+
+dat_rob <- rob_dummy(13, 
+                     "ROB2",
+                     study = FALSE)
+
+dat_analysis <- cbind(dat_bcg, dat_rob)
+
+glimpse(dat_analysis)
+```
+
+Now each row in the dataset contains a single numerical result and it's corresponding risk-of-bias assessment.
+
+## Perform the meta-analysis
+
+Let's now perform a simple random-effects meta-analysis using `metafor::rma()`:
+
+```{r}
+# Calculate effect estimates and sampling variances for each study
+dat_analysis <-
+  metafor::escalc(
+    measure = "RR",
+    ai = tpos,
+    bi = tneg,
+    ci = cpos,
+    di = cneg,
+    data = dat_analysis
+  )
+
+# Perform the meta-analysis
+res <- metafor::rma(yi,
+                    vi,
+                    data = dat_analysis,
+                    slab = paste(author, year))
+
+# Explore the results
+res
+```
+
+## Create paired forest plot
+
+Having performed the meta-analysis, you can now append a risk-of-bias traffic-light plot onto the standard output from `metafor::forest()` by simply passing the results object (`res`) to `rob_forest()`:
+
+```{r, fig.width=10}
+rob_forest(res, rob_tool = "ROB2")
+```
+
+This function is designed to make it as easy as possible to substitute `rob_forest()` for `metafor::forest()`.
+
+## Risk of bias due to missing evidence 
+
+<!-- ### Extract and append weights -->
+
+<!-- Alternatively, you can extract the weights assigned to each study in the meta-analysis and append them to the risk-of-bias dataset. This weighted risk-of-bias dataset can then be passed to `rob_summary()` where the `weighted` argument is set to `TRUE` to produce summary plots which show the amount of statistical information, rather than the number of studies, that is at each level of risk of bias. -->
+
+<!-- ```{r, out.height=400} -->
+<!-- # Extract the weights assigned to each study from the meta-analysis and append them to the risk-of-bias dataset -->
+<!-- data_rob <- rob_append_weights(data_rob, res) -->
+
+<!-- # Pass this weighted dataset to the rob_summary() function, and set weighted = TRUE -->
+<!-- rob_summary(data_rob, tool = "ROB2", weighted = TRUE) -->
+
+<!-- # Compare this to the un-weighted bar plots (weighted = FALSE) -->
+<!-- rob_summary(data_rob, tool = "ROB2", weighted = FALSE) -->
+<!-- ``` -->
+
+
+
+

@@ -1,0 +1,7 @@
+mock==3.0.5
+pytest
+pytest-cov
+pep8
+sphinx
+sphinx-autobuild==0.7.1
+sphinx_rtd_theme

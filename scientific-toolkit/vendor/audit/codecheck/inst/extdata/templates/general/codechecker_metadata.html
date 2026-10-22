@@ -1,0 +1,34 @@
+<div class="venue-metadata codechecker-metadata">
+{{#has_github}}
+<img class="venue-metadata-logo codechecker-metadata-avatar" src="https://github.com/{{github_handle}}.png" alt="{{github_handle}} GitHub avatar">
+{{/has_github}}
+{{#has_type_chart}}
+{{{type_chart_svg}}}
+<script id="codechecker-types" type="application/json">{{{type_counts_json}}}</script>
+{{/has_type_chart}}
+<div class="venue-metadata-text">
+<ul class="venue-metadata-list">
+{{#has_orcid}}
+<li><i class="ai ai-orcid"></i> <span class="venue-metadata-label">ORCID:</span> <a href="https://orcid.org/{{orcid}}" target="_blank" rel="noopener">{{orcid}}</a></li>
+{{/has_orcid}}
+{{#has_github}}
+<li><i class="fa fa-github"></i> <span class="venue-metadata-label">GitHub:</span> <a href="https://github.com/{{github_handle}}" target="_blank" rel="noopener">{{github_handle}}</a></li>
+{{/has_github}}
+{{#has_wikidata}}
+<li><i class="fa fa-database"></i> <span class="venue-metadata-label">Wikidata:</span> <a href="https://www.wikidata.org/wiki/{{wikidata}}" target="_blank" rel="noopener">{{wikidata}}</a></li>
+{{/has_wikidata}}
+{{#has_fediverse}}
+<li><i class="fa fa-comments"></i> <span class="venue-metadata-label">Fediverse:</span> <a href="{{fediverse_url}}" target="_blank" rel="me noopener">{{{fediverse_text}}}</a></li>
+{{/has_fediverse}}
+{{#has_fields}}
+<li><i class="fa fa-flask"></i> <span class="venue-metadata-label">Fields:</span> {{fields}}</li>
+{{/has_fields}}
+{{#has_languages}}
+<li><i class="fa fa-code"></i> <span class="venue-metadata-label">Languages:</span> {{languages}}</li>
+{{/has_languages}}
+{{#has_venues}}
+<li><i class="fa fa-check-square-o"></i> <span class="venue-metadata-label">Contributed checks:</span> {{{venues_html}}}</li>
+{{/has_venues}}
+</ul>
+</div>
+</div>

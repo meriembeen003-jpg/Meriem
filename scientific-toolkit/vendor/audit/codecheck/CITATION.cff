@@ -1,0 +1,18 @@
+cff-version: 1.1.0
+message: If you use this software, please cite it as below.
+authors:
+  - family-names: Eglen
+    given-names: Stephen
+    orcid: https://orcid.org/0000-0001-8607-8025
+  - family-names: Nüst
+    given-names: Daniel
+    orcid: https://orcid.org/0000-0002-0024-5046
+  - family-names: Monin
+    given-names: Angelina
+    orcid: https://orcid.org/0000-0002-6875-1551
+title: "codecheck R package: Helper Functions for CODECHECK Project"
+version: 0.31.0
+#doi: 10.5281/zenodo.TODO
+date-released: 2026-09-21
+license: MIT
+repository-code: https://github.com/codecheckers/codecheck

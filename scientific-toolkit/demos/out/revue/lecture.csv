@@ -1,0 +1,6 @@
+titre,doi,annee,auteurs,revue,citations,est_oa,oa_url,type,langue,source,sources_multiples,resume
+Effets d'un programme de remédiation sur la lecture,10.1000/rpe.2021.015,2021,Dupont M.,Revue de psychologie de l éducation,34,,https://example.org/pdf1,,,openalex,crossref; openalex,Essai contrôlé randomisé évaluant un programme de remédiation en lecture chez 140 élèves.
+Reading remediation in primary school: a randomized trial,10.1037/edu0000123,2023,Smith J.; Doe J.; Martin C.,Journal of Educational Psychology,12,,https://example.org/pdf2,,,europepmc,europepmc; openalex,Randomized trial of reading remediation in primary school children.
+Interventions for reading comprehension: a meta-analysis,10.1000/meta.2019.44,2019,Bernard S.; Klein T.,Review of Educational Research,210,,https://example.org/pdf3,,,openalex,crossref; openalex,Meta-analysis of 120 studies of reading comprehension interventions in school settings.
+Cortical correlates of reading difficulty in adults,10.1000/neuro.2022.11,2022,Roux C.; Klein T.,NeuroImage,23,,https://example.org/pdf4,,,openalex,,fMRI study of cortical correlates of reading difficulty in adults.
+Reading acquisition and bilingualism: a longitudinal study,10.1000/biling.2021.03,2021,Bernard S.,Language and Education,19,,,,,openalex,crossref; openalex,Longitudinal study of reading acquisition and bilingualism in children.

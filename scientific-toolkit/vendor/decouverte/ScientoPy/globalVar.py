@@ -1,0 +1,103 @@
+# The MIT License (MIT)
+# Copyright (c) 2026 - Universidad del Cauca, Juan Ruiz-Rosero
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+# DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+# OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+# OR OTHER DEALINGS IN THE SOFTWARE.
+
+import datetime
+
+# Default start and end year
+DEFAULT_START_YEAR = 1990
+DEFAULT_END_YEAR = datetime.datetime.now().year - 1
+
+# Default plot width and height in inches
+DEFAULT_PLOT_WIDTH = 6.4
+DEFAULT_PLOT_HEIGHT = 4.8
+
+
+# Default output files and folders
+PREPROCESS_LOG_FILE = "PreprocessedBrief.csv"
+OUTPUT_FILE_NAME = "papersPreprocessed.csv"         # legacy CSV (explicit export only)
+OUTPUT_FILE_PARQUET = "papersPreprocessed.parquet"  # canonical preprocessed store
+LAST_ANALYSIS_FILE = "lastAnalysis.parquet"         # internal, for --previousResults
+OUTPUT_FILE_BIB = "bibliography.bib"
+DATA_OUT_FOLDER = "dataPre"
+GRAPHS_OUT_FOLDER = "graphs"
+DEFAULT_DATA_IN_FOLDER = "dataIn"
+RESULTS_FOLDER = "results"
+LATEX_EXAMPLE_FOLDER = "latexExample"
+
+
+# Documents types to include on the script processing
+INCLUDED_TYPES = ["Conference Paper", "Article", 
+"Review", "Proceedings Paper", "Article in Press"]
+
+# Default trend sizes
+TOP_TREND_SIZE = 200
+TREND_PERIODS = 3
+
+# True to use a predefined color map instead the following list
+USE_COLOR_MAP = True
+
+# Default colors and markers for the graphs (base palettes repeated for 100+ topics)
+_COLORS_TAB10_BASE = [
+    "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+    "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf",
+]
+COLORS_TAB10 = _COLORS_TAB10_BASE * 10
+
+_COLORS_TAB20_BASE = [
+    "#1f77b4", "#aec7e8", "#ff7f0e", "#ffbb78", "#2ca02c",
+    "#98df8a", "#d62728", "#ff9896", "#9467bd", "#c5b0d5",
+    "#8c564b", "#c49c94", "#e377c2", "#f7b6d2", "#7f7f7f",
+    "#c7c7c7", "#bcbd22", "#dbdb8d", "#17becf", "#9edae5",
+]
+COLORS_TAB20 = _COLORS_TAB20_BASE * 5
+
+_MARKERS_BASE = ('o', '^', 's', 'p', '*', 'd', 'D', '8', 'v', '>', 'v', '<', 'h', 'H')
+MARKERS = _MARKERS_BASE * 8
+
+
+# Default export format (Scopus-style vs WoS-style field names).
+# Deprecated as a hard-coded global: exportPapers.py accepts --format at the CLI;
+# this value is only used as the default when no format is specified explicitly.
+# Values: "SCOPUS_FIELDS" | "WOS_FIELDS".
+SAVE_RESULTS_ON = "SCOPUS_FIELDS"
+
+# Global variables
+logFile = 0
+loadedPapers = 0
+omittedPapers = 0
+OriginalTotalPapers = 0
+papersScopus = 0
+papersWoS = 0
+totalAfterRemDupl = 0
+progressPer = 0
+progressText = ''
+totalPapers = 0
+cancelProcess = False
+decPlaces = 1
+
+
+validCriterion = ["author", "sourceTitle",  "subject", "authorKeywords", "indexKeywords", "abstract",
+                  "bothKeywords", "documentType", "dataBase", "country", "institution", "institutionWithCountry"]
+
+validGrapTypes = ["bar_trends", "bar", "time_line", "evolution", "word_cloud"]
+
+
+SCIENTOPY_VERSION = "3.1.2"

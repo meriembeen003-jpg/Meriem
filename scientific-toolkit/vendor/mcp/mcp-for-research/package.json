@@ -1,0 +1,115 @@
+{
+  "name": "scholarly-research-mcp",
+  "version": "2.0.3",
+  "description": "MCP server for scholarly research across PubMed, ArXiv, Google Scholar, and Firecrawl-backed web search (five consolidated tools)",
+  "main": "dist/index.js",
+  "bin": {
+    "scholarly-research-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build && node scripts/validate-pack.js",
+    "postbuild": "chmod +x dist/index.js 2>/dev/null || true",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "prod": "npm run build && npm start",
+    "test": "jest && npm run test:tools",
+    "test:pubmed": "node -e \"const fs=require('fs'); const p='tests/test-pubmed-adapter.js'; if (!fs.existsSync(p)) { console.log('Skipped: '+p+' not found'); process.exit(0); } require('./'+p);\"",
+    "test:mcp": "node -e \"const fs=require('fs'); const p='tests/test-mcp-client.js'; if (!fs.existsSync(p)) { console.log('Skipped: '+p+' not found'); process.exit(0); } require('./'+p);\"",
+    "test:interactive": "node tests/interactive-test.js",
+    "test:citations": "jest tests/test-citations.js --passWithNoTests",
+    "test:google-scholar": "node tests/test-google-scholar.js",
+    "test:google-scholar-simple": "node tests/test-simple-google-scholar.js",
+    "test:unified": "node tests/test-unified-search.js",
+    "test:firecrawl": "node tests/test-firecrawl-integration.js",
+    "test:firecrawl-arxiv": "node tests/test-firecrawl-arxiv.js",
+    "test:arxiv-all": "./tests/run-arxiv-tests.sh",
+    "test:arxiv": "node tests/test-arxiv-adapter.js",
+    "test:unified-arxiv": "node tests/test-unified-search-with-arxiv.js",
+    "test:arxiv-simple": "node tests/test-arxiv-simple.js",
+    "test:arxiv-comprehensive": "node tests/test-arxiv-comprehensive.js",
+    "test:build": "node tests/test-build.js",
+    "test:packaging": "node scripts/validate-pack.js",
+    "test:arxiv-mcp-tools": "node tests/test-arxiv-mcp-tools.js",
+    "test:arxiv-direct": "node tests/test-arxiv-direct.js",
+    "test:all-tools-bash": "./tests/test-all-tools-simple.sh",
+    "test:all-tools-python": "python3 tests/test_all_tools.py",
+    "test:all-tools-js": "node tests/test-all-tools.js",
+    "test:all": "npm run build && npm run test:pubmed && npm run test:mcp && npm run test:citations && npm run test:google-scholar && npm run test:unified && npm run test:arxiv && npm run test:unified-arxiv",
+    "test:content": "node -e \"const fs=require('fs'); const p='tests/test-content-extraction.js'; if (!fs.existsSync(p)) { console.log('Skipped: '+p+' not found'); process.exit(0); } require('./'+p);\"",
+    "test:preferences": "node tests/test-preferences.js",
+    "test:tools": "node tests/run-tool-tests.js",
+    "test:firecrawl-parser": "node tests/google-scholar-firecrawl-parser.test.js",
+    "cursor": "node scripts/cursor-mcp-client.js",
+    "version:patch": "node scripts/version.js patch",
+    "version:minor": "node scripts/version.js minor",
+    "version:major": "node scripts/version.js major",
+    "release:patch": "npm run version:patch && git add package.json && git commit -m \"Bump version\" && git tag v$(node -p \"require('./package.json').version\") && git push origin main --tags",
+    "release:minor": "npm run version:minor && git add package.json && git commit -m \"Bump version\" && git tag v$(node -p \"require('./package.json').version\") && git push origin main --tags",
+    "release:major": "npm run version:major && git add package.json && git commit -m \"Bump version\" && git tag v$(node -p \"require('./package.json').version\") && git push origin main --tags",
+    "publish:npm": "npm publish",
+    "publish:github": "npm publish --registry=https://npm.pkg.github.com",
+    "publish:both": "node scripts/publish-both.js"
+  },
+  "engines": {
+    "node": ">=18.17.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "@modelcontextprotocol/sdk": "^1.17.3",
+    "axios": "^1.6.0",
+    "cheerio": "~1.0.0",
+    "puppeteer-core": "^19.11.1",
+    "xml2js": "^0.6.2",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/cheerio": "^0.22.35",
+    "@types/jest": "^29.0.0",
+    "@types/node": "^20.0.0",
+    "@types/xml2js": "^0.4.14",
+    "jest": "^29.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  },
+  "jest": {
+    "testMatch": [
+      "**/tests/**/*.js",
+      "**/tests/**/*.ts"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "google-scholar-firecrawl-parser.test.js",
+      "run-tool-tests.js"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.{js,ts}",
+      "!src/**/*.d.ts"
+    ],
+    "testEnvironment": "node",
+    "testTimeout": 30000,
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/jest.setup.js"
+    ]
+  },
+  "keywords": [
+    "mcp",
+    "research",
+    "scholarly",
+    "pubmed",
+    "google-scholar"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aringadre76/mcp-for-research.git"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
+  "githubPackages": {
+    "registry": "https://npm.pkg.github.com",
+    "scope": "@aringadre76"
+  }
+}

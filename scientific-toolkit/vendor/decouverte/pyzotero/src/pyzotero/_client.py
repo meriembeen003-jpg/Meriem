@@ -1,0 +1,1675 @@
+"""Zotero API client for Pyzotero.
+
+This module contains the main Zotero class which provides methods for
+interacting with the Zotero API.
+"""
+
+from __future__ import annotations
+
+import copy
+import json
+import re
+import time
+from collections.abc import Generator
+from pathlib import Path, PurePosixPath
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    import os
+
+from urllib.parse import (
+    parse_qs,
+    parse_qsl,
+    quote,
+    unquote,
+    urlencode,
+    urlparse,
+    urlunparse,
+)
+
+import httpx2
+import whenever
+
+import pyzotero as pz
+
+from . import errors as ze
+from ._decorators import backoff_check, cleanwrap, retrieve, ss_wrap, tcache
+from ._upload import Zupload
+from ._utils import (
+    DEFAULT_ITEM_LIMIT,
+    DEFAULT_NUM_ITEMS,
+    DEFAULT_TIMEOUT,
+    MAX_RETRY_ATTEMPTS,
+    ONE_HOUR,
+    build_url,
+    chunks,
+    get_backoff_duration,
+    merge_params,
+    token,
+)
+from .errors import error_handler
+from .filetransport import Client as File_Client
+
+__author__ = "Stephan Hügel"
+__api_version__ = "3"
+
+# Regex pattern used by the retrieve decorator to pick out the 'content='
+# URL parameter when dispatching Atom-format responses to processors.
+_CONTENT_RE = re.compile(r"(?<=content=)\w+")
+
+
+class Zotero:
+    """Zotero API methods.
+
+    A full list of methods can be found here:
+    http://www.zotero.org/support/dev/server_api
+    """
+
+    def __init__(
+        self,
+        library_id: str | int | None = None,
+        library_type: str | None = None,
+        api_key: str | None = None,
+        preserve_json_order: bool = False,
+        locale: str = "en-US",
+        local: bool = False,
+        client: httpx2.Client | None = None,
+        upload_timeout: int | float = 120,
+        server_id: str | None = None,
+        local_api_key: str | None = None,
+    ) -> None:
+        self.client: httpx2.Client | None = None
+        """Store Zotero credentials"""
+        if not local:
+            self.endpoint = "https://api.zotero.org"
+            self.local = False
+        else:
+            self.endpoint = "http://127.0.0.1:23119/api"
+            self.local = True
+        self._server_id: str | None = server_id
+        self.local_api_key: str | None = local_api_key
+        """The key that permits local API writes. See :meth:`authorize_local`."""
+        if library_id is not None and library_type:
+            self.library_id = library_id
+            # library_type determines whether query begins w. /users or /groups
+            self.library_type = library_type + "s"
+        else:
+            err = "Please provide both the library ID and the library type"
+            raise ze.MissingCredentialsError(err)
+        # api_key is not required for public individual or group libraries
+        self.api_key = api_key
+        if preserve_json_order:
+            import warnings  # noqa: PLC0415
+
+            warnings.warn(
+                "preserve_json_order is deprecated and will be removed in a future version. "
+                "Python 3.7+ dicts preserve insertion order automatically.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        self.locale = locale
+        self.url_params: dict[str, Any] | None = None
+        self.tag_data = False
+        self.request: httpx2.Response | None = None
+        self.snapshot = False
+        self.upload_timeout = upload_timeout
+        self.client = client or httpx2.Client(
+            follow_redirects=True,
+            timeout=DEFAULT_TIMEOUT,
+            # The local API is on the loopback interface. Do not send its
+            # requests through a proxy from the environment.
+            trust_env=not local,
+        )
+        # these aren't valid item fields, so never send them to the server
+        self.temp_keys = {"key", "etag", "group_id", "updated"}
+        # retained as an instance attribute for backwards compatibility; all
+        # usage inside pyzotero reads _CONTENT_RE at module scope.
+        self.content = _CONTENT_RE
+        # JSON by default
+        self.formats: dict[str, str] = {
+            "application/atom+xml": "atom",
+            "application/x-bibtex": "bibtex",
+            "application/json": "json",
+            "text/html": "snapshot",
+            "text/plain": "plain",
+            "text/markdown": "plain",
+            "application/pdf; charset=utf-8": "pdf",
+            "application/pdf": "pdf",
+            "application/msword": "doc",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation": "pptx",
+            "application/zip": "zip",
+            "application/epub+zip": "zip",
+            "audio/mpeg": "mp3",
+            "video/mp4": "mp4",
+            "audio/x-wav": "wav",
+            "video/x-msvideo": "avi",
+            "application/octet-stream": "octet",
+            "application/x-tex": "tex",
+            "application/x-texinfo": "texinfo",
+            "image/jpeg": "jpeg",
+            "image/png": "png",
+            "image/gif": "gif",
+            "image/tiff": "tiff",
+            "application/postscript": "postscript",
+            "application/rtf": "rtf",
+        }
+        self.processors: dict[str, Any] = {
+            "bib": self._bib_processor,
+            "citation": self._citation_processor,
+            "bibtex": self._bib_processor,
+            "bookmarks": self._bib_processor,
+            "coins": self._bib_processor,
+            "csljson": self._csljson_processor,
+            "mods": self._bib_processor,
+            "refer": self._bib_processor,
+            "rdf_bibliontology": self._bib_processor,
+            "rdf_dc": self._bib_processor,
+            "rdf_zotero": self._bib_processor,
+            "ris": self._bib_processor,
+            "tei": self._bib_processor,
+            "wikipedia": self._bib_processor,
+            "json": self._json_processor,
+            "html": self._bib_processor,
+        }
+        self.links: dict[str, str] | None = None
+        self.self_link: httpx2.URL | None = None
+        self.templates: dict[str, Any] = {}
+        self.savedsearch: Any = None
+        # backoff handling: timestamp when backoff expires (0.0 = no backoff)
+        self.backoff_until: float = 0.0
+
+    def __del__(self) -> None:
+        """Remove client before cleanup."""
+        # this isn't guaranteed to run, but that's OK
+        if c := self.client:
+            c.close()
+
+    @property
+    def __version__(self) -> str:
+        """Return the version of the pyzotero library."""
+        return pz.__version__
+
+    @property
+    def server_id(self) -> str | None:
+        """The server ID of the local API, or None if it is not known.
+
+        Each local API response has a ``Zotero-Server-ID`` header. The header
+        identifies the Zotero instance that sent the data, and the ID stays
+        with the user's database. Pyzotero keeps the ID from the first local
+        response and sends it with the requests that follow. As a result, the
+        server rejects a request that goes to a different instance, or to a
+        restored database, and data from different instances does not mix. If
+        the ID is not known before the first write, Pyzotero gets it
+        automatically.
+
+        The versions that the local API reports apply only to this server ID.
+        They have no relation to web API versions, or to versions from a
+        different Zotero instance. A program that stores objects or versions
+        from the local API must store this ID with them, and must partition
+        the data by ID. The program can set this attribute on a later run.
+        """
+        return self._server_id
+
+    @server_id.setter
+    def server_id(self, value: str | None) -> None:
+        if value is not None and not isinstance(value, str):
+            msg = f"server_id must be a str or None, not {type(value).__name__}"
+            raise TypeError(msg)
+        self._server_id = value
+
+    def _local_headers(self) -> dict[str, str]:
+        """Return the Zotero-Server-ID header for a local API request.
+
+        Read requests do not need the header. Write requests must have it.
+        Pyzotero sends the header with all requests when the ID is known. As a
+        result, the server rejects a request to a different instance with a
+        412 error, and data from different instances does not mix.
+        """
+        if self.local and self._server_id:
+            return {"Zotero-Server-ID": self._server_id}
+        return {}
+
+    def _capture_server_id(self, resp: httpx2.Response) -> None:
+        """Keep the Zotero-Server-ID header from a local API response.
+
+        Each local API response has the header. Error responses also have it.
+        As a result, normal read requests set the ID with no extra request.
+        """
+        if self.local and not self._server_id:
+            if server_id := resp.headers.get("zotero-server-id"):
+                self._server_id = server_id
+
+    def _ensure_server_id(self) -> str:
+        """Get and keep the local server ID if it is not already known.
+
+        The local API rejects a write with a 428 error if the request does not
+        have the ``Zotero-Server-ID`` header. Thus this method gets the ID
+        before the first write. Note: the bare ``/api`` path returns a 404
+        error. The no-op endpoint that has the header is ``/api/``, with the
+        slash at the end.
+        """
+        if self._server_id:
+            return self._server_id
+        self._check_backoff()
+        resp = self._send("GET", f"{self.endpoint.removesuffix('/')}/")
+        self._post_check(resp)
+        if not self._server_id:
+            msg = (
+                "The local Zotero API didn't return a Zotero-Server-ID header, "
+                "which is required for writes. Local API write support needs a "
+                "Zotero version that provides it; see "
+                "https://www.zotero.org/support/beta_builds"
+            )
+            raise ze.UnsupportedParamsError(msg)
+        return self._server_id
+
+    def _local_write_headers(self) -> dict[str, str]:
+        """Return the headers that a local API write must have.
+
+        The local API rejects a write with a 428 error if the request does not
+        have ``Zotero-Server-ID``, and with a 401 error if there is no local
+        API key. Thus this method gets the server ID if it is not known. It
+        does not examine the key: the server rejects a missing key and an
+        expired key with the same error, so the caller gets one error type for
+        the two conditions.
+        """
+        if not self.local:
+            return {}
+        headers = {"Zotero-Server-ID": self._ensure_server_id()}
+        if self.local_api_key:
+            headers["Zotero-API-Key"] = self.local_api_key
+        return headers
+
+    def _send(self, method: str, url: str, **kwargs: Any) -> httpx2.Response:
+        """Send a request with the client. Add the default headers.
+
+        Pyzotero adds the default headers to each request, not to the client.
+        As a result, a client that the caller supplies also sends them, and
+        the client does not change. A default header replaces a client header
+        of the same name. A header in ``kwargs`` replaces a default header of
+        the same name.
+        """
+        kwargs["headers"] = {
+            **self.default_headers(),
+            **(kwargs.pop("headers", None) or {}),
+        }
+        return self.client.request(method, url, **kwargs)
+
+    def _write(self, method: str, url: str, **kwargs: Any) -> httpx2.Response:
+        """Send a write request. Add the headers that a local write must have.
+
+        The local API rejects a write with a 428 error if ``Zotero-Server-ID``
+        is not sent, and with a 401 error if there is no valid local API key.
+        This method adds the two headers in one place, not in each write
+        method. For the web API, this method only passes the request through.
+        The callers examine the responses, as before.
+        """
+        if self.local:
+            kwargs["headers"] = {
+                **(kwargs.pop("headers", None) or {}),
+                **self._local_write_headers(),
+            }
+        return self._send(method, url, **kwargs)
+
+    def authorize_local(self, app_name: str) -> dict[str, Any]:
+        """Get a local API key. Zotero asks the user for permission.
+
+        Each local API write must have a key. This key has no relation to a
+        zotero.org API key. This method makes Zotero show a dialog with the
+        options "Allow" (one-time access), "Always Allow" (permanent access)
+        and "Deny". If the user approves, the method stores the key on this
+        instance as ``local_api_key`` and sends it with the local writes that
+        follow.
+
+        Zotero applies a rate limit to this endpoint. Do not call this method
+        in a retry loop.
+
+        Args:
+            app_name: The display name of the caller. Zotero shows it in the
+                dialog.
+
+        Returns:
+            The server's response: a dict with a ``key`` str and a
+            ``remember`` bool. If ``remember`` is False, the key is valid for
+            one write only: the first successful write uses it, and the write
+            that follows raises :class:`LocalAPIKeyRequiredError`. Then you
+            must call this method again. If ``remember`` is True, you can
+            store the key and give it to ``Zotero()`` as the
+            ``local_api_key`` argument on a later run.
+
+        Raises:
+            LocalAPIDeniedError: The user denied the request.
+            TooManyRequestsError: The endpoint applied its rate limit.
+
+        """
+        if not self.local:
+            msg = "authorize_local() is only available in local mode (local=True)"
+            raise ze.UnsupportedParamsError(msg)
+        if not app_name or not app_name.strip():
+            msg = "app_name is required: it identifies the caller in the dialog"
+            raise ze.ParamNotPassedError(msg)
+        headers = {"Zotero-Server-ID": self._ensure_server_id()}
+        self._check_backoff()
+        req = self._send(
+            "POST",
+            url=build_url(self.endpoint, "/local/authorize"),
+            headers=headers,
+            json={"appName": app_name.strip()},
+        )
+        self.request = req
+        if req.status_code == httpx2.codes.FORBIDDEN:
+            msg = f"Zotero denied the local API authorisation request from {app_name!r}"
+            raise ze.LocalAPIDeniedError(msg)
+        if req.status_code == httpx2.codes.TOO_MANY_REQUESTS:
+            # error_handler does not raise for a 429 response: it records a
+            # backoff and returns. The code that follows would then try to
+            # parse a text/plain body as JSON. To prevent this, raise here.
+            retry_after = get_backoff_duration(req.headers)
+            msg = "Zotero is rate-limiting local API authorisation requests"
+            if retry_after:
+                msg = f"{msg}; retry in {retry_after}s"
+            raise ze.TooManyRequestsError(msg)
+        self._post_check(req)
+        authorised = req.json()
+        self.local_api_key = authorised["key"]
+        return authorised
+
+    def _check_for_component(self, url: str | None, component: str) -> bool:
+        """Check a url path query fragment for a specific query parameter."""
+        return bool(parse_qs(url).get(component))
+
+    def _striplocal(self, url: str) -> str:
+        """Remove the leading '/api' substring from urls if running in local mode."""
+        if self.local:
+            parsed = urlparse(url)
+            purepath = PurePosixPath(unquote(parsed.path))
+            newpath = "/".join(purepath.parts[2:])
+            replaced = parsed._replace(path="/" + newpath)
+            return urlunparse(replaced)
+        return url
+
+    def _set_backoff(self, duration: str | float) -> None:
+        """Set backoff expiration time."""
+        self.backoff_until = time.time() + float(duration)
+
+    def _check_backoff(self) -> None:
+        """Wait if backoff is active."""
+        remainder = self.backoff_until - time.time()
+        if remainder > 0.0:
+            time.sleep(remainder)
+
+    def _post_check(self, resp: httpx2.Response) -> None:
+        """Raise on HTTP error and record any server-supplied backoff.
+
+        Centralises the post-request pattern used by every method that
+        performs an HTTP call: ``raise_for_status`` is dispatched through
+        ``error_handler`` to produce a PyZotero exception, and any
+        ``Backoff``/``Retry-After`` header is recorded on the instance.
+        """
+        # Do this before raise_for_status: error responses also have the header
+        self._capture_server_id(resp)
+        try:
+            resp.raise_for_status()
+        except httpx2.HTTPError as exc:
+            error_handler(self, resp, exc)
+        backoff = get_backoff_duration(resp.headers)
+        if backoff:
+            self._set_backoff(backoff)
+
+    def default_headers(self) -> dict[str, str]:
+        """Return headers that are always OK to include."""
+        _headers = {
+            "User-Agent": f"Pyzotero/{pz.__version__}",
+            "Zotero-API-Version": f"{__api_version__}",
+        }
+        if self.api_key:
+            _headers["Authorization"] = f"Bearer {self.api_key}"
+        return _headers
+
+    def _cache(self, response: httpx2.Response, key: str) -> Any:
+        """Add a retrieved template to the cache for 304 checking.
+
+        Accepts a dict and key name, adds the retrieval time, and adds both
+        to self.templates as a new dict using the specified key.
+        """
+        # cache template and retrieval time for subsequent calls
+        thetime = whenever.ZonedDateTime.now("Europe/London").to_stdlib()
+        self.templates[key] = {"tmplt": response.json(), "updated": thetime}
+        return copy.deepcopy(response.json())
+
+    @cleanwrap
+    def _cleanup(
+        self, to_clean: dict[str, Any], allow: tuple[str, ...] = ()
+    ) -> dict[str, Any]:
+        """Remove keys we added for internal use."""
+        # this item's been retrieved from the API, we only need the 'data' entry
+        if set(to_clean.keys()) == {
+            "links",
+            "library",
+            "version",
+            "meta",
+            "key",
+            "data",
+        }:
+            to_clean = to_clean["data"]
+        return {
+            k: v for k, v in to_clean.items() if k in allow or k not in self.temp_keys
+        }
+
+    def _retrieve_data(
+        self, request: str | None = None, params: dict[str, Any] | None = None
+    ) -> httpx2.Response:
+        """Retrieve Zotero items via the API.
+
+        Combine endpoint and request to access the specific resource.
+        Returns a JSON document.
+        """
+        if request is None:
+            request = ""
+        full_url = build_url(self.endpoint, request)
+        # don't set locale if the url already contains it
+        # we always add a locale if it's a "standalone" or first call
+        needs_locale = not self.links or not self._check_for_component(
+            self.links.get("next"),
+            "locale",
+        )
+        if needs_locale:
+            if params:
+                params["locale"] = self.locale
+            else:
+                params = {"locale": self.locale}
+        # we now have to merge self.url_params (default params, and those supplied by the user)
+        if not params:
+            params = {}
+        if not self.url_params:
+            self.url_params = {}
+        merged_params = {**self.url_params, **params}
+        # our incoming url might be from the "links" dict, in which case it will contain url parameters.
+        # Unfortunately, httpx2 doesn't like to merge query parameters in the url string and passed params
+        # so we strip the url params, combining them with our existing url_params
+        final_url, final_params = merge_params(full_url, merged_params)
+        for _ in range(MAX_RETRY_ATTEMPTS):
+            # ensure that we wait if there's an active backoff
+            self._check_backoff()
+            # file URI errors are raised immediately so we have to try here
+            try:
+                self.request = self._send(
+                    "GET",
+                    url=final_url,
+                    params=final_params,
+                    headers=self._local_headers(),
+                    timeout=DEFAULT_TIMEOUT,
+                )
+                self.request.encoding = "utf-8"
+                # The API doesn't return this any more, so we have to cheat
+                self.self_link = self.request.url
+            except httpx2.UnsupportedProtocol:
+                # File URI handler logic
+                fc = File_Client()
+                response = fc.get(
+                    url=final_url,
+                    params=final_params,
+                    headers=self.default_headers(),
+                    timeout=DEFAULT_TIMEOUT,
+                    follow_redirects=True,
+                )
+                self.request = response
+                # since we'll be writing bytes, we need to set this to a type that will trigger the bytes processor
+                self.request.headers["Content-Type"] = "text/plain"
+            self._post_check(self.request)
+            # On 429, error_handler records the server's backoff instead of
+            # raising; _check_backoff waits it out, so retry rather than
+            # handing the error body back as though it were a payload
+            if self.request.status_code != httpx2.codes.TOO_MANY_REQUESTS:
+                return self.request
+        msg = f"Still rate-limited after {MAX_RETRY_ATTEMPTS} attempts. Try again later"
+        raise ze.TooManyRetriesError(msg)
+
+    def _extract_links(self) -> dict[str, str] | None:
+        """Extract self, first, next, last links from a request response."""
+        extracted: dict[str, str] = {}
+        try:
+            for key, value in self.request.links.items():
+                if key is None:
+                    continue
+                parsed = urlparse(value["url"])
+                fragment = urlunparse(("", "", parsed.path, "", parsed.query, ""))
+                extracted[key] = fragment
+            # add a 'self' link
+            parsed = urlparse(str(self.self_link))
+            # strip 'format' query parameter and rebuild query string
+            query_params = [(k, v) for k, v in parse_qsl(parsed.query) if k != "format"]
+            # rebuild url fragment with just path and query (consistent with other links)
+            extracted["self"] = urlunparse(
+                ("", "", parsed.path, "", urlencode(query_params), "")
+            )
+        except KeyError:
+            # No links present, because it's a single item
+            return None
+        else:
+            return extracted
+
+    def _updated(
+        self, url: str, payload: dict[str, Any], template: str | None = None
+    ) -> bool:
+        """Call to see if a template request returns 304.
+
+        Accepts:
+        - a string to combine with the API endpoint
+        - a dict of format values, in case they're required by 'url'
+        - a template name to check for
+
+        As per the API docs, a template less than 1 hour old is
+        assumed to be fresh, and will immediately return False if found.
+        """
+        # If the template is more than an hour old, try a 304
+        if template is None:
+            return False
+        if (
+            abs(
+                whenever.ZonedDateTime.now("Europe/London").to_stdlib()
+                - self.templates[template]["updated"],
+            ).seconds
+            > ONE_HOUR
+        ):
+            query = build_url(
+                self.endpoint,
+                url.format(u=self.library_id, t=self.library_type, **payload),
+            )
+            headers = {
+                "If-Modified-Since": payload["updated"].strftime(
+                    "%a, %d %b %Y %H:%M:%S %Z",
+                ),
+                **self._local_headers(),
+            }
+            # perform the request, and check whether the response returns 304
+            self._check_backoff()
+            req = self._send("GET", query, headers=headers)
+            self._post_check(req)
+            return req.status_code == httpx2.codes.NOT_MODIFIED
+        # Still plenty of life left in't
+        return False
+
+    def add_parameters(self, **params: Any) -> None:
+        """Add URL parameters.
+
+        Also ensure that only valid format/content combinations are requested.
+        """
+        # Preserve constructor-level parameters (like locale) while allowing method-level overrides
+        if self.url_params is None:
+            self.url_params = {}
+
+        # Store existing params to preserve things like locale
+        preserved_params = self.url_params.copy()
+
+        # we want JSON by default
+        if not params.get("format"):
+            params["format"] = "json"
+        # non-standard content must be retrieved as Atom
+        if params.get("content"):
+            params["format"] = "atom"
+        # TODO: rewrite format=atom, content=json request
+        if "limit" not in params or params.get("limit") == 0:
+            params["limit"] = DEFAULT_ITEM_LIMIT
+        # Need ability to request arbitrary number of results for version
+        # response
+        # -1 value is hack that works with current version
+        elif params["limit"] == -1 or params["limit"] is None:
+            del params["limit"]
+        # bib format can't have a limit
+        if params.get("format") == "bib":
+            params.pop("limit", None)
+
+        # Merge preserved params with new params (new params override existing ones)
+        self.url_params = {**preserved_params, **params}
+
+    def _build_query(self, query_string: str, no_params: bool = False) -> str:
+        """Set request parameters.
+
+        Will always add the user ID if it hasn't been specifically set by an API method.
+        """
+        try:
+            query = quote(query_string.format(u=self.library_id, t=self.library_type))
+        except KeyError as err:
+            errmsg = f"There's a request parameter missing: {err}"
+            raise ze.ParamNotPassedError(errmsg) from None
+        # Add the URL parameters and the user key, if necessary
+        if no_params is False and not self.url_params:
+            self.add_parameters()
+        return query
+
+    @retrieve
+    def publications(self) -> str:
+        """Return the contents of My Publications."""
+        if self.library_type != "users":
+            msg = "This API call does not exist for group libraries"
+            raise ze.CallDoesNotExistError(msg)
+        query_string = "/{t}/{u}/publications/items"
+        return self._build_query(query_string)
+
+    # The following methods are Zotero Read API calls
+    def num_items(self) -> int:
+        """Return the total number of top-level items in the library."""
+        query = "/{t}/{u}/items/top"
+        return self._totals(query)
+
+    def count_items(self) -> int:
+        """Return the count of all items in a group / library."""
+        query = "/{t}/{u}/items"
+        return self._totals(query)
+
+    def num_collectionitems(self, collection: str) -> int:
+        """Return the total number of items in the specified collection."""
+        query = f"/{self.library_type}/{self.library_id}/collections/{collection.upper()}/items"
+        return self._totals(query)
+
+    def _totals(self, query: str) -> int:
+        """General method for returning total counts."""
+        self.add_parameters(limit=1)
+        query = self._build_query(query)
+        self._retrieve_data(query)
+        self.url_params = None
+        # extract the 'total items' figure
+        return int(self.request.headers["Total-Results"])
+
+    @retrieve
+    def key_info(self, **kwargs: Any) -> str:
+        """Retrieve info about the permissions associated with the key."""
+        query_string = f"/keys/{self.api_key}"
+        return self._build_query(query_string)
+
+    @retrieve
+    def items(self, **kwargs: Any) -> str:
+        """Get user items."""
+        query_string = "/{t}/{u}/items"
+        return self._build_query(query_string)
+
+    @retrieve
+    def settings(self, **kwargs: Any) -> str:
+        """Get synced user settings."""
+        query_string = "/{t}/{u}/settings"
+        return self._build_query(query_string)
+
+    @retrieve
+    def fulltext_item(self, itemkey: str, **kwargs: Any) -> str:
+        """Get full-text content for an item."""
+        query_string = (
+            f"/{self.library_type}/{self.library_id}/items/{itemkey}/fulltext"
+        )
+        return self._build_query(query_string)
+
+    @backoff_check
+    def set_fulltext(self, itemkey: str, payload: dict[str, Any]) -> httpx2.Response:
+        """Set full-text data for an item.
+
+        <itemkey> should correspond to an existing attachment item.
+        payload should be a dict containing three keys:
+        'content': the full-text content and either
+        For text documents, 'indexedChars' and 'totalChars' OR
+        For PDFs, 'indexedPages' and 'totalPages'.
+        """
+        return self._write(
+            "PUT",
+            url=build_url(
+                self.endpoint,
+                f"/{self.library_type}/{self.library_id}/items/{itemkey}/fulltext",
+            ),
+            json=payload,
+        )
+
+    def new_fulltext(self, since: int) -> Any:
+        """Retrieve list of full-text content items and versions newer than <since>."""
+        query_string = f"/{self.library_type}/{self.library_id}/fulltext"
+        headers: dict[str, str] = self._local_headers()
+        params: dict[str, Any] = {"since": since}
+        self._check_backoff()
+        resp = self._send(
+            "GET",
+            build_url(self.endpoint, query_string),
+            params=params,
+            headers=headers,
+        )
+        self._post_check(resp)
+        return resp.json()
+
+    def item_versions(self, **kwargs: Any) -> Any:
+        """Return dict associating item keys to versions.
+
+        Accepts a since= parameter in kwargs to limit the data to those updated since.
+        """
+        if "limit" not in kwargs:
+            kwargs["limit"] = None
+        kwargs["format"] = "versions"
+        return self.items(**kwargs)
+
+    def collection_versions(self, **kwargs: Any) -> Any:
+        """Return dict associating collection keys to versions.
+
+        Accepts a since= parameter in kwargs to limit the data to those updated since.
+        """
+        if "limit" not in kwargs:
+            kwargs["limit"] = None
+        kwargs["format"] = "versions"
+        return self.collections(**kwargs)
+
+    def last_modified_version(self, **kwargs: Any) -> int:
+        """Get the last modified user or group library version."""
+        # This MUST be a multiple-object request, limit param notwithstanding.
+        # Call _retrieve_data directly (as _totals does) rather than items(),
+        # which would overwrite self.links and break any in-progress
+        # pagination via follow() / iterfollow()
+        self.add_parameters(limit=1)
+        query = self._build_query("/{t}/{u}/items")
+        self._retrieve_data(query)
+        self.url_params = None
+        lmv = self.request.headers.get("last-modified-version", 0)
+        return int(lmv)
+
+    @retrieve
+    def top(self, **kwargs: Any) -> str:
+        """Get user top-level items."""
+        query_string = "/{t}/{u}/items/top"
+        return self._build_query(query_string)
+
+    @retrieve
+    def trash(self, **kwargs: Any) -> str:
+        """Get all items in the trash."""
+        query_string = "/{t}/{u}/items/trash"
+        return self._build_query(query_string)
+
+    @retrieve
+    def searches(self, **kwargs: Any) -> str:
+        """Get saved searches."""
+        query_string = "/{t}/{u}/searches"
+        return self._build_query(query_string)
+
+    @retrieve
+    def deleted(self, **kwargs: Any) -> str:
+        """Get all deleted items (requires since= parameter)."""
+        if "limit" not in kwargs:
+            # Currently deleted API doesn't respect limit leaving it out by
+            # default preserves compat
+            kwargs["limit"] = None
+        query_string = "/{t}/{u}/deleted"
+        return self._build_query(query_string)
+
+    @retrieve
+    def item(self, item: str, **kwargs: Any) -> str:
+        """Get a specific item."""
+        query_string = f"/{self.library_type}/{self.library_id}/items/{item.upper()}"
+        return self._build_query(query_string)
+
+    @retrieve
+    def file(self, item: str, **kwargs: Any) -> str:
+        """Get the file from a specific item."""
+        query_string = (
+            f"/{self.library_type}/{self.library_id}/items/{item.upper()}/file"
+        )
+        return self._build_query(query_string, no_params=True)
+
+    def dump(
+        self,
+        itemkey: str,
+        filename: str | os.PathLike[str] | None = None,
+        path: str | os.PathLike[str] | None = None,
+    ) -> None:
+        """Dump a file attachment to disk, with optional filename and path."""
+        if not filename:
+            filename = self.item(itemkey)["data"]["filename"]
+        pth = Path(path) / filename if path else Path(filename)
+        file = self.file(itemkey)
+        if self.snapshot:
+            self.snapshot = False
+            pth = pth.parent / (pth.name + ".zip")
+        with pth.open("wb") as f:
+            f.write(file)
+
+    @retrieve
+    def children(self, item: str, **kwargs: Any) -> str:
+        """Get a specific item's child items."""
+        query_string = (
+            f"/{self.library_type}/{self.library_id}/items/{item.upper()}/children"
+        )
+        return self._build_query(query_string)
+
+    @retrieve
+    def collection_items(self, collection: str, **kwargs: Any) -> str:
+        """Get a specific collection's items."""
+        query_string = f"/{self.library_type}/{self.library_id}/collections/{collection.upper()}/items"
+        return self._build_query(query_string)
+
+    @retrieve
+    def collection_items_top(self, collection: str, **kwargs: Any) -> str:
+        """Get a specific collection's top-level items."""
+        query_string = f"/{self.library_type}/{self.library_id}/collections/{collection.upper()}/items/top"
+        return self._build_query(query_string)
+
+    @retrieve
+    def collection_tags(self, collection: str, **kwargs: Any) -> str:
+        """Get a specific collection's tags."""
+        query_string = f"/{self.library_type}/{self.library_id}/collections/{collection.upper()}/tags"
+        return self._build_query(query_string)
+
+    @retrieve
+    def collection(self, collection: str, **kwargs: Any) -> str:
+        """Get user collection."""
+        query_string = (
+            f"/{self.library_type}/{self.library_id}/collections/{collection.upper()}"
+        )
+        return self._build_query(query_string)
+
+    @retrieve
+    def collections(self, **kwargs: Any) -> str:
+        """Get user collections."""
+        query_string = "/{t}/{u}/collections"
+        return self._build_query(query_string)
+
+    def all_collections(self, collid: str | None = None) -> list[Any]:
+        """Retrieve all collections and subcollections.
+
+        Works for top-level collections or for a specific collection.
+        Works at all collection depths.
+        """
+        all_collections: list[Any] = []
+
+        def subcoll(clct: Any) -> None:
+            """Recursively add collections to a flat master list."""
+            all_collections.append(clct)
+            if clct["meta"].get("numCollections", 0) > 0:
+                # add collection to master list & recur with all child collections
+                for c in self.everything(self.collections_sub(clct["data"]["key"])):
+                    subcoll(c)
+
+        # select all top-level collections or a specific collection and children
+        if collid:
+            toplevel = [self.collection(collid)]
+        else:
+            toplevel = self.everything(self.collections_top())
+        for collection in toplevel:
+            subcoll(collection)
+        return all_collections
+
+    @retrieve
+    def collections_top(self, **kwargs: Any) -> str:
+        """Get top-level user collections."""
+        query_string = "/{t}/{u}/collections/top"
+        return self._build_query(query_string)
+
+    @retrieve
+    def collections_sub(self, collection: str, **kwargs: Any) -> str:
+        """Get subcollections for a specific collection."""
+        query_string = f"/{self.library_type}/{self.library_id}/collections/{collection.upper()}/collections"
+        return self._build_query(query_string)
+
+    @retrieve
+    def groups(self, **kwargs: Any) -> str:
+        """Get user groups."""
+        query_string = "/users/{u}/groups"
+        return self._build_query(query_string)
+
+    @retrieve
+    def tags(self, **kwargs: Any) -> str:
+        """Get tags."""
+        query_string = "/{t}/{u}/tags"
+        return self._build_query(query_string)
+
+    @retrieve
+    def item_tags(self, item: str, **kwargs: Any) -> str:
+        """Get tags for a specific item."""
+        query_string = (
+            f"/{self.library_type}/{self.library_id}/items/{item.upper()}/tags"
+        )
+        return self._build_query(query_string)
+
+    def all_top(self, **kwargs: Any) -> Any:
+        """Retrieve all top-level items."""
+        return self.everything(self.top(**kwargs))
+
+    def follow(self) -> Any:
+        """Return the result of the call to the URL in the 'Next' link.
+
+        Returns None when there are no more pages to retrieve.
+        """
+        # Bail out before making a request: without a 'next' link, the
+        # decorated helper would end up querying the bare API root
+        if not self.links or not self.links.get("next"):
+            return None
+        return self._follow_next()
+
+    @retrieve
+    def _follow_next(self) -> str:
+        """Retrieve the URL in the 'next' link. Only called by follow()."""
+        return self._striplocal(self.links["next"])
+
+    def iterfollow(self) -> Generator[Any, None, None]:
+        """Return generator for self.follow()."""
+        # use same criterion as self.follow()
+        while True:
+            if self.links.get("next"):
+                yield self.follow()
+            else:
+                return
+
+    def makeiter(self, func: Any) -> Generator[Any, None, None]:
+        """Return a generator of func's results."""
+        if self.links is None or "self" not in self.links:
+            msg = "makeiter() requires a previous API call with pagination links"
+            raise RuntimeError(msg)
+        # reset the link. This results in an extra API call, yes
+        self.links["next"] = self.links["self"]
+        return self.iterfollow()
+
+    def everything(self, query: Any) -> Any:
+        """Retrieve all items in the library for a particular query.
+
+        This method will override the 'limit' parameter if it's been set.
+        """
+        try:
+            items = []
+            items.extend(query)
+            while self.links.get("next"):
+                items.extend(self.follow())
+        except TypeError:
+            # we have a bibliography object ughh
+            items = copy.deepcopy(query)
+            while self.links.get("next"):
+                items.entries.extend(self.follow().entries)
+        return items
+
+    def get_subset(self, subset: list[str]) -> list[Any]:
+        """Retrieve a subset of items.
+
+        Accepts a single argument: a list of item IDs.
+        """
+        if len(subset) > DEFAULT_NUM_ITEMS:
+            err = f"You may only retrieve {DEFAULT_NUM_ITEMS} items per call"
+            raise ze.TooManyItemsError(err)
+        # remember any url parameters that have been set
+        params = self.url_params
+        retr: list[Any] = []
+        for itm in subset:
+            retr.append(self.item(itm))
+            self.url_params = params
+        # clean up URL params when we're finished
+        self.url_params = None
+        return retr
+
+    # The following methods process data returned by Read API calls
+    def _json_processor(self, retrieved: Any) -> list[Any]:
+        """Format and return data from API calls which return Items."""
+        # send entries to _tags_data if there's no JSON
+        try:
+            items = [json.loads(e["content"][0]["value"]) for e in retrieved.entries]
+        except KeyError:
+            return self._tags_data(retrieved)
+        return items
+
+    def _csljson_processor(self, retrieved: Any) -> list[Any]:
+        """Return a list of dicts which are dumped CSL JSON."""
+        items = [
+            json.loads(entry["content"][0]["value"]) for entry in retrieved.entries
+        ]
+        self.url_params = None
+        return items
+
+    def _bib_processor(self, retrieved: Any) -> list[str]:
+        """Return a list of strings formatted as HTML bibliography entries."""
+        items = [bib["content"][0]["value"] for bib in retrieved.entries]
+        self.url_params = None
+        return items
+
+    def _citation_processor(self, retrieved: Any) -> list[str]:
+        """Return a list of strings formatted as HTML citation entries."""
+        items = [cit["content"][0]["value"] for cit in retrieved.entries]
+        self.url_params = None
+        return items
+
+    def _tags_data(self, retrieved: Any) -> list[str]:
+        """Format and return data from API calls which return Tags."""
+        self.url_params = None
+        return [t["tag"] for t in retrieved]
+
+    # The following methods are Write API calls
+    def item_template(self, itemtype: str, linkmode: str | None = None) -> Any:
+        """Get a template for a new item."""
+        # if we have a template and it hasn't been updated since we stored it
+        template_name = f"item_template_{itemtype}_{linkmode or ''}"
+        params: dict[str, Any] = {"itemType": itemtype}
+        # Set linkMode parameter for API request if itemtype is attachment
+        if itemtype == "attachment":
+            params["linkMode"] = linkmode
+        query_string = "/items/new"
+        if self.templates.get(template_name) and not self._updated(
+            query_string,
+            self.templates[template_name],
+            template_name,
+        ):
+            return copy.deepcopy(self.templates[template_name]["tmplt"])
+        # otherwise perform a normal request and cache the response.
+        # The parameters are passed per-request rather than via
+        # add_parameters(), which would leave them on the client and leak
+        # them into subsequent requests (#356)
+        try:
+            retrieved = self._retrieve_data(query_string, params=params)
+        except ze.ResourceNotFoundError:
+            if not self.local:
+                raise
+            # The local API has the item type and field endpoints, but it does
+            # not have /items/new. Thus there is no fallback here.
+            msg = (
+                "The local Zotero API doesn't implement the /items/new "
+                "template endpoint, so item_template() (and the "
+                "attachment_simple() / attachment_both() methods that rely on "
+                "it) are unavailable in local mode. Build the item dict "
+                "directly and pass it to create_items(), or to "
+                "upload_attachments() for a file attachment. Item types and "
+                "fields are available via item_types() and item_type_fields()."
+            )
+            raise ze.CallDoesNotExistError(msg) from None
+        return self._cache(retrieved, template_name)
+
+    def _attachment_template(self, attachment_type: str) -> Any:
+        """Return a new attachment template of the required type.
+
+        Types: imported_file, imported_url, linked_file, linked_url
+        """
+        return self.item_template("attachment", linkmode=attachment_type)
+
+    def _attachment(
+        self, payload: list[dict[str, Any]], parentid: str | None = None
+    ) -> Any:
+        """Create attachments.
+
+        Accepts a list of one or more attachment template dicts
+        and an optional parent Item ID. If this is specified,
+        attachments are created under this ID.
+        """
+        attachment = Zupload(self, payload, parentid)
+        return attachment.upload()
+
+    @ss_wrap
+    def show_operators(self) -> Any:
+        """Show available saved search operators."""
+        return self.savedsearch.operators
+
+    @ss_wrap
+    def show_conditions(self) -> Any:
+        """Show available saved search conditions."""
+        return self.savedsearch.conditions_operators.keys()
+
+    @ss_wrap
+    def show_condition_operators(self, condition: str) -> set[Any]:
+        """Show available operators for a given saved search condition."""
+        # dict keys of allowed operators for the current condition
+        permitted_operators = self.savedsearch.conditions_operators.get(condition)
+        # transform these into values
+        return {self.savedsearch.operators.get(op) for op in permitted_operators}
+
+    @ss_wrap
+    def saved_search(self, name: str, conditions: list[dict[str, str]]) -> Any:
+        """Create a saved search.
+
+        conditions is a list of dicts containing search conditions and must
+        contain the following str keys: condition, operator, value
+        """
+        self.savedsearch._validate(conditions)
+        payload = [{"name": name, "conditions": conditions}]
+        headers = {"Zotero-Write-Token": token()}
+        self._check_backoff()
+        req = self._write(
+            "POST",
+            url=build_url(
+                self.endpoint,
+                f"/{self.library_type}/{self.library_id}/searches",
+            ),
+            headers=headers,
+            json=payload,
+        )
+        self.request = req
+        self._post_check(req)
+        return req.json()
+
+    @ss_wrap
+    def delete_saved_search(self, keys: list[str]) -> int:
+        """Delete one or more saved searches.
+
+        Pass a list of one or more unique search keys.
+        """
+        headers = {"Zotero-Write-Token": token()}
+        self._check_backoff()
+        req = self._write(
+            "DELETE",
+            url=build_url(
+                self.endpoint,
+                f"/{self.library_type}/{self.library_id}/searches",
+            ),
+            headers=headers,
+            params={"searchKey": ",".join(keys)},
+        )
+        self.request = req
+        self._post_check(req)
+        return req.status_code
+
+    def upload_attachments(
+        self,
+        attachments: Any,
+        parentid: str | None = None,
+        basedir: str | None = None,
+    ) -> Any:
+        """Upload files to the already created (but never uploaded) attachments."""
+        return Zupload(self, attachments, parentid, basedir=basedir).upload()
+
+    def add_tags(self, item: dict[str, Any], *tags: str) -> bool:
+        """Add one or more tags to a retrieved item, then update it on the server.
+
+        Accepts a dict, and one or more tags to add to it.
+        Returns the updated item from the server.
+        """
+        # Make sure there's a tags field, or add one
+        if not item.get("data", {}).get("tags"):
+            item["data"]["tags"] = []
+        for tag in tags:
+            item["data"]["tags"].append({"tag": f"{tag}"})
+        # make sure everything's OK
+        self.check_items([item])
+        return self.update_item(item)
+
+    def check_items(self, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Check that items to be created contain no invalid dict keys.
+
+        Accepts a single argument: a list of one or more dicts.
+        The retrieved fields are cached and re-used until a 304 call fails.
+        """
+        # item_fields() is @tcache-decorated, so caching is handled there.
+        template = {t["field"] for t in self.item_fields()}  # ty: ignore[invalid-argument-type]
+        # add fields we know to be OK
+        template |= {
+            "path",
+            "tags",
+            "notes",
+            "itemType",
+            "creators",
+            "mimeType",
+            "linkMode",
+            "note",
+            "charset",
+            "dateAdded",
+            "version",
+            "collections",
+            "dateModified",
+            "relations",
+            # trashed objects are returned carrying this, and setting it trashes
+            "deleted",
+            #  attachment items
+            "parentItem",
+            "mtime",
+            "contentType",
+            "md5",
+            "filename",
+            "inPublications",
+            # annotation fields
+            "annotationText",
+            "annotationColor",
+            "annotationType",
+            "annotationPageLabel",
+            "annotationPosition",
+            "annotationSortIndex",
+            "annotationComment",
+            "annotationAuthorName",
+        }
+        template |= set(self.temp_keys)
+        processed_items: list[dict[str, Any]] = []
+        for pos, item in enumerate(items):
+            if set(item) == {"links", "library", "version", "meta", "key", "data"}:
+                itm = item["data"]
+            else:
+                itm = item
+            to_check = set(itm.keys())
+            difference = to_check.difference(template)
+            if difference:
+                err = f"Invalid keys present in item {pos + 1}: {' '.join(i for i in difference)}"
+                raise ze.InvalidItemFieldsError(err)
+            processed_items.append(itm)
+        return processed_items
+
+    @tcache
+    def item_types(self) -> tuple[str, dict[str, Any]]:
+        """Get all available item types."""
+        # Check for a valid cached version
+        params: dict[str, Any] = {"locale": self.locale}
+        query_string = "/itemTypes"
+        return query_string, params
+
+    @tcache
+    def creator_fields(self) -> tuple[str, dict[str, Any]]:
+        """Get localised creator fields."""
+        # Check for a valid cached version
+        params: dict[str, Any] = {"locale": self.locale}
+        query_string = "/creatorFields"
+        return query_string, params
+
+    @tcache
+    def item_type_fields(self, itemtype: str) -> tuple[str, dict[str, Any]]:
+        """Get all valid fields for an item."""
+        params: dict[str, Any] = {"itemType": itemtype, "locale": self.locale}
+        query_string = "/itemTypeFields"
+        return query_string, params
+
+    @tcache
+    def item_creator_types(self, itemtype: str) -> tuple[str, dict[str, Any]]:
+        """Get all available creator types for an item."""
+        params: dict[str, Any] = {"itemType": itemtype, "locale": self.locale}
+        query_string = "/itemTypeCreatorTypes"
+        return query_string, params
+
+    @tcache
+    def item_fields(self) -> tuple[str, dict[str, Any]]:
+        """Get all available item fields."""
+        # Check for a valid cached version
+        params: dict[str, Any] = {"locale": self.locale}
+        query_string = "/itemFields"
+        return query_string, params
+
+    @staticmethod
+    def item_attachment_link_modes() -> list[str]:
+        """Get all available link mode types.
+
+        Note: No viable REST API route was found for this, so I tested and built
+        a list from documentation found here:
+        https://www.zotero.org/support/dev/web_api/json
+        """
+        return ["imported_file", "imported_url", "linked_file", "linked_url"]
+
+    def create_items(
+        self,
+        payload: list[dict[str, Any]],
+        parentid: str | None = None,
+        last_modified: int | None = None,
+        timeout: int | float | httpx2.Timeout | None = None,
+    ) -> Any:
+        """Create new Zotero items.
+
+        Accepts the following arguments:
+            payload: a list containing one or more item dicts
+            parentid: an optional parent item ID
+            last_modified: optional library version for
+                If-Unmodified-Since-Version
+            timeout: optional per-call timeout (in seconds, or an
+                ``httpx2.Timeout``) for the POST request. Defaults to the
+                Zotero client's configured timeout. Bulk writes of close to
+                the 50-item maximum can take considerably longer than the
+                default to be acknowledged by the server; pass e.g.
+                ``timeout=60`` if you encounter ``httpx2.ReadTimeout``.
+
+        Note that this can also be used to update existing items.
+        """
+        if len(payload) > DEFAULT_NUM_ITEMS:
+            msg = f"You may only create up to {DEFAULT_NUM_ITEMS} items per call"
+            raise ze.TooManyItemsError(msg)
+        # TODO: strip extra data if it's an existing item
+        headers = {"Zotero-Write-Token": token()}
+        if last_modified is not None:
+            headers["If-Unmodified-Since-Version"] = str(last_modified)
+        to_send = list(self._cleanup(*payload, allow=("key",)))
+        if parentid:
+            for item in to_send:
+                item["parentItem"] = parentid
+        self._check_backoff()
+        post_kwargs: dict[str, Any] = {
+            "url": build_url(
+                self.endpoint,
+                f"/{self.library_type}/{self.library_id}/items",
+            ),
+            "json": to_send,
+            "headers": headers,
+        }
+        if timeout is not None:
+            post_kwargs["timeout"] = timeout
+        req = self._write("POST", **post_kwargs)
+        self.request = req
+        self._post_check(req)
+        return req.json()
+
+    def create_collection(
+        self,
+        payload: list[dict[str, Any]],
+        last_modified: int | None = None,
+    ) -> Any:
+        """Alias for create_collections to preserve backward compatibility."""
+        return self.create_collections(payload, last_modified)
+
+    def create_collections(
+        self,
+        payload: list[dict[str, Any]],
+        last_modified: int | None = None,
+    ) -> Any:
+        """Create new Zotero collections.
+
+        Accepts one argument, a list of dicts containing the following keys:
+        'name': the name of the collection
+        'parentCollection': OPTIONAL, the parent collection to which you wish to add this
+        """
+        # no point in proceeding if there's no 'name' key
+        for item in payload:
+            if "name" not in item:
+                msg = "The dict you pass must include a 'name' key"
+                raise ze.ParamNotPassedError(msg)
+            # add a blank 'parentCollection' key if it hasn't been passed
+            if "parentCollection" not in item:
+                item["parentCollection"] = ""
+        headers = {"Zotero-Write-Token": token()}
+        if last_modified is not None:
+            headers["If-Unmodified-Since-Version"] = str(last_modified)
+        self._check_backoff()
+        req = self._write(
+            "POST",
+            url=build_url(
+                self.endpoint,
+                f"/{self.library_type}/{self.library_id}/collections",
+            ),
+            headers=headers,
+            json=payload,
+        )
+        self.request = req
+        self._post_check(req)
+        return req.json()
+
+    @backoff_check
+    def update_collection(
+        self, payload: dict[str, Any], last_modified: int | None = None
+    ) -> httpx2.Response:
+        """Update a Zotero collection property such as 'name'.
+
+        Accepts one argument, a dict containing collection data retrieved
+        using e.g. 'collections()'.
+        """
+        modified = payload["version"]
+        if last_modified is not None:
+            modified = last_modified
+        key = payload["key"]
+        headers = {"If-Unmodified-Since-Version": str(modified)}
+        return self._write(
+            "PUT",
+            url=build_url(
+                self.endpoint,
+                f"/{self.library_type}/{self.library_id}/collections/{key}",
+            ),
+            headers=headers,
+            json=payload,
+        )
+
+    def attachment_simple(self, files: list[str], parentid: str | None = None) -> Any:
+        """Add attachments using filenames as title.
+
+        Args:
+            files: One or more file paths to add as attachments.
+            parentid: Optional Item ID to create child attachments.
+
+        """
+        orig = self._attachment_template("imported_file")
+        to_add = [orig.copy() for _ in files]
+        for idx, tmplt in enumerate(to_add):
+            tmplt["title"] = Path(files[idx]).name
+            tmplt["filename"] = files[idx]
+        if parentid:
+            return self._attachment(to_add, parentid)
+        return self._attachment(to_add)
+
+    def attachment_both(
+        self,
+        files: list[tuple[str, str]],
+        parentid: str | None = None,
+    ) -> Any:
+        """Add child attachments using title, filename.
+
+        Args:
+            files: One or more lists or tuples containing (title, file path).
+            parentid: Optional Item ID to create child attachments.
+
+        """
+        orig = self._attachment_template("imported_file")
+        to_add = [orig.copy() for _ in files]
+        for idx, tmplt in enumerate(to_add):
+            tmplt["title"] = files[idx][0]
+            tmplt["filename"] = files[idx][1]
+        if parentid:
+            return self._attachment(to_add, parentid)
+        return self._attachment(to_add)
+
+    @backoff_check
+    def update_item(
+        self, payload: dict[str, Any], last_modified: int | None = None
+    ) -> httpx2.Response:
+        """Update an existing item.
+
+        Accepts one argument, a dict containing Item data.
+        """
+        to_send = self.check_items([payload])[0]
+        modified = payload["version"] if last_modified is None else last_modified
+        ident = payload["key"]
+        headers = {"If-Unmodified-Since-Version": str(modified)}
+        return self._write(
+            "PATCH",
+            url=build_url(
+                self.endpoint,
+                f"/{self.library_type}/{self.library_id}/items/{ident}",
+            ),
+            headers=headers,
+            json=to_send,
+        )
+
+    def _batch_update(
+        self,
+        payload: list[dict[str, Any]],
+        collection: str,
+        last_modified: int | None = None,
+    ) -> bool:
+        """POST a payload to the library in chunks of DEFAULT_NUM_ITEMS.
+
+        ``collection`` is the last path segment, for example ``"items"`` or
+        ``"collections"``. The API accepts a maximum of 50 objects for each
+        request, so this method divides longer payloads across requests.
+
+        ``last_modified`` sets If-Unmodified-Since-Version on each chunk. A
+        keyed write to the local API must have a concurrency precondition:
+        that header, or a ``version`` value on each object. Without one, the
+        local API returns a 428 error. Objects that come from the API have
+        their own version. Thus only payloads that the caller makes by hand
+        need ``last_modified``.
+        """
+        to_send = [self.check_items([p])[0] for p in payload]
+        url = build_url(
+            self.endpoint,
+            f"/{self.library_type}/{self.library_id}/{collection}/",
+        )
+        headers = (
+            {"If-Unmodified-Since-Version": str(last_modified)}
+            if last_modified is not None
+            else {}
+        )
+        for chunk in chunks(to_send, DEFAULT_NUM_ITEMS):
+            self._check_backoff()
+            req = self._write("POST", url=url, json=chunk, headers=headers)
+            self.request = req
+            self._post_check(req)
+        return True
+
+    def update_items(
+        self, payload: list[dict[str, Any]], last_modified: int | None = None
+    ) -> bool:
+        """Update existing items.
+
+        Accepts a list of dicts that contain item data, and an optional
+        library version for If-Unmodified-Since-Version. The version is
+        necessary only when the dicts do not have a ``version`` of their own.
+        """
+        return self._batch_update(payload, "items", last_modified)
+
+    def update_collections(
+        self, payload: list[dict[str, Any]], last_modified: int | None = None
+    ) -> bool:
+        """Update existing collections.
+
+        Accepts a list of dicts that contain collection data, and an optional
+        library version for If-Unmodified-Since-Version. The version is
+        necessary only when the dicts do not have a ``version`` of their own.
+        """
+        return self._batch_update(payload, "collections", last_modified)
+
+    def _patch_collections(
+        self, payload: dict[str, Any], collections: list[str]
+    ) -> httpx2.Response:
+        """Replace the collection list of one item with ``collections``.
+
+        ``payload`` is an item dict from the API. Its ``version`` becomes the
+        If-Unmodified-Since-Version precondition.
+        """
+        headers = {"If-Unmodified-Since-Version": str(payload["version"])}
+        return self._write(
+            "PATCH",
+            url=build_url(
+                self.endpoint,
+                f"/{self.library_type}/{self.library_id}/items/{payload['key']}",
+            ),
+            json={"collections": collections},
+            headers=headers,
+        )
+
+    @backoff_check
+    def addto_collection(
+        self, collection: str, payload: dict[str, Any]
+    ) -> httpx2.Response:
+        """Add item to a collection.
+
+        Accepts two arguments: The collection ID, and an item dict.
+        """
+        # add the collection data from the item
+        modified_collections = payload["data"]["collections"] + [collection]
+        return self._patch_collections(payload, modified_collections)
+
+    @backoff_check
+    def deletefrom_collection(
+        self, collection: str, payload: dict[str, Any]
+    ) -> httpx2.Response:
+        """Delete an item from a collection.
+
+        Accepts two arguments: The collection ID, and an item dict.
+        """
+        # strip the collection data from the item
+        modified_collections = [
+            c for c in payload["data"]["collections"] if c != collection
+        ]
+        return self._patch_collections(payload, modified_collections)
+
+    @backoff_check
+    def moveto_collection(
+        self, from_collection: str, to_collection: str, payload: dict[str, Any]
+    ) -> httpx2.Response:
+        """Move an item from one collection to another.
+
+        Accepts three arguments: the source collection ID, the destination
+        collection ID, and an item dict. This is one request, unlike a
+        :meth:`deletefrom_collection` call followed by an
+        :meth:`addto_collection` call: the second of those would fail its
+        version precondition. Membership of other collections is unchanged.
+        If the item is not in the source collection, it is added to the
+        destination collection all the same.
+        """
+        modified_collections = [
+            c
+            for c in payload["data"]["collections"]
+            if c not in (from_collection, to_collection)
+        ]
+        modified_collections.append(to_collection)
+        return self._patch_collections(payload, modified_collections)
+
+    @backoff_check
+    def delete_tags(self, *payload: str) -> httpx2.Response:
+        """Delete a group of tags.
+
+        Pass in up to 50 tags, or use *[tags].
+        """
+        if len(payload) > DEFAULT_NUM_ITEMS:
+            msg = f"Only {DEFAULT_NUM_ITEMS} tags or fewer may be deleted"
+            raise ze.TooManyItemsError(msg)
+        modified_tags = " || ".join(list(payload))
+        # first, get version data by getting one tag
+        self.tags(limit=1)
+        headers = {
+            "If-Unmodified-Since-Version": self.request.headers[
+                "last-modified-version"
+            ],
+        }
+        return self._write(
+            "DELETE",
+            url=build_url(
+                self.endpoint,
+                f"/{self.library_type}/{self.library_id}/tags",
+            ),
+            params={"tag": modified_tags},
+            headers=headers,
+        )
+
+    def _delete_entity(
+        self,
+        payload: dict[str, Any] | list[dict[str, Any]],
+        last_modified: int | None,
+        collection: str,
+        key_param: str,
+    ) -> httpx2.Response:
+        """Dispatch a DELETE against one or many entities of the same type.
+
+        ``collection`` is the path segment (e.g. ``"items"``); ``key_param``
+        is the query-parameter name used for list payloads (e.g.
+        ``"itemKey"``).
+        """
+        base = f"/{self.library_type}/{self.library_id}/{collection}"
+        if isinstance(payload, list):
+            params = {key_param: ",".join([p["key"] for p in payload])}
+            modified = (
+                last_modified if last_modified is not None else payload[0]["version"]
+            )
+            url = build_url(self.endpoint, base)
+        else:
+            params = None
+            modified = (
+                last_modified if last_modified is not None else payload["version"]
+            )
+            url = build_url(self.endpoint, f"{base}/{payload['key']}")
+        headers = {"If-Unmodified-Since-Version": str(modified)}
+        return self._write("DELETE", url=url, params=params, headers=headers)
+
+    @backoff_check
+    def delete_item(
+        self,
+        payload: dict[str, Any] | list[dict[str, Any]],
+        last_modified: int | None = None,
+    ) -> httpx2.Response:
+        """Delete Items from a Zotero library.
+
+        Accepts a single argument:
+            a dict containing item data
+            OR a list of dicts containing item data
+        """
+        return self._delete_entity(payload, last_modified, "items", "itemKey")
+
+    @backoff_check
+    def delete_collection(
+        self,
+        payload: dict[str, Any] | list[dict[str, Any]],
+        last_modified: int | None = None,
+    ) -> httpx2.Response:
+        """Delete a Collection from a Zotero library.
+
+        Accepts a single argument:
+            a dict containing item data
+            OR a list of dicts containing item data
+        """
+        return self._delete_entity(
+            payload, last_modified, "collections", "collectionKey"
+        )
+
+
+__all__ = ["Zotero"]

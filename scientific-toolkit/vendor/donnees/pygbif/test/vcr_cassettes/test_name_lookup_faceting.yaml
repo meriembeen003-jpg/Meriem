@@ -1,0 +1,52 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      user-agent:
+      - python-requests/2.31.0,pygbif/0.6.4
+    method: GET
+    uri: https://api.gbif.org/v1/species/search?limit=0&facet=status&hl=false&verbose=false
+  response:
+    body:
+      string: '{"offset":0,"limit":0,"endOfRecords":false,"count":41779927,"results":[],"facets":[{"field":"STATUS","counts":[{"name":"ACCEPTED","count":26710022},{"name":"SYNONYM","count":13256060},{"name":"DOUBTFUL","count":922181},{"name":"HOMOTYPIC_SYNONYM","count":461822},{"name":"HETEROTYPIC_SYNONYM","count":363370},{"name":"MISAPPLIED","count":39746},{"name":"PROPARTE_SYNONYM","count":19715}]}]}'
+    headers:
+      Accept-Ranges:
+      - bytes
+      Age:
+      - '0'
+      Cache-Control:
+      - public, max-age=600
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 04 Oct 2024 07:00:38 GMT
+      Expires:
+      - '0'
+      Pragma:
+      - no-cache
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin, Access-Control-Request-Method, Access-Control-Request-Headers
+      Via:
+      - 1.1 varnish (Varnish/6.0)
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+      X-Varnish:
+      - '669712879'
+      X-XSS-Protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+version: 1
