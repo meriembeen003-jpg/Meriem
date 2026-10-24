@@ -1,0 +1,34 @@
+[
+ {
+  "event": "E02",
+  "product": "H-H1_LOSC_16_V1-1126259446-32.hdf5",
+  "role": "انفعال H1، 16 kHz، 32 ثانية",
+  "reason": "get_event_urls failed: SSLError: HTTPSConnectionPool(host='gwosc.org', port=443): Max retries exceeded with url: /api/v2/event-versions/GW150914/strain-files?detector=H1&sample-rate=16&file-format=hdf&duration=32 (Caused by SSLError(SSLZeroReturnError(6, 'TLS/SSL connection has been closed (EOF) (_ssl.c:992)')))",
+  "attempts": [],
+  "when": "2026-10-24T12:40:33+00:00"
+ },
+ {
+  "event": "E02",
+  "product": "L-L1_LOSC_16_V1-1126259446-32.hdf5",
+  "role": "انفعال L1، 16 kHz، 32 ثانية",
+  "reason": "get_event_urls failed: SSLError: HTTPSConnectionPool(host='gwosc.org', port=443): Max retries exceeded with url: /api/v2/event-versions/GW150914/strain-files?detector=L1&sample-rate=16&file-format=hdf&duration=32 (Caused by SSLError(SSLZeroReturnError(6, 'TLS/SSL connection has been closed (EOF) (_ssl.c:992)')))",
+  "attempts": [],
+  "when": "2026-10-24T12:40:33+00:00"
+ },
+ {
+  "event": "E02",
+  "product": "event_json_GW150914.json",
+  "role": "ملف الحدث (JSON الرسمي من GWOSC API)",
+  "reason": "SSLError: HTTPSConnectionPool(host='gwosc.org', port=443): Max retries exceeded with url: /eventapi/json/allevents/ (Caused by SSLError(SSLZeroReturnError(6, 'TLS/SSL connection has been closed (EOF) (_ssl.c:992)')))",
+  "attempts": [],
+  "when": "2026-10-24T12:40:33+00:00"
+ },
+ {
+  "event": "E02",
+  "product": "LALInference_skymap.fits.gz",
+  "role": "خريطة السماء لاحتمال الموضع (P1500227)",
+  "reason": "SSLError: HTTPSConnectionPool(host='gwosc.org', port=443): Max retries exceeded with url: /eventapi/json/allevents/ (Caused by SSLError(SSLZeroReturnError(6, 'TLS/SSL connection has been closed (EOF) (_ssl.c:992)')))",
+  "attempts": [],
+  "when": "2026-10-24T12:40:33+00:00"
+ }
+]

@@ -1,0 +1,3 @@
+SOURCE: https://gwosc.org/events/GW150914/
+FETCHED: 2026-10-24T12:40:33+00:00
+ERROR: URLError: <urlopen error TLS/SSL connection has been closed (EOF) (_ssl.c:992)>

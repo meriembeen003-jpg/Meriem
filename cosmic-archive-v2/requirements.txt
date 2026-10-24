@@ -1,0 +1,23 @@
+# SciPy stack
+numpy>=1.24
+scipy>=1.10
+astropy>=5.3
+matplotlib>=3.7
+h5py>=3.8
+pillow>=10
+
+# archives (each one talks to its own official service)
+gwosc>=0.8.3                # GWOSC  (E02)
+astroquery>=0.4.7           # MAST   (E05, E10)
+sunpy[net]>=5.1             # VSO/JSOC (E06)
+obspy>=1.4                  # USGS + IRIS FDSN (E07)
+uproot>=5.1                 # CMS AOD ROOT (E08)
+cernopendata-client>=0.10   # opendata.cern.ch (E08)
+openneuro-py>=2024.0        # openneuro.org (E09)
+
+# readers / encoders
+nibabel>=5.1                # NIfTI (E09)
+healpy>=1.16                # Planck SMICA + GW skymap renders
+imageio>=2.31
+imageio-ffmpeg>=0.4.9       # H.264 MP4 for the AIA movie (E06)
+requests>=2.31
