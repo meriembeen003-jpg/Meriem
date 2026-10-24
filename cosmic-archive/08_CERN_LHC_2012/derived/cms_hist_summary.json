@@ -1,0 +1,7 @@
+{
+ "hist": "demo/massZto2muon",
+ "n_bins": 120,
+ "entries": 6242079.0,
+ "peak_bin_gev": 91.0,
+ "bin_width_gev": 0.6666666666666643
+}
