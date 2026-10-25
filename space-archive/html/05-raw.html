@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<style>
+body{font-family:Tahoma,Arial,sans-serif;line-height:1.9;font-size:13pt;}
+h1{color:#0B3D91;} h2{color:#0B3D91;} h3{color:#FC3D21;}
+a{color:#0B3D91;} table{border-collapse:collapse;} th,td{border:1px solid #999;padding:4px 8px;}
+blockquote{background:#f2f4f8;padding:6px 12px;} code{background:#f1f1f1;padding:1px 4px;}
+</style></head><body><h1>05 — دليل البيانات الخام العلمية | RAW-FITS &amp; MAST</h1>
+<h2>الفكرة ببساطة</h2>
+<p>الصور الملوّنة التي تراها لهابل وويب في الأخبار هي <strong>المنتج النهائي</strong> لعملية علمية: التلسكوب لا «يرى» ألواناً كما نراها؛ أدواته تقيس شدة الضوء عبر مرشحات في أطوال موجية أغلبها تحت حمراء (ويب) أو مرئية/فوق بنفسجية (هابل). المختصون يجمعون قياسات مرشحات عدة ويسندون لكلٍّ منها لوناً مرئياً (الأزرق للأقصر، الأحمر للأطول) — إنه تمثيل أمين للبيانات، وليس صورة «كما ستراها عينك لو كنت هناك».</p>
+<p>إذا أردت المادة <strong>قبل كل هذا</strong> — الأرقام كما سجّلتها الأداة — ف ذا مكانها الوحيد: <strong>الأرشيفات العلمية بصيغة FITS</strong>.</p>
+<h2>ما هي FITS؟</h2>
+<p><strong>FITS (Flexible Image Transport System)</strong> هي صيغة الأرشفة القياسية لعلم الفلك منذ عقود (معتمدة من NASA والاتحاد الفلكي الدولي IAU): ملف واحد يحمل مصفوفة القياسات متعددة الأبعاد + ترويسة بيانات وصفية كاملة (الأداة، المرشح، زمن التعريض، الإحداثيات السماوية...). بهذه الملفات نفسها يشتغل علماء الفلك وتنبني الأوراق العلمية.</p>
+<h2>البوابة الرسمية — MAST</h2>
+<p><strong>Barbara A. Mikulski Archive for Space Telescopes</strong> في معهد STScI (بالتيمور) — مستودع البيانات الدائم لأكثر من 20 مهمة في البصري وفوق البنفسجي وتحت الأحمر القريب: <strong>Hubble, Webb (JWST), Kepler, TESS, GALEX...</strong> وقريباً Roman.</p>
+<ul>
+<li>بوابة البحث والتنزيل: https://mast.stsci.edu</li>
+<li>الوصول المباشر للأرشيف: https://archive.stsci.edu</li>
+<li>توثيق الوصول إلى بيانات JWST خطوة بخطوة: https://jwst-docs.stsci.edu/accessing-jwst-data</li>
+</ul>
+<p><strong>مستويات المنتجات في MAST</strong> (من الخام إلى الجاهز):
+1. <strong>Uncalibrated Raw</strong> — التعريضات كما نزلت من المركبة (<code>_uncal</code> عند JWST).
+2. <strong>Calibrated</strong> — بعد معايرة خط المعالجة الرسمي (إزالة آثار الأداة).
+3. <strong>Combined / High-Level Science Products</strong> — فسيفساء ومنتجات فرق البحث (<code>_i2d</code> للصور المدمجة).</p>
+<h2>خطوات عملية لتنزيل أول ملف FITS لك</h2>
+<ol>
+<li>ادخل بوابة MAST وفعّل سماح النوافذ المنبثقة للموقع (شرط رسمي للتنزيل).</li>
+<li>في البحث المتقدم: اكتب اسم الهدف (مثال: <code>Pillars of Creation</code> أو إحداثياته) واختر المهمة <code>JWST</code> — سيظهر جدول بالرصدات ومرشحاتها (لأعمدة الخلق بـNIRCam مثلاً ستجد 6 نتائج مرشحات).</li>
+<li>حدّد الرصدات المطلوبة ثم «Download» — ستُنزَّل حزمة فيها ملفات FITS متداخلة المجلدات.</li>
+<li>للصورة الجاهزة للتحليل اختر ملف <strong><code>i2d</code></strong>؛ بداخله امتداد <strong><code>SCI</code></strong> هو صورة العلم نفسها (الباقي خرائط معايرة وأوزان).</li>
+</ol>
+<h2>أدوات فتح FITS ومعاينتها (مجانية وشائعة بين الفلكيين)</h2>
+<table>
+<thead>
+<tr>
+<th>الأداة</th>
+<th>الاستخدام</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SAOImage DS9</td>
+<td>عارض FITS الكلاسيكي للفلكيين (مركز سميثسونيان)</td>
+</tr>
+<tr>
+<td>FITS Liberator (ESA/ESO/NASA)</td>
+<td>تحويل FITS إلى صور للنشر مع التحكم بالامتداد اللوني</td>
+</tr>
+<tr>
+<td>Siril</td>
+<td>معالجة صور فلكية مفتوحة المصدر</td>
+</tr>
+<tr>
+<td>AstroImageJ</td>
+<td>تحليل قياسات ضوئية</td>
+</tr>
+<tr>
+<td>مكتبة Astropy (بايثون)</td>
+<td>البرمجة والتحليل — <code>astropy.io.fits</code></td>
+</tr>
+</tbody>
+</table>
+<h2>أين تجد «نفس الصورة» بالمستويين؟ — مثال تعليمي كامل</h2>
+<p>خذ <strong>أول حقل عميق لويب (SMACS 0723)</strong> وسر عبر السلسلة كاملة:
+1. <strong>الخام FITS</strong>: ابحث في MAST عن الهدف بمهمة JWST ومرشحات NIRCam الستة (F090W…F444W).
+2. <strong>العلمي الملوّن الأصلي</strong>: https://esawebb.org/images/weic2209a/ — Fullsize Original ‏38.7MB وTIFF 4K.
+3. <strong>المشروح (البوصلة + مفاتيح المرشحات)</strong>: في مجلد الصور بهذا الأرشيف — يورّيك كيف رُكّبت الألوان.
+4. <strong>شرح الطريقة من فريق الصور نفسه</strong>: https://science.nasa.gov/mission/webb/science-overview/science-explainers/how-are-webbs-full-color-images-made/</p>
+<p>هذه السلسلة هي أدق إجابة عن سؤال: «هل الصورة حقيقية؟» — نعم، ببيانات لم تُبتكر؛ وألوانها ترجمة موثقة لأطوال موجية لا تراها العين.</p>
+<h2>أرشيفات خام أخرى تستحق الحفظ</h2>
+<ul>
+<li><strong>صور بيرسيفيرنس الخام يوماً بيوم</strong> (كما تصل من المريخ): https://mars.nasa.gov/mars2020/multimedia/raw-images/</li>
+<li><strong>بوابة Earthdata</strong> لبيانات أقمار الأرض الأصلية: https://www.earthdata.nasa.gov</li>
+<li><strong>MAST — صفحات FITS والتنسيقات</strong>: https://archive.stsci.edu/fits/</li>
+</ul>
+<blockquote>
+<p>⚖️ بيانات MAST العلمية متاحة للعموم للبحث والتعليم. عند نشر صورة تعالجها بنفسك من FITS التزم بذكر: المهمة/التلسكوب + مؤرشف البيانات (STScI/MAST) + «معالجة شخصية للبيانات الأرشيفية» ليميزها الجمهور عن إصدارات الوكالات الرسمية.</p>
+</blockquote></body></html>
