@@ -1,36 +1,24 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# مدار — أطلس الدليل العلمي
 
-## Getting Started
+مشروع Next.js عربي يعرض مساراً زمنياً خطياً من الكون المبكر إلى نشأة الحياة والتطور البيولوجي. صُمم كواجهة استكشاف ومكتبة قراءة نقدية، مع توضيح حدود المعرفة والتمييز بين الرصد والمحاكاة والفرضية.
 
-First, run the development server:
+## تشغيل محلياً
 
 ```bash
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+ثم افتحي `http://localhost:3000`. أو استخدمي `npm run build` و`npm start` لبناء الإنتاج وتشغيله.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## محتويات المكتبة البحثية
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+المجلد `research-library/` يحوي دليلاً عربياً وتسعة مجلدات مرقمة، لكل منها ملف `README.md` يتضمن ملخص المرحلة، سؤالاً قابلاً للاختبار، مراجع تأسيسية محكّمة/أولية، وروابط إلى صور ومقاطع ومحاكاة مؤسسية. الروابط خارجية؛ لم تُنسخ ملفات الأوراق أو الوسائط المحمية بحقوق نشر.
 
-## Learn More
+المكتبة نُظّمت أيضاً في Google Drive: [مدار — من الكون إلى الحياة](https://drive.google.com/drive/folders/1l1BFAthMXtRTBsxT4q3rH1tGrbpo5rDA).
 
-To learn more about Next.js, take a look at the following resources:
+## ملاحظات علمية
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- «الانفجار العظيم» يصف تطور الكون المبكر، ولا يعني أن رصدنا لحظة الصفر أو حسمنا ما قبل حد صلاحية الفيزياء الحالية.
+- نشأة الحياة من الكيمياء مسألة مفتوحة؛ ولا ينبغي الخلط بينها وبين التطور البيولوجي بعد وجود نظم قابلة للتكاثر والوراثة.
+- كثير من المرئيات الفلكية تمثيلات أو محاكاة، وليست صوراً مباشرة لتطور زمني طويل.
