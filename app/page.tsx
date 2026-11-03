@@ -1,239 +1,326 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Capacitor } from "@capacitor/core";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Browser } from "@capacitor/browser";
+import { Capacitor } from "@capacitor/core";
+import { loadPublicFeed, PUBLIC_FEEDS, type FeedResult, type PublicItem } from "./lib/feeds";
 
-type Section = "overview" | "sources" | "fieldnotes";
-type Quake = { id: string; place: string; magnitude: number; time: number; url: string; depth: number };
-type Source = { id: string; name: string; kind: string; region: string; url: string; detail: string; live?: boolean };
+type View = "briefing" | "saved" | "sources" | "method";
 type Note = { id: string; title: string; source: string; url: string; text: string; createdAt: string };
+type InstallPromptEvent = Event & { prompt: () => Promise<void> };
 
-const sources: Source[] = [
-  { id: "un-webtv", name: "UN Web TV", kind: "بث مباشر", region: "دولي", url: "https://webtv.un.org/en", detail: "بثّ علني لاجتماعات وفعاليات الأمم المتحدة." },
-  { id: "un-press", name: "تغطية مجلس الأمن", kind: "محاضر وتصريحات", region: "دولي", url: "https://press.un.org/en/content/security-council/meetings-coverage", detail: "تغطية رسمية لاجتماعات مجلس الأمن وبياناته." },
-  { id: "maroc", name: "بوابة المغرب الرسمية", kind: "بيانات حكومية", region: "المغرب", url: "https://www.maroc.ma/ar", detail: "بوابة رسمية للأخبار والبلاغات الحكومية المنشورة." },
-  { id: "who", name: "منظمة الصحة العالمية", kind: "تنبيهات صحية", region: "دولي", url: "https://www.who.int/emergencies/disease-outbreak-news", detail: "إشعارات صحية عامة صادرة عن المنظمة." },
-  { id: "usgs", name: "USGS · رصد الزلازل", kind: "بيانات حية", region: "عالمي", url: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson", detail: "خلاصة آلية للنشاط الزلزالي خلال آخر 24 ساعة.", live: true },
-  { id: "gdacs", name: "GDACS", kind: "إنذارات كوارث", region: "دولي", url: "https://www.gdacs.org/", detail: "نظام تنسيق دولي لمتابعة الكوارث الطبيعية." },
+const viewItems: { id: View; label: string; icon: string }[] = [
+  { id: "briefing", label: "النشرة", icon: "▥" },
+  { id: "saved", label: "المحفوظات", icon: "☆" },
+  { id: "sources", label: "المصادر", icon: "⌘" },
+  { id: "method", label: "عن مِرصد", icon: "i" },
 ];
 
-const navigation: { id: Section; label: string; icon: string }[] = [
-  { id: "overview", label: "نظرة عامة", icon: "◫" },
-  { id: "sources", label: "مكتبة المصادر", icon: "◎" },
-  { id: "fieldnotes", label: "دفتر التحقق", icon: "▤" },
+const publicBroadcasts = [
+  { title: "UN Web TV", subtitle: "جلسات وفعاليات الأمم المتحدة", url: "https://webtv.un.org/en", symbol: "UN", tone: "violet" },
+  { title: "البوابة المغربية", subtitle: "تسجيلات ومواد منشورة", url: "https://maroc.ma/ar", symbol: "MA", tone: "mint" },
 ];
 
-function ExternalIcon() {
-  return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M11 3h6v6M17 3l-8 8"/><path d="M15 11v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4"/></svg>;
+function OpenIcon({ small = false }: { small?: boolean }) {
+  return <svg className={small ? "open-icon small" : "open-icon"} viewBox="0 0 20 20" aria-hidden="true"><path d="M11 3h6v6M17 3l-8 8"/><path d="M15 11v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4"/></svg>;
 }
 
-function formatAgo(timestamp: number) {
-  const minutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60000));
-  if (minutes < 1) return "الآن";
-  if (minutes < 60) return `قبل ${minutes} د`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `قبل ${hours} س`;
-  return `قبل ${Math.floor(hours / 24)} يوم`;
+function RadarMark() {
+  return <span className="radar-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="15"/><circle cx="20" cy="20" r="9"/><circle cx="20" cy="20" r="3"/><path d="M20 20 31 8"/><path className="radar-spark" d="M30 8h4v4"/></svg></span>;
+}
+
+function CountrySeal({ code, tone }: { code: string; tone: string }) {
+  return <span className={`country-seal tone-${tone}`}>{code}</span>;
+}
+
+function formatDate(value: string | null, compact = false) {
+  if (!value) return "التاريخ غير مذكور في الخلاصة";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "التاريخ غير مذكور في الخلاصة";
+  const now = Date.now();
+  const elapsed = Math.max(0, now - date.getTime());
+  if (elapsed < 60_000) return "منذ لحظات";
+  if (elapsed < 60 * 60_000) return `قبل ${Math.floor(elapsed / 60_000)} دقيقة`;
+  if (elapsed < 24 * 60 * 60_000) return `قبل ${Math.floor(elapsed / (60 * 60_000))} ساعة`;
+  return new Intl.DateTimeFormat("ar-MA", compact ? { day: "numeric", month: "short" } : { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(date);
+}
+
+function getFeedTone(feedId: string) {
+  return PUBLIC_FEEDS.find((feed) => feed.id === feedId)?.tone ?? "blue";
+}
+
+function getSourceLabel(item: PublicItem) {
+  const code = item.countryCode;
+  return code === "UN" ? "مؤسسة دولية" : "مصدر حكومي مباشر";
 }
 
 export default function Home() {
-  const [section, setSection] = useState<Section>("overview");
-  const [quakes, setQuakes] = useState<Quake[]>([]);
-  const [quakeState, setQuakeState] = useState<"loading" | "ready" | "error">("loading");
-  const [lastChecked, setLastChecked] = useState<Date | null>(null);
+  const [view, setView] = useState<View>("briefing");
+  const [results, setResults] = useState<FeedResult[]>([]);
+  const resultsRef = useRef<FeedResult[]>([]);
+  const [loadState, setLoadState] = useState<"idle" | "loading" | "ready">("idle");
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState("الكل");
-  const [savedSources, setSavedSources] = useState<string[]>(["un-webtv", "maroc", "usgs"]);
+  const [countryFilter, setCountryFilter] = useState("all");
+  const [favorites, setFavorites] = useState<string[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
-  const [showNote, setShowNote] = useState(false);
+  const [preferencesReady, setPreferencesReady] = useState(false);
+  const [selected, setSelected] = useState<PublicItem | null>(null);
   const [toast, setToast] = useState("");
-  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [mobileNav, setMobileNav] = useState(false);
+  const [showNote, setShowNote] = useState(false);
+  const [online, setOnline] = useState(true);
+  const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
+  const [speakState, setSpeakState] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const refresh = useCallback(async () => {
+    setLoadState("loading");
+    const fetched = await Promise.all(PUBLIC_FEEDS.map(loadPublicFeed));
+    const previous = resultsRef.current;
+    const merged = fetched.map((result) => {
+      if (!result.error) return result;
+      const cached = previous.find((entry) => entry.feed.id === result.feed.id && entry.items.length > 0);
+      return cached ? { ...cached, error: result.error, stale: true } : result;
+    });
+    const checkedAt = new Date().toISOString();
+    resultsRef.current = merged;
+    setResults(merged);
+    setLastUpdated(checkedAt);
+    setLoadState("ready");
+    try { localStorage.setItem("marsad-feed-cache-v2", JSON.stringify({ checkedAt, results: merged })); } catch { /* cache is optional */ }
+  }, []);
 
   useEffect(() => {
-    try {
-      const storedSources = localStorage.getItem("marsad-sources");
-      const storedNotes = localStorage.getItem("marsad-notes");
-      if (storedSources) setSavedSources(JSON.parse(storedSources));
-      if (storedNotes) setNotes(JSON.parse(storedNotes));
-    } catch { /* ignore invalid local preferences */ }
-    const handler = (event: Event) => {
+    const restoreTimer = window.setTimeout(() => {
+      try {
+        setFavorites(JSON.parse(localStorage.getItem("marsad-favorites-v2") || "[]"));
+        setNotes(JSON.parse(localStorage.getItem("marsad-notes-v2") || "[]"));
+        const cached = JSON.parse(localStorage.getItem("marsad-feed-cache-v2") || "null") as { checkedAt?: string; results?: FeedResult[] } | null;
+        if (cached?.results?.length) {
+          const known = new Set(PUBLIC_FEEDS.map((feed) => feed.id));
+          const restored = cached.results.filter((result) => known.has(result.feed.id)).map((result) => ({ ...result, stale: true }));
+          resultsRef.current = restored;
+          setResults(restored);
+          if (cached.checkedAt) setLastUpdated(cached.checkedAt);
+          setLoadState("ready");
+        }
+      } catch { /* discard corrupt local preferences or feed cache */ }
+      setOnline(navigator.onLine);
+      setPreferencesReady(true);
+    }, 0);
+    const onlineHandler = () => setOnline(true);
+    const offlineHandler = () => setOnline(false);
+    const installHandler = (event: Event) => {
       event.preventDefault();
-      setInstallPrompt(event as BeforeInstallPromptEvent);
+      setInstallPrompt(event as InstallPromptEvent);
     };
-    window.addEventListener("beforeinstallprompt", handler);
+    window.addEventListener("online", onlineHandler);
+    window.addEventListener("offline", offlineHandler);
+    window.addEventListener("beforeinstallprompt", installHandler);
     if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
       navigator.serviceWorker.register("/sw.js").catch(() => undefined);
     }
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
+    const initialRefreshTimer = window.setTimeout(() => { void refresh(); }, 0);
+    const interval = window.setInterval(refresh, 15 * 60 * 1000);
+    return () => {
+      window.removeEventListener("online", onlineHandler);
+      window.removeEventListener("offline", offlineHandler);
+      window.removeEventListener("beforeinstallprompt", installHandler);
+      window.clearTimeout(restoreTimer);
+      window.clearTimeout(initialRefreshTimer);
+      window.clearInterval(interval);
+    };
+  }, [refresh]);
+
+  useEffect(() => { if (preferencesReady) localStorage.setItem("marsad-favorites-v2", JSON.stringify(favorites)); }, [favorites, preferencesReady]);
+  useEffect(() => { if (preferencesReady) localStorage.setItem("marsad-notes-v2", JSON.stringify(notes)); }, [notes, preferencesReady]);
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
-    const handleExternalLink = (event: MouseEvent) => {
+    const openOfficialSource = (event: MouseEvent) => {
       if (!(event.target instanceof Element)) return;
       const anchor = event.target.closest("a[href]");
-      if (!(anchor instanceof HTMLAnchorElement) || !/^https?:$/.test(new URL(anchor.href).protocol)) return;
+      if (!(anchor instanceof HTMLAnchorElement)) return;
+      const url = new URL(anchor.href);
+      if (url.protocol !== "https:") return;
       event.preventDefault();
       void Browser.open({ url: anchor.href });
     };
-    document.addEventListener("click", handleExternalLink);
-    return () => document.removeEventListener("click", handleExternalLink);
+    document.addEventListener("click", openOfficialSource);
+    return () => document.removeEventListener("click", openOfficialSource);
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      setQuakeState("loading");
-      try {
-        const response = await fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson", { cache: "no-store" });
-        if (!response.ok) throw new Error("feed unavailable");
-        const data = await response.json();
-        if (cancelled) return;
-        const items: Quake[] = (data.features ?? []).slice(0, 8).map((item: { id: string; properties: { place: string; mag: number; time: number; url: string }; geometry: { coordinates: number[] } }) => ({
-          id: item.id,
-          place: item.properties.place,
-          magnitude: item.properties.mag,
-          time: item.properties.time,
-          url: item.properties.url,
-          depth: item.geometry.coordinates[2],
-        }));
-        setQuakes(items);
-        setLastChecked(new Date());
-        setQuakeState("ready");
-      } catch {
-        if (!cancelled) setQuakeState("error");
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        document.querySelector<HTMLInputElement>(".global-search input")?.focus();
       }
+      if (event.key === "Escape") { setSelected(null); setShowNote(false); setMenuOpen(false); }
     };
-    load();
-    const timer = window.setInterval(load, 5 * 60 * 1000);
-    return () => { cancelled = true; window.clearInterval(timer); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem("marsad-sources", JSON.stringify(savedSources));
-  }, [savedSources]);
-  useEffect(() => {
-    localStorage.setItem("marsad-notes", JSON.stringify(notes));
-  }, [notes]);
+  const allItems = useMemo(() => {
+    const items = results.flatMap((result) => result.items);
+    return items.sort((a, b) => {
+      if (!a.publishedAt) return 1;
+      if (!b.publishedAt) return -1;
+      return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+    });
+  }, [results]);
 
-  const filteredSources = useMemo(() => sources.filter((source) => {
-    const matchesText = `${source.name} ${source.kind} ${source.region} ${source.detail}`.toLowerCase().includes(search.toLowerCase());
-    const matchesFilter = filter === "الكل" || source.kind === filter || source.region === filter;
-    return matchesText && matchesFilter;
-  }), [search, filter]);
+  const visibleItems = useMemo(() => allItems.filter((item) => {
+    const matchesCountry = countryFilter === "all" || item.feedId === countryFilter;
+    const matchesSaved = view !== "saved" || favorites.includes(item.id);
+    const query = search.trim().toLocaleLowerCase();
+    const matchesSearch = !query || `${item.title} ${item.excerpt} ${item.organization} ${item.country}`.toLocaleLowerCase().includes(query);
+    return matchesCountry && matchesSaved && matchesSearch;
+  }), [allItems, countryFilter, favorites, search, view]);
 
-  const notify = (message: string) => {
-    setToast(message);
-    window.setTimeout(() => setToast(""), 2600);
-  };
-
-  const toggleSource = (id: string) => {
-    setSavedSources((current) => current.includes(id) ? current.filter((value) => value !== id) : [...current, id]);
-    notify(savedSources.includes(id) ? "أزيل المصدر من قائمتك" : "أضيف المصدر إلى قائمتك");
-  };
+  const successfulFeeds = results.filter((result) => !result.error && !result.stale && result.items.length).length;
+  const totalFeeds = PUBLIC_FEEDS.length;
+  const toggleFavorite = (id: string) => setFavorites((current) => current.includes(id) ? current.filter((item) => item !== id) : [id, ...current]);
+  const notify = (message: string) => { setToast(message); window.setTimeout(() => setToast(""), 2600); };
 
   const addNote = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const title = String(form.get("title") || "").trim();
-    const url = String(form.get("url") || "").trim();
     const text = String(form.get("text") || "").trim();
     if (!title || !text) return;
-    setNotes((current) => [{ id: crypto.randomUUID(), title, source: String(form.get("source") || "مصدر مباشر"), url, text, createdAt: new Date().toISOString() }, ...current]);
+    setNotes((current) => [{ id: crypto.randomUUID(), title, source: String(form.get("source") || "مصدر عام"), url: String(form.get("url") || ""), text, createdAt: new Date().toISOString() }, ...current]);
     setShowNote(false);
-    notify("حُفظت ملاحظتك على هذا الجهاز");
+    notify("حُفظت الملاحظة على هذا الجهاز فقط");
   };
 
-  const installApp = async () => {
-    if (!installPrompt) {
-      notify("استخدم قائمة المتصفح ثم «إضافة إلى الشاشة الرئيسية»");
+  const openNoteFor = (item?: PublicItem | null) => {
+    setSelected(item ?? null);
+    setShowNote(true);
+  };
+
+  const speak = (item: PublicItem) => {
+    if (!("speechSynthesis" in window)) { notify("القراءة الصوتية غير متاحة على هذا الجهاز"); return; }
+    if (speakState) {
+      window.speechSynthesis.cancel();
+      setSpeakState(false);
       return;
     }
+    const utterance = new SpeechSynthesisUtterance([item.title, item.excerpt].filter(Boolean).join(". "));
+    utterance.lang = item.language === "العربية" ? "ar-MA" : item.language === "Français" ? "fr-FR" : "en-US";
+    utterance.rate = 0.92;
+    utterance.onend = () => setSpeakState(false);
+    utterance.onerror = () => setSpeakState(false);
+    window.speechSynthesis.speak(utterance);
+    setSpeakState(true);
+  };
+
+  const install = async () => {
+    if (!installPrompt) { notify("من قائمة المتصفح اختر: إضافة إلى الشاشة الرئيسية"); return; }
     await installPrompt.prompt();
     setInstallPrompt(null);
   };
 
-  const latestQuake = quakes.reduce<Quake | null>((max, item) => !max || item.magnitude > max.magnitude ? item : max, null);
+  const currentTitle = viewItems.find((item) => item.id === view)?.label ?? "النشرة";
+  const chosenFilter = (id: string) => {
+    setCountryFilter(id);
+    if (id !== "all") setView("briefing");
+  };
 
   return (
-    <main className="app-shell" dir="rtl">
-      <aside className={`sidebar ${mobileNav ? "sidebar-open" : ""}`}>
-        <a className="brand" href="#home" onClick={() => setSection("overview")}>
-          <span className="brand-mark"><span>م</span><i /></span>
-          <span className="brand-copy"><strong>مِرصد</strong><small>من المصدر، لا من الصدى</small></span>
-        </a>
-        <div className="sidebar-label">مساحة العمل</div>
-        <nav className="main-nav" aria-label="التنقل الرئيسي">
-          {navigation.map((item) => <button key={item.id} className={section === item.id ? "nav-item active" : "nav-item"} onClick={() => { setSection(item.id); setMobileNav(false); }}><span className="nav-icon">{item.icon}</span>{item.label}{item.id === "fieldnotes" && notes.length > 0 && <b className="nav-count">{notes.length}</b>}</button>)}
+    <main className="mirsad" dir="rtl">
+      <aside className={`rail ${menuOpen ? "rail-open" : ""}`}>
+        <div className="rail-brand"><RadarMark /><span><strong>مِرصد</strong><small>المصادر العلنية كما هي</small></span></div>
+        <div className="rail-caption">مساحة الرصد</div>
+        <nav className="rail-nav" aria-label="التنقل">
+          {viewItems.map((item) => <button key={item.id} className={view === item.id ? "rail-link current" : "rail-link"} onClick={() => { setView(item.id); if (item.id === "saved") setCountryFilter("all"); setMenuOpen(false); }}><span className="rail-glyph">{item.icon}</span><span>{item.label}</span>{item.id === "saved" && favorites.length > 0 && <b>{favorites.length}</b>}</button>)}
         </nav>
-        <div className="sidebar-rule" />
-        <div className="sidebar-label">مصادري المثبّتة <span>{savedSources.length}</span></div>
-        <div className="pinned-list">
-          {sources.filter((item) => savedSources.includes(item.id)).slice(0, 4).map((source) => <button key={source.id} className="pinned-item" onClick={() => { setSection("sources"); setSearch(source.name); setMobileNav(false); }}><i className={`source-dot ${source.live ? "live" : ""}`} /><span>{source.name}</span></button>)}
-          {savedSources.length === 0 && <p className="quiet-note">ثبّت مصادر لتظهر هنا.</p>}
+        <div className="rail-divider" />
+        <div className="rail-caption rail-caption-row"><span>تدفقات مفعّلة</span><span className="rail-count">{successfulFeeds}/{totalFeeds}</span></div>
+        <div className="source-mini-list">
+          {PUBLIC_FEEDS.map((feed) => {
+            const state = results.find((result) => result.feed.id === feed.id);
+            return <button key={feed.id} className="source-mini" onClick={() => { chosenFilter(feed.id); setMenuOpen(false); }}><CountrySeal code={feed.countryCode} tone={feed.tone} /><span>{feed.country}</span><i className={state?.error ? "feed-indicator bad" : state?.stale ? "feed-indicator stale" : state ? "feed-indicator ok" : "feed-indicator"} /></button>;
+          })}
         </div>
-        <div className="sidebar-bottom">
-          <div className="privacy-card"><span className="privacy-icon">⌁</span><div><strong>خصوصيتك أولًا</strong><p>ملاحظاتك محفوظة على جهازك فقط.</p></div></div>
-          <div className="profile-row"><span className="avatar">م</span><span><b>مساحة شخصية</b><small>لا حساب · لا تتبّع</small></span><span className="more">···</span></div>
-        </div>
+        <div className="rail-spacer" />
+        <a className="rail-live-link" href="https://webtv.un.org/en" target="_blank" rel="noreferrer"><span className="live-wave"><i /><i /><i /><i /></span><span><b>بث عام</b><small>UN Web TV · فتح البث</small></span><OpenIcon small /></a>
+        <div className="rail-bottom"><span className={`connection-light ${online ? "is-online" : "is-offline"}`} /><span>{online ? "الاتصال متاح" : "غير متصل"}</span><button onClick={install} aria-label="تثبيت التطبيق">تثبيت التطبيق <span>↓</span></button></div>
       </aside>
 
-      <section className="main-area">
-        <header className="topbar">
-          <button className="mobile-menu" aria-label="القائمة" onClick={() => setMobileNav(!mobileNav)}>☰</button>
-          <div className="breadcrumb"><span>مساحة الرصد</span><b>/</b><strong>{navigation.find((item) => item.id === section)?.label}</strong></div>
-          <div className="top-actions"><span className="local-badge"><i /> يعمل محليًا</span><button className="install-btn" onClick={installApp}><span>↓</span> تثبيت التطبيق</button></div>
+      <section className="stage">
+        <header className="masthead">
+          <button className="menu-trigger" onClick={() => setMenuOpen((open) => !open)} aria-label="فتح القائمة">☰</button>
+          <div className="masthead-left"><span className="masthead-overline">مِرصد / <b>{currentTitle}</b></span><span className="masthead-date">{new Intl.DateTimeFormat("ar-MA", { weekday: "long", day: "numeric", month: "long" }).format(new Date())}</span></div>
+          <div className="masthead-tools"><div className="secure-label"><span>◉</span> مصادر عامة فقط</div><button className="refresh-button" onClick={refresh} disabled={loadState === "loading"}><span className={loadState === "loading" ? "refresh-icon spinning" : "refresh-icon"}>↻</span><span>{loadState === "loading" ? "يحدّث…" : "تحديث"}</span></button></div>
         </header>
-        <div className="content-wrap">
-          {section === "overview" && <>
-            <div className="welcome-row"><div><div className="eyebrow"><span className="eyebrow-line" /> لوحة الرصد الشخصي</div><h1>اعرف ما قيل.<br /><em>وتحقّق بنفسك.</em></h1><p className="welcome-copy">مصادر أولية، سياق واضح، ولا ادّعاء بمعرفة ما لا نعرفه.</p></div><div className="date-chip"><span className="calendar-icon">▦</span><div><small>التاريخ المحلي</small><strong>{new Intl.DateTimeFormat("ar-MA", { weekday: "long", day: "numeric", month: "long" }).format(new Date())}</strong></div></div></div>
-            <section className="truth-strip"><span className="truth-symbol">i</span><p><strong>مبدأ مِرصد</strong> — نعرض المصدر الأصلي ووقت التحديث. وجود معلومة هنا لا يعني التحقق من صحتها؛ افحص السياق وقارن الأدلة.</p><button onClick={() => setSection("sources")}>كيف يعمل؟ <span>←</span></button></section>
 
-            <div className="section-heading"><div><span className="section-kicker">إشارات قابلة للتحقق</span><h2>ماذا يحدث الآن؟</h2></div><span className="update-state"><i className={quakeState === "ready" ? "pulse-dot" : "pulse-dot muted"} />{quakeState === "ready" ? "تحديث تلقائي كل 5 دقائق" : quakeState === "error" ? "تعذّر الاتصال بالمصدر" : "جارٍ الاتصال بالمصدر المفتوح"}</span></div>
-            <div className="metrics-grid">
-              <article className="metric-card metric-featured"><div className="metric-top"><span className="metric-icon globe-icon">◎</span><span className="metric-label">رصد زلزالي · USGS</span><a href={sources.find((s) => s.id === "usgs")?.url} target="_blank" rel="noreferrer" aria-label="افتح المصدر الأصلي"><ExternalIcon /></a></div><div className="metric-main"><strong>{quakeState === "ready" ? quakes.length : "—"}</strong><span>أحداث معروضة<br />خلال آخر 24 ساعة</span></div><div className="metric-foot"><span>{quakeState === "ready" ? `أعلى مقدار: ${latestQuake ? latestQuake.magnitude.toFixed(1) : "—"}` : quakeState === "error" ? "البيانات غير متاحة الآن" : "بانتظار استجابة المصدر"}</span><span>{lastChecked ? lastChecked.toLocaleTimeString("ar-MA", { hour: "2-digit", minute: "2-digit" }) : "—"}</span></div></article>
-              <article className="metric-card"><div className="metric-top"><span className="metric-icon docs-icon">▤</span><span className="metric-label">مصادر أولية</span><button className="text-arrow" onClick={() => setSection("sources")}>عرض الكل <span>←</span></button></div><div className="metric-main"><strong>{sources.length}</strong><span>مصادر عامة<br />قابلة للفتح والتحقق</span></div><div className="metric-foot"><span>حكومية · دولية · علمية</span><span className="green-tag">مباشرة</span></div></article>
-              <article className="metric-card"><div className="metric-top"><span className="metric-icon note-icon">✎</span><span className="metric-label">دفتر التحقق</span><button className="text-arrow" onClick={() => setSection("fieldnotes")}>فتح الدفتر <span>←</span></button></div><div className="metric-main"><strong>{notes.length.toLocaleString("ar-MA")}</strong><span>ملاحظة محفوظة<br />على هذا الجهاز</span></div><div className="metric-foot"><span>لا مزامنة سحابية</span><span className="lock-mark">⌑ خاص</span></div></article>
+        <div className="page-content">
+          <section className="intro-panel">
+            <div className="intro-copy">
+              <div className="eyebrow"><span className="eyebrow-dash" /> رصد التصريحات والبيانات المنشورة</div>
+              <h1>من الجهة مباشرة.<br /><em>بلا وسيط بينك وبين المصدر.</em></h1>
+              <p>تابع ما تنشره الجهات علنًا، وافتح النص أو التسجيل الأصلي بنفسك. لا نعيد صياغة التصريحات ولا نزعم التحقق من صحتها.</p>
+              <div className="intro-actions"><button className="primary-action" onClick={() => { setView("briefing"); document.querySelector(".feed-controls")?.scrollIntoView({ behavior: "smooth", block: "center" }); }}>استكشف النشرة <span>←</span></button><button className="quiet-action" onClick={() => setView("sources")}>تعرّف على المصادر</button></div>
             </div>
+            <div className="signal-art" aria-hidden="true"><div className="signal-grid"/><div className="signal-orbit orbit-a"/><div className="signal-orbit orbit-b"/><div className="signal-orbit orbit-c"/><div className="signal-center"><RadarMark /></div><span className="signal-point point-a"/><span className="signal-point point-b"/><span className="signal-point point-c"/><span className="signal-readout readout-a">SOURCE / OPEN</span><span className="signal-readout readout-b">NO SYNTHESIS</span></div>
+            <div className="intro-foot"><span><b>{successfulFeeds.toLocaleString("ar-MA")}</b> مصادر متاحة الآن</span><i /><span>تحديث تلقائي كل 15 دقيقة</span><i /><span>{lastUpdated ? `آخر فحص ${new Intl.DateTimeFormat("ar-MA", { hour: "2-digit", minute: "2-digit" }).format(new Date(lastUpdated))}` : "بانتظار أول تحديث"}</span></div>
+          </section>
 
-            <div className="dashboard-columns">
-              <section className="panel activity-panel"><div className="panel-heading"><div><span className="section-kicker">مصدر بيانات مفتوح</span><h3>آخر النشاط الزلزالي</h3></div><a className="source-link" href={sources.find((s) => s.id === "usgs")?.url} target="_blank" rel="noreferrer">USGS <ExternalIcon /></a></div><div className="earthquake-list">
-                {quakeState === "loading" && <div className="empty-state"><span className="spinner" /> جارٍ جلب بيانات المصدر…</div>}
-                {quakeState === "error" && <div className="empty-state error-state"><span>!</span><div><b>تعذر تحميل البيانات</b><small>قد يكون المصدر غير متاح أو الاتصال مقطوعًا. لا نعرض بيانات قديمة كأنها حيّة.</small><button onClick={() => window.location.reload()}>إعادة المحاولة</button></div></div>}
-                {quakeState === "ready" && quakes.length === 0 && <div className="empty-state">لا توجد أحداث في الخلاصة الحالية.</div>}
-                {quakeState === "ready" && quakes.slice(0, 5).map((quake) => <a className="quake-row" href={quake.url} target="_blank" rel="noreferrer" key={quake.id}><span className={`magnitude ${quake.magnitude >= 4.5 ? "high" : ""}`}>{quake.magnitude.toFixed(1)}</span><span className="quake-info"><b>{quake.place || "موقع غير محدد"}</b><small>عمق {Math.round(quake.depth)} كم · {formatAgo(quake.time)}</small></span><span className="row-open"><ExternalIcon /></span></a>)}
-              </div><div className="panel-foot"><span>البيانات من خدمة USGS العامة؛ تعرض الزلازل فقط.</span><span>{lastChecked ? `تحديث ${lastChecked.toLocaleTimeString("ar-MA", { hour: "2-digit", minute: "2-digit" })}` : ""}</span></div></section>
+          {view === "briefing" && <>
+            <section className="metrics-row" aria-label="حالة المصادر">
+              <article className="metric"><span className="metric-icon metric-icon-green">◉</span><div><small>مصادر تُحدّث بنجاح</small><strong>{loadState === "ready" ? `${successfulFeeds} / ${totalFeeds}` : "—"}</strong></div><span className="metric-meta">خلاصات أصلية</span></article>
+              <article className="metric"><span className="metric-icon metric-icon-blue">▤</span><div><small>مواد في النشرة</small><strong>{loadState === "ready" ? allItems.length.toLocaleString("ar-MA") : "—"}</strong></div><span className="metric-meta">من الجهات المدرجة</span></article>
+              <article className="metric"><span className="metric-icon metric-icon-gold">☆</span><div><small>مواد محفوظة</small><strong>{favorites.length.toLocaleString("ar-MA")}</strong></div><span className="metric-meta">على هذا الجهاز</span></article>
+            </section>
 
-              <section className="panel quick-panel"><div className="panel-heading"><div><span className="section-kicker">وصول مباشر</span><h3>مصادرك المثبّتة</h3></div><button className="add-round" aria-label="إضافة مصدر" onClick={() => setSection("sources")}>＋</button></div><div className="quick-sources">{sources.filter((source) => savedSources.includes(source.id)).slice(0, 4).map((source) => <a className="quick-source" key={source.id} href={source.url} target="_blank" rel="noreferrer"><span className={`quick-source-icon q-${source.id}`}>{source.id === "usgs" ? "⌁" : source.id === "maroc" ? "م" : source.id === "who" ? "+" : "◉"}</span><span className="quick-source-text"><b>{source.name}</b><small>{source.kind} · {source.region}</small></span><ExternalIcon /></a>)}{savedSources.length === 0 && <p className="empty-mini">اذهب إلى مكتبة المصادر وثبّت ما يهمك.</p>}</div><button className="all-sources-btn" onClick={() => setSection("sources")}>استكشف مكتبة المصادر <span>←</span></button></section>
-            </div>
-
-            <section className="prepared-card"><div className="prepared-art"><span className="orbit orbit-one"/><span className="orbit orbit-two"/><span className="prepared-core">⌖</span></div><div className="prepared-copy"><span className="section-kicker">استعداد بلا تهويل</span><h3>المعلومة المفيدة تبدأ بخطة واضحة.</h3><p>جهّز قائمة اتصال، دوّن نقاط الالتقاء، واحفظ إرشادات الطوارئ الرسمية محليًا. لا تنتظر تطبيقًا ليؤكد خطرًا آنيًا.</p></div><button onClick={() => { setSection("fieldnotes"); setShowNote(true); }}>دوّن خطة الاستعداد <span>←</span></button></section>
-            <footer className="page-footer"><span>مِرصد — أداة متابعة للمصادر العامة، وليست نظام إنذار رسميًا.</span><span>بياناتك تبقى على جهازك <i>◆</i></span></footer>
+            <section className="feed-section">
+              <div className="feed-head"><div><div className="eyebrow"><span className="eyebrow-dash" /> تغطية أولية</div><h2>النشرة العامة</h2><p>مواد منشورة من الجهات نفسها؛ افتح الأصل لقراءة النص الكامل وسياقه.</p></div><div className="feed-head-note"><span className="feed-head-dot" />{loadState === "loading" ? "جارٍ الاتصال بالمصادر" : loadState === "ready" ? `${successfulFeeds} من ${totalFeeds} استجاب` : "لم يبدأ التحديث"}</div></div>
+              <div className="feed-controls">
+                <label className="global-search"><span>⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="ابحث في العناوين والمقتطفات…" /><kbd>Ctrl K</kbd></label>
+                <div className="country-tabs"><button className={countryFilter === "all" ? "country-tab selected" : "country-tab"} onClick={() => chosenFilter("all")}>الكل <span>{allItems.length}</span></button>{PUBLIC_FEEDS.map((feed) => <button key={feed.id} className={countryFilter === feed.id ? "country-tab selected" : "country-tab"} onClick={() => chosenFilter(feed.id)}>{feed.country}</button>)}</div>
+              </div>
+              {results.some((result) => result.stale) && <div className="stale-notice"><span>◷</span><p><b>نسخة محفوظة للقراءة دون اتصال.</b> قد تكون بعض المواد قديمة؛ وقت الفحص السابق ظاهر في التذييل.</p></div>}
+              <div className="feed-layout">
+                <div className="timeline-column">
+                  {loadState === "loading" && results.length === 0 && <div className="loading-panel"><span className="large-spinner"/><strong>نفتح قنوات المصادر العلنية</strong><small>نحمّل المواد من الجهات المدرجة. قد يستغرق الاتصال لحظات.</small></div>}
+                  {loadState === "ready" && visibleItems.length > 0 && <div className="story-list">{visibleItems.map((item) => {
+                    const feed = PUBLIC_FEEDS.find((source) => source.id === item.feedId)!;
+                    const isSaved = favorites.includes(item.id);
+                    return <article className={`story-card ${selected?.id === item.id ? "story-selected" : ""}`} key={item.id} onClick={() => setSelected(item)}>
+                      <div className="story-rail"><CountrySeal code={item.countryCode} tone={feed.tone}/><span /></div>
+                      <div className="story-body"><div className="story-meta"><span className="story-source">{item.organization}</span><span className="source-class">{getSourceLabel(item)}</span><span className="story-dot">·</span><time>{formatDate(item.publishedAt, true)}</time></div><button className="story-title" dir="auto" onClick={(event) => { event.stopPropagation(); setSelected(item); }}>{item.title}</button>{item.excerpt && <p className="story-excerpt" dir="auto">{item.excerpt}</p>}<div className="story-bottom"><span className="language-tag">{item.language}</span><a href={item.url} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>النص الأصلي <OpenIcon small /></a><div className="story-quick"><button title={isSaved ? "إزالة من المحفوظات" : "حفظ"} onClick={(event) => { event.stopPropagation(); toggleFavorite(item.id); notify(isSaved ? "أزيلت المادة من المحفوظات" : "حُفظت المادة على الجهاز"); }}>{isSaved ? "★" : "☆"}</button><button title="عرض التفاصيل" onClick={(event) => { event.stopPropagation(); setSelected(item); }}>⋯</button></div></div></div>
+                    </article>;
+                  })}</div>}
+                  {loadState === "ready" && visibleItems.length === 0 && <div className="empty-feed"><span>⌕</span><strong>{search ? "لا نتائج لهذا البحث" : "لا توجد مواد من هذا المصدر الآن"}</strong><p>{search ? "جرّب كلمات أخرى أو اختر مصدرًا مختلفًا." : "اضغط تحديث لإعادة فحص الخلاصة، أو افتح المصدر الرسمي مباشرة."}</p><button onClick={refresh}>إعادة الفحص <span>↻</span></button></div>}
+                  {loadState === "ready" && results.some((result) => result.error) && <div className="source-warning"><span>!</span><div><b>بعض المصادر لم تستجب</b><p>{results.filter((result) => result.error).map((result) => result.feed.country).join("، ")} — نعرض فقط المواد التي أمكن جلبها، ولا نستبدلها بمحتوى مخمّن.</p></div><button onClick={refresh}>إعادة المحاولة</button></div>}
+                  <div className="feed-footnote"><span>ⓘ</span> العنوان والمقتطف من الناشر الأصلي؛ انتقل إلى رابط المصدر للسياق الكامل. لا تعني أسبقية النشر صحة الادعاء.</div>
+                </div>
+                <aside className="intel-column">
+                  <section className="side-module source-health"><div className="module-head"><div><span className="module-kicker">الحالة الآن</span><h3>قنوات المصدر</h3></div><button onClick={refresh} aria-label="تحديث القنوات">↻</button></div><div className="health-list">{PUBLIC_FEEDS.map((feed) => { const result = results.find((entry) => entry.feed.id === feed.id); const count = result?.items.length ?? 0; return <button key={feed.id} className="health-row" onClick={() => chosenFilter(feed.id)}><CountrySeal code={feed.countryCode} tone={feed.tone}/><span className="health-copy"><b>{feed.country}</b><small>{feed.language} · {feed.format === "html" ? "صفحة رسمية" : "خلاصة عامة"}</small></span><span className={result?.error ? "health-status fail" : result?.stale ? "health-status stale" : result ? "health-status good" : "health-status pending"}>{loadState === "loading" && !result ? "···" : result?.error ? "تعذر" : result?.stale ? "مخزّنة" : result ? `${count} مادة` : "انتظار"}</span></button>; })}</div><div className="module-foot">المحتوى يأتي من النطاق الأصلي لكل جهة.</div></section>
+                  <section className="side-module broadcast-module"><div className="module-head"><div><span className="module-kicker">مواد صوتية ومرئية عامة</span><h3>افتح البث الأصلي</h3></div><span className="broadcast-mark">◖</span></div>{publicBroadcasts.map((item) => <a className="broadcast-link" key={item.title} href={item.url} target="_blank" rel="noreferrer"><span className={`broadcast-seal tone-${item.tone}`}>{item.symbol}</span><span><b>{item.title}</b><small>{item.subtitle}</small></span><OpenIcon small /></a>)}<p className="module-disclaimer">هذه روابط إلى صفحات بث عامة، وليست رصدًا لاتصالات خاصة أو بثًا مضمون الاستمرار.</p></section>
+                  <section className="quote-module"><span className="quote-mark">“</span><p>اقرأ النص الكامل، وتحقق من التاريخ والسياق قبل بناء استنتاج.</p><button onClick={() => setView("method")}>منهجية الرصد <span>←</span></button></section>
+                </aside>
+              </div>
+            </section>
           </>}
 
-          {section === "sources" && <>
-            <div className="page-title-row"><div><div className="eyebrow"><span className="eyebrow-line" /> مكتبة المصادر</div><h1 className="page-title">ابدأ من <em>الأصل.</em></h1><p className="welcome-copy">روابط مباشرة إلى جهات تنشر بياناتها علنًا. المصدر الأولي يبيّن ما قيل، ولا يثبت وحده صحته.</p></div><button className="install-btn" onClick={() => setShowNote(true)}>＋ أضف إلى دفتر التحقق</button></div>
-            <div className="source-tools"><label className="search-box"><span>⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="ابحث عن جهة أو موضوع…" /><kbd>⌘ K</kbd></label><div className="filter-row">{["الكل", "دولي", "المغرب", "بث مباشر", "بيانات حية"].map((item) => <button className={filter === item ? "filter-chip selected" : "filter-chip"} key={item} onClick={() => setFilter(item)}>{item}</button>)}</div></div>
-            <div className="source-grid">{filteredSources.map((source, index) => <article className="source-card" key={source.id}><div className="source-card-top"><span className={`source-emblem emblem-${index % 5}`}>{source.id === "maroc" ? "م" : source.id === "who" ? "+" : source.id === "usgs" ? "⌁" : source.id === "gdacs" ? "△" : "◉"}</span><span className="source-type">{source.kind}</span><button className={savedSources.includes(source.id) ? "bookmark saved" : "bookmark"} onClick={() => toggleSource(source.id)} title={savedSources.includes(source.id) ? "إزالة من المثبتة" : "تثبيت المصدر"}>{savedSources.includes(source.id) ? "◆" : "◇"}</button></div><h3>{source.name}</h3><p>{source.detail}</p><div className="source-card-bottom"><span><i className={source.live ? "source-dot live" : "source-dot"} />{source.region}{source.live ? " · خلاصة آلية" : " · صفحة عامة"}</span><a href={source.url} target="_blank" rel="noreferrer">فتح المصدر <ExternalIcon /></a></div></article>)}</div>
-            {filteredSources.length === 0 && <div className="empty-search"><span>⌕</span><b>لا توجد نتائج</b><small>جرّب كلمة بحث أخرى أو غيّر التصفية.</small></div>}
-            <div className="source-disclaimer"><span>ⓘ</span><p><b>تنبيه منهجي:</b> وجود الجهة في المكتبة لا يعني تزكية كل ما تنشره. احتفظ بالرابط والتاريخ، واقرأ المادة الأصلية كاملةً قبل الاستنتاج.</p></div>
-          </>}
+          {view === "saved" && <section className="secondary-view"><div className="secondary-heading"><div><div className="eyebrow"><span className="eyebrow-dash"/> مكتبتك الشخصية</div><h2>المحفوظات</h2><p>مواد علنية حفظتها للعودة إليها. تُخزّن القائمة على هذا الجهاز فقط.</p></div><span className="secondary-count">{favorites.length.toLocaleString("ar-MA")} <small>مادة</small></span></div><div className="story-list">{visibleItems.map((item) => <article className="story-card" key={item.id} onClick={() => setSelected(item)}><div className="story-rail"><CountrySeal code={item.countryCode} tone={getFeedTone(item.feedId)}/><span/></div><div className="story-body"><div className="story-meta"><span className="story-source">{item.organization}</span><time>{formatDate(item.publishedAt, true)}</time></div><button className="story-title" dir="auto" onClick={() => setSelected(item)}>{item.title}</button><p className="story-excerpt" dir="auto">{item.excerpt}</p><div className="story-bottom"><span className="language-tag">{item.language}</span><a href={item.url} target="_blank" rel="noreferrer">النص الأصلي <OpenIcon small /></a><div className="story-quick"><button title="إزالة من المحفوظات" onClick={() => toggleFavorite(item.id)}>★</button></div></div></div></article>)}</div>{visibleItems.length === 0 && <div className="empty-feed"><span>☆</span><strong>قائمتك فارغة الآن</strong><p>من النشرة، اضغط النجمة بجانب أي مادة لحفظها هنا.</p><button onClick={() => setView("briefing")}>العودة إلى النشرة <span>←</span></button></div>}</section>}
 
-          {section === "fieldnotes" && <>
-            <div className="page-title-row"><div><div className="eyebrow"><span className="eyebrow-line" /> أدواتك الخاصة</div><h1 className="page-title">دفتر <em>التحقّق.</em></h1><p className="welcome-copy">سجّل ما شاهدته في المصدر، وافصل الاقتباس عن تفسيرك له.</p></div><button className="install-btn" onClick={() => setShowNote(true)}>＋ ملاحظة جديدة</button></div>
-            <div className="method-banner"><span>01</span><div><b>دوّن قبل أن تستنتج</b><p>من قال ماذا؟ متى؟ أين التسجيل الكامل؟ ما الذي لا نعرفه بعد؟ الملاحظات هنا خاصة بهذا الجهاز ولا تُرسل إلى خادم.</p></div><span className="method-stamp">محلي فقط · 🔒</span></div>
-            {notes.length === 0 ? <div className="empty-notes"><div className="empty-note-icon">✎</div><h3>دفترك يبدأ منك</h3><p>لا توجد ملاحظات محفوظة بعد. أضف رابطًا ومقتطفًا أو اكتب خطة استعداد شخصية.</p><button className="primary-btn" onClick={() => setShowNote(true)}>＋ أنشئ أول ملاحظة</button></div> : <div className="notes-list">{notes.map((note) => <article className="note-card" key={note.id}><div className="note-card-meta"><span>ملاحظة شخصية</span><span>{new Date(note.createdAt).toLocaleDateString("ar-MA", { day: "numeric", month: "long", year: "numeric" })}</span></div><h3>{note.title}</h3><p className="note-source">المصدر: {note.source}{note.url && <> · <a href={note.url} target="_blank" rel="noreferrer">فتح الرابط <ExternalIcon /></a></>}</p><blockquote>{note.text}</blockquote><button className="delete-note" onClick={() => setNotes((current) => current.filter((item) => item.id !== note.id))}>حذف الملاحظة</button></article>)}</div>}
-            <button className="export-btn" onClick={() => { const blob = new Blob([JSON.stringify(notes, null, 2)], { type: "application/json" }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "marsad-notes.json"; link.click(); URL.revokeObjectURL(link.href); }}>↓ تصدير نسخة احتياطية من ملاحظاتي</button>
-          </>}
+          {view === "sources" && <section className="secondary-view"><div className="secondary-heading"><div><div className="eyebrow"><span className="eyebrow-dash"/> دليل التتبّع</div><h2>مصادر الرصد</h2><p>كل بطاقة تفتح جهة النشر نفسها؛ حالة الوصول تتغير بحسب الشبكة وقيود الموقع.</p></div><button className="refresh-button" onClick={refresh}><span className="refresh-icon">↻</span> فحص المصادر</button></div><div className="source-directory">{PUBLIC_FEEDS.map((feed) => { const result = results.find((entry) => entry.feed.id === feed.id); return <article className="directory-card" key={feed.id}><div className="directory-top"><CountrySeal code={feed.countryCode} tone={feed.tone}/><span className={result?.error ? "directory-state unavailable" : result?.stale ? "directory-state stale" : result ? "directory-state active" : "directory-state"}><i/>{result?.error ? "تعذّر التحديث" : result?.stale ? "نسخة محفوظة" : result ? "اتصال ناجح" : "بانتظار الفحص"}</span></div><span className="directory-country">{feed.country} · {feed.language}</span><h3>{feed.organization}</h3><p>{feed.description}</p><div className="directory-type"><span>{feed.format === "html" ? "صفحة أصلية" : feed.format.toUpperCase()}</span><span>يُفحص كل 15 دقيقة</span></div><a className="directory-open" href={feed.siteUrl} target="_blank" rel="noreferrer">فتح موقع الناشر <OpenIcon small /></a></article>; })}</div><div className="broadcast-directory"><div><span className="eyebrow"><span className="eyebrow-dash"/> بث ومواد مرئية</span><h3>استمع وشاهد من الناشر نفسه</h3><p>لا نتوسط في البث ولا نعيد رفعه؛ الرابط يقود إلى صفحة الجهة العلنية.</p></div>{publicBroadcasts.map((item) => <a key={item.title} href={item.url} target="_blank" rel="noreferrer"><span className={`broadcast-seal tone-${item.tone}`}>{item.symbol}</span><span><b>{item.title}</b><small>{item.subtitle}</small></span><OpenIcon small /></a>)}</div></section>}
+
+          {view === "method" && <section className="secondary-view method-view"><div className="secondary-heading"><div><div className="eyebrow"><span className="eyebrow-dash"/> شفافية وحدود واضحة</div><h2>ما الذي يفعله مِرصد؟</h2><p>أداة لتقريب المصادر الأولية العامة، لا محركًا لإثبات الحقيقة ولا نظام إنذار.</p></div></div><div className="method-grid"><article><span className="method-number">01</span><h3>المصدر قبل التعليق</h3><p>نجلب العناوين والمقتطفات من خلاصات أو صفحات منشورة علنًا، ونربط كل مادة بصفحتها الأصلية. لا ننشئ اقتباسات ولا نكتب ملخصات من عندنا.</p></article><article><span className="method-number">02</span><h3>الحالة لا تُخفى</h3><p>عند فشل اتصال أي جهة نظهر ذلك ونحددها. عدم ظهور مادة لا يعني عدم وجود حدث، وتأخر التحديث لا يعني عدم وقوعه.</p></article><article><span className="method-number">03</span><h3>قولٌ منشور، لا حقيقة محققة</h3><p>المصدر الأولي يثبت ما نشرته الجهة، لكنه لا يثبت وحده صحة الادعاء أو اكتمال السياق. المقارنة والتحقق مسؤولية القارئ.</p></article><article><span className="method-number">04</span><h3>خصوصية الجهاز</h3><p>المحفوظات والملاحظات تبقى في التخزين المحلي للتطبيق. لا يوجد تسجيل دخول أو رفع تلقائي لملاحظاتك.</p></article></div><div className="limits-panel"><span>!</span><div><b>حدود تقنية مهمة</b><p>مِرصد لا يلتقط ترددات الراديو، ولا يعترض الاتصالات الخاصة أو المشفرة، ولا يعمل كنظام طوارئ. البثوث المتاحة هنا منشورة للعامة من الجهات نفسها.</p></div></div></section>}
+
+          <footer className="app-footer"><span>مِرصد <i>·</i> إصدار تجريبي</span><span>{lastUpdated ? `آخر فحص ${formatDate(lastUpdated, true)}` : "لم يتم التحديث بعد"}</span><span>لا حساب · لا تتبّع · لا معلومات مخترعة</span></footer>
         </div>
       </section>
 
-      {showNote && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowNote(false); }}><form className="note-modal" onSubmit={addNote}><div className="modal-head"><div><span className="section-kicker">دفتر خاص · على هذا الجهاز</span><h2>ملاحظة جديدة</h2></div><button type="button" className="modal-close" onClick={() => setShowNote(false)}>×</button></div><label>عنوان الملاحظة<input name="title" placeholder="مثال: تصريح في جلسة اليوم" required autoFocus /></label><label>الجهة أو المصدر<input name="source" placeholder="اسم الجهة أو المتحدث" /></label><label>رابط المصدر الأصلي <span className="optional">اختياري</span><input name="url" type="url" placeholder="https://…" /></label><label>ماذا شاهدت أو سمعت؟<textarea name="text" rows={5} placeholder="اكتب المقتطف كما ورد، ثم ميّز رأيك عنه…" required /></label><div className="modal-tip">ⓘ هذه الملاحظة لا تتحقق من صحة الادعاء، ولا تغادر هذا الجهاز.</div><div className="modal-actions"><button type="button" className="cancel-btn" onClick={() => setShowNote(false)}>إلغاء</button><button className="primary-btn" type="submit">حفظ الملاحظة</button></div></form></div>}
-      {toast && <div className="toast"><span>✓</span>{toast}</div>}
+      {selected && <div className="detail-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelected(null); }}><aside className="detail-drawer" dir="rtl"><div className="drawer-top"><span className="drawer-label">مادة منشورة علنًا</span><button onClick={() => setSelected(null)} aria-label="إغلاق">×</button></div><div className="drawer-source"><CountrySeal code={selected.countryCode} tone={getFeedTone(selected.feedId)}/><span><b>{selected.organization}</b><small>{selected.country} · {selected.language}</small></span></div><div className="drawer-divider"/><div className="drawer-metadata"><span>تاريخ النشر</span><b>{formatDate(selected.publishedAt)}</b><span>نوع المصدر</span><b>{getSourceLabel(selected)}</b></div><h2 className="drawer-title">{selected.title}</h2>{selected.excerpt ? <div className="drawer-excerpt"><span>مقتطف الناشر</span><p>{selected.excerpt}</p></div> : <div className="drawer-excerpt"><span>المادة الأصلية</span><p>لا يتضمن موجز المصدر مقتطفًا نصيًا. افتح صفحة الجهة لقراءة النص الكامل.</p></div>}<div className="drawer-caution">المعروض مقتطف من الناشر وليس تحققًا مستقلًا. راجع النص الكامل والسياق الأصلي.</div><div className="drawer-actions"><a className="primary-action" href={selected.url} target="_blank" rel="noreferrer">افتح النص الأصلي <OpenIcon small /></a><button onClick={() => toggleFavorite(selected.id)}>{favorites.includes(selected.id) ? "★ محفوظة" : "☆ احفظها"}</button><button onClick={() => speak(selected)}>{speakState ? "■ أوقف القراءة" : "◖ استمع للمقتطف"}</button><button onClick={() => openNoteFor(selected)}>＋ أضف ملاحظة</button></div></aside></div>}
+
+      {showNote && <div className="modal-layer" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowNote(false); }}><form className="note-form" onSubmit={addNote}><div className="note-form-head"><div><span className="eyebrow">ملاحظات محلية</span><h2>أضف إلى دفتر التحقق</h2></div><button type="button" onClick={() => setShowNote(false)}>×</button></div><label>العنوان<input name="title" defaultValue={selected?.title || ""} placeholder="عنوان الملاحظة" required/></label><label>الجهة<input name="source" defaultValue={selected?.organization || ""} placeholder="اسم الناشر"/></label><label>رابط المصدر<input name="url" type="url" defaultValue={selected?.url || ""} placeholder="https://…"/></label><label>ملاحظتك<textarea name="text" rows={5} placeholder="دوّن الاقتباس أو ما تريد التحقق منه…" required/></label><div className="local-only-note">🔒 تُحفظ محليًا على هذا الجهاز فقط.</div><button className="primary-action note-submit" type="submit">حفظ الملاحظة <span>←</span></button></form></div>}
+      {toast && <div className="toast-message"><span>✓</span>{toast}</div>}
+      {menuOpen && <button className="menu-scrim" aria-label="إغلاق القائمة" onClick={() => setMenuOpen(false)} />}
     </main>
   );
 }
-
-type BeforeInstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: "accepted" | "dismissed" }> };

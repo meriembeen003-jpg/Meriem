@@ -4,9 +4,9 @@ export const dynamic = "force-static";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "مِرصد — من المصدر، لا من الصدى",
+    name: "مِرصد — تصريحات من المصادر الأصلية",
     short_name: "مِرصد",
-    description: "متابعة المصادر العامة والتحقق من سياقها.",
+    description: "نشرة مباشرة للمواد المنشورة من الجهات العامة.",
     lang: "ar",
     dir: "rtl",
     start_url: "/",

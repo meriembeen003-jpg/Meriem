@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "مِرصد — من المصدر، لا من الصدى",
-  description: "مساحة عربية لمتابعة المصادر العامة والتحقق من سياقها، مع دفتر ملاحظات خاص على جهازك.",
+  title: "مِرصد — تصريحات من المصادر الأصلية",
+  description: "نشرة عربية لمتابعة المواد المنشورة من الجهات الحكومية والمؤسسات العامة مباشرةً، مع روابط للمصدر الأصلي.",
   applicationName: "مِرصد",
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, title: "مِرصد", statusBarStyle: "default" },
