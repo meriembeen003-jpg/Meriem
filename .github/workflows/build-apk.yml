@@ -30,11 +30,12 @@ jobs:
           java-version: "21"
           cache: gradle
 
-      - name: Install Android platform
+      - name: Verify Android SDK
         run: |
-          echo "Android SDK: ${ANDROID_HOME:-not set}"
-          command -v sdkmanager
-          sdkmanager --install "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          test -d "$SDK_ROOT/platforms/android-36"
+          test -d "$SDK_ROOT/build-tools/36.0.0"
+          echo "Android API 36 and build tools are ready."
 
       - name: Install web dependencies
         run: npm ci
