@@ -7,7 +7,7 @@ on:
       - arena/5db4bbb4-meriem
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build-apk:
@@ -60,13 +60,27 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      # A one-off workflow_dispatch can stage the APK on the fixed branch so it
-      # can be transferred into the user's connected Drive, then the staging
-      # commit is removed immediately after download.
-      - name: Stage APK for requested Drive transfer
-        if: github.event_name == 'push' && contains(github.event.head_commit.message, '[drive-apk]')
+
+  stage-apk-for-drive-transfer:
+    name: Stage one-time APK for Drive transfer
+    if: github.event_name == 'push' && contains(github.event.head_commit.message, '[drive-apk]')
+    needs: build-apk
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Check out project
+        uses: actions/checkout@v5
+
+      - name: Download built APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: marsad-debug-apk
+          path: apk-transfer
+
+      - name: Stage APK briefly on the fixed branch
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk marsad-transfer.apk
+          cp apk-transfer/app-debug.apk marsad-transfer.apk
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add marsad-transfer.apk
