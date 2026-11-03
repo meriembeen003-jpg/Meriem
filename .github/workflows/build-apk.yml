@@ -64,7 +64,7 @@ jobs:
       # can be transferred into the user's connected Drive, then the staging
       # commit is removed immediately after download.
       - name: Stage APK for requested Drive transfer
-        if: github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'push' && contains(github.event.head_commit.message, '[drive-apk]')
         run: |
           cp android/app/build/outputs/apk/debug/app-debug.apk marsad-transfer.apk
           git config user.name "github-actions[bot]"

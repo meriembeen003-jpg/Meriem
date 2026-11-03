@@ -26,4 +26,6 @@ npm run lint
 npm run build
 ```
 
-التطبيق الحالي Next.js/PWA، وليس مشروع Android أصليًا. إنشاء APK يتطلب Android SDK وJava/Gradle؛ هذه الأدوات غير متوفرة في بيئة البناء الحالية.
+تتضمن الشيفرة غلاف Android أصليًا عبر Capacitor. استخدم `npm run build:android` لتصدير الواجهة ومزامنتها مع مشروع Android، ثم `cd android && ./gradlew assembleDebug` لإنتاج APK تجريبي. عند النشر للمستخدمين، يلزم إنشاء APK إصدار وتوقيعه بمفتاح خاص؛ لا تحفظ مفاتيح التوقيع في المستودع.
+
+بناء CI ينشئ APK تجريبيًا قابلًا للتثبيت كـ artifact باسم `marsad-debug-apk`.
