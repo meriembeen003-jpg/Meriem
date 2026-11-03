@@ -1,49 +1,239 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { Capacitor } from "@capacitor/core";
+import { Browser } from "@capacitor/browser";
+
+type Section = "overview" | "sources" | "fieldnotes";
+type Quake = { id: string; place: string; magnitude: number; time: number; url: string; depth: number };
+type Source = { id: string; name: string; kind: string; region: string; url: string; detail: string; live?: boolean };
+type Note = { id: string; title: string; source: string; url: string; text: string; createdAt: string };
+
+const sources: Source[] = [
+  { id: "un-webtv", name: "UN Web TV", kind: "بث مباشر", region: "دولي", url: "https://webtv.un.org/en", detail: "بثّ علني لاجتماعات وفعاليات الأمم المتحدة." },
+  { id: "un-press", name: "تغطية مجلس الأمن", kind: "محاضر وتصريحات", region: "دولي", url: "https://press.un.org/en/content/security-council/meetings-coverage", detail: "تغطية رسمية لاجتماعات مجلس الأمن وبياناته." },
+  { id: "maroc", name: "بوابة المغرب الرسمية", kind: "بيانات حكومية", region: "المغرب", url: "https://www.maroc.ma/ar", detail: "بوابة رسمية للأخبار والبلاغات الحكومية المنشورة." },
+  { id: "who", name: "منظمة الصحة العالمية", kind: "تنبيهات صحية", region: "دولي", url: "https://www.who.int/emergencies/disease-outbreak-news", detail: "إشعارات صحية عامة صادرة عن المنظمة." },
+  { id: "usgs", name: "USGS · رصد الزلازل", kind: "بيانات حية", region: "عالمي", url: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson", detail: "خلاصة آلية للنشاط الزلزالي خلال آخر 24 ساعة.", live: true },
+  { id: "gdacs", name: "GDACS", kind: "إنذارات كوارث", region: "دولي", url: "https://www.gdacs.org/", detail: "نظام تنسيق دولي لمتابعة الكوارث الطبيعية." },
+];
+
+const navigation: { id: Section; label: string; icon: string }[] = [
+  { id: "overview", label: "نظرة عامة", icon: "◫" },
+  { id: "sources", label: "مكتبة المصادر", icon: "◎" },
+  { id: "fieldnotes", label: "دفتر التحقق", icon: "▤" },
+];
+
+function ExternalIcon() {
+  return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M11 3h6v6M17 3l-8 8"/><path d="M15 11v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4"/></svg>;
+}
+
+function formatAgo(timestamp: number) {
+  const minutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60000));
+  if (minutes < 1) return "الآن";
+  if (minutes < 60) return `قبل ${minutes} د`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `قبل ${hours} س`;
+  return `قبل ${Math.floor(hours / 24)} يوم`;
+}
+
 export default function Home() {
+  const [section, setSection] = useState<Section>("overview");
+  const [quakes, setQuakes] = useState<Quake[]>([]);
+  const [quakeState, setQuakeState] = useState<"loading" | "ready" | "error">("loading");
+  const [lastChecked, setLastChecked] = useState<Date | null>(null);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("الكل");
+  const [savedSources, setSavedSources] = useState<string[]>(["un-webtv", "maroc", "usgs"]);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [showNote, setShowNote] = useState(false);
+  const [toast, setToast] = useState("");
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [mobileNav, setMobileNav] = useState(false);
+
+  useEffect(() => {
+    try {
+      const storedSources = localStorage.getItem("marsad-sources");
+      const storedNotes = localStorage.getItem("marsad-notes");
+      if (storedSources) setSavedSources(JSON.parse(storedSources));
+      if (storedNotes) setNotes(JSON.parse(storedNotes));
+    } catch { /* ignore invalid local preferences */ }
+    const handler = (event: Event) => {
+      event.preventDefault();
+      setInstallPrompt(event as BeforeInstallPromptEvent);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
+      navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+    }
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    const handleExternalLink = (event: MouseEvent) => {
+      if (!(event.target instanceof Element)) return;
+      const anchor = event.target.closest("a[href]");
+      if (!(anchor instanceof HTMLAnchorElement) || !/^https?:$/.test(new URL(anchor.href).protocol)) return;
+      event.preventDefault();
+      void Browser.open({ url: anchor.href });
+    };
+    document.addEventListener("click", handleExternalLink);
+    return () => document.removeEventListener("click", handleExternalLink);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setQuakeState("loading");
+      try {
+        const response = await fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson", { cache: "no-store" });
+        if (!response.ok) throw new Error("feed unavailable");
+        const data = await response.json();
+        if (cancelled) return;
+        const items: Quake[] = (data.features ?? []).slice(0, 8).map((item: { id: string; properties: { place: string; mag: number; time: number; url: string }; geometry: { coordinates: number[] } }) => ({
+          id: item.id,
+          place: item.properties.place,
+          magnitude: item.properties.mag,
+          time: item.properties.time,
+          url: item.properties.url,
+          depth: item.geometry.coordinates[2],
+        }));
+        setQuakes(items);
+        setLastChecked(new Date());
+        setQuakeState("ready");
+      } catch {
+        if (!cancelled) setQuakeState("error");
+      }
+    };
+    load();
+    const timer = window.setInterval(load, 5 * 60 * 1000);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("marsad-sources", JSON.stringify(savedSources));
+  }, [savedSources]);
+  useEffect(() => {
+    localStorage.setItem("marsad-notes", JSON.stringify(notes));
+  }, [notes]);
+
+  const filteredSources = useMemo(() => sources.filter((source) => {
+    const matchesText = `${source.name} ${source.kind} ${source.region} ${source.detail}`.toLowerCase().includes(search.toLowerCase());
+    const matchesFilter = filter === "الكل" || source.kind === filter || source.region === filter;
+    return matchesText && matchesFilter;
+  }), [search, filter]);
+
+  const notify = (message: string) => {
+    setToast(message);
+    window.setTimeout(() => setToast(""), 2600);
+  };
+
+  const toggleSource = (id: string) => {
+    setSavedSources((current) => current.includes(id) ? current.filter((value) => value !== id) : [...current, id]);
+    notify(savedSources.includes(id) ? "أزيل المصدر من قائمتك" : "أضيف المصدر إلى قائمتك");
+  };
+
+  const addNote = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const title = String(form.get("title") || "").trim();
+    const url = String(form.get("url") || "").trim();
+    const text = String(form.get("text") || "").trim();
+    if (!title || !text) return;
+    setNotes((current) => [{ id: crypto.randomUUID(), title, source: String(form.get("source") || "مصدر مباشر"), url, text, createdAt: new Date().toISOString() }, ...current]);
+    setShowNote(false);
+    notify("حُفظت ملاحظتك على هذا الجهاز");
+  };
+
+  const installApp = async () => {
+    if (!installPrompt) {
+      notify("استخدم قائمة المتصفح ثم «إضافة إلى الشاشة الرئيسية»");
+      return;
+    }
+    await installPrompt.prompt();
+    setInstallPrompt(null);
+  };
+
+  const latestQuake = quakes.reduce<Quake | null>((max, item) => !max || item.magnitude > max.magnitude ? item : max, null);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-center gap-8 py-32 px-16 bg-white dark:bg-black">
-        <svg
-          viewBox="0 0 69 26"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="fill-black dark:fill-white"
-        >
-          <path d="M13.7917 24.3604C12.4622 25.3549 10.7895 25.8884 8.82032 25.8884C6.66971 25.8884 4.87412 25.3543 3.47587 24.3604H13.7917Z"></path>
-          <path d="M27.8204 24.3604C26.802 25.2894 25.534 25.8884 24.1756 25.8884C22.4188 25.8884 21.02 25.339 20.108 24.3604H27.8204Z"></path>
-          <path d="M44.5726 24.3604C43.0194 25.3511 41.0762 25.8884 38.8367 25.8884C36.5972 25.8884 34.6541 25.3511 33.1008 24.3604H44.5726Z"></path>
-          <path d="M6.10452 21.7838C6.64469 22.5408 7.32257 23.0964 8.12748 23.4234H2.40008C1.94592 22.9414 1.55318 22.3936 1.22435 21.7838H6.10452Z"></path>
-          <path d="M15.9753 21.7838C15.6457 22.3936 15.2602 22.9415 14.8213 23.4234H11.8608C12.7015 23.0973 13.4264 22.543 14.0227 21.7838H15.9753Z"></path>
-          <path d="M23.2016 21.7838C23.3205 22.5267 23.6272 23.0906 24.0875 23.4234H19.4507C19.2008 22.9377 19.0348 22.3887 18.9611 21.7838H23.2016Z"></path>
-          <path d="M29.6415 21.7838C29.3929 22.3649 29.0672 22.9198 28.6798 23.4234H26.2913C26.809 23.0921 27.2884 22.5303 27.6965 21.7838H29.6415Z"></path>
-          <path d="M34.7756 21.7838C35.1876 22.498 35.7076 23.0447 36.3327 23.4234H31.8901C31.3725 22.9406 30.9182 22.3925 30.5327 21.7838H34.7756Z"></path>
-          <path d="M47.1403 21.7838C46.7548 22.3925 46.3005 22.9406 45.7829 23.4234H41.3477C41.9765 23.0447 42.5011 22.4979 42.9178 21.7838H47.1403Z"></path>
-          <path d="M4.97293 19.2072C5.1237 19.8073 5.31836 20.3552 5.55486 20.8468H0.788749C0.585257 20.3346 0.420002 19.7875 0.293988 19.2072H4.97293Z"></path>
-          <path d="M16.9458 19.2072C16.8042 19.7876 16.6278 20.3347 16.4179 20.8468H14.6376C14.9063 20.3562 15.1356 19.8083 15.3244 19.2072H16.9458Z"></path>
-          <path d="M23.146 20.8468H18.9172V19.2072H23.146V20.8468Z"></path>
-          <path d="M33.879 19.2072C33.9937 19.8097 34.1454 20.3562 34.3337 20.8468H30.0171C30.0067 20.8251 29.9961 20.8035 29.9859 20.7817C29.9802 20.8034 29.9741 20.8251 29.9682 20.8468H28.1326C28.3289 20.3505 28.4984 19.8012 28.6354 19.2072H33.879Z"></path>
-          <path d="M48.2582 19.2072C48.1017 19.7867 47.8998 20.3339 47.6561 20.8468H43.3651C43.5558 20.3562 43.71 19.8097 43.8264 19.2072H48.2582Z"></path>
-          <path d="M4.61127 16.6306C4.63883 17.207 4.69545 17.7543 4.78 18.2703H0.128844C0.056725 17.7466 0.0134713 17.1997 0 16.6306H4.61127Z"></path>
-          <path d="M17.2781 17.2464C17.2423 17.5969 17.1958 17.9383 17.1392 18.2703H15.5758C15.6704 17.8506 15.7479 17.4096 15.8073 16.9484L17.2781 17.2464Z"></path>
-          <path d="M23.146 18.2703H18.9172V16.6306H23.146V18.2703Z"></path>
-          <path d="M33.6225 16.6306C33.6374 17.2111 33.6755 17.7576 33.7361 18.2703H28.8183C28.902 17.7493 28.9618 17.2012 28.9946 16.6306H33.6225Z"></path>
-          <path d="M48.643 16.6306C48.6191 17.199 48.5595 17.7459 48.4664 18.2703H43.9719C44.0335 17.7576 44.072 17.211 44.0873 16.6306H48.643Z"></path>
-          <path d="M23.146 6.89115H28.9193V8.56739H23.146V15.6937H18.9172V8.56739H15.8592L16.4324 14.49L14.9983 14.6762C14.0055 9.75933 13.1963 8.00865 9.8132 7.85966C6.45181 7.85968 4.61542 10.5441 4.592 15.6937H0.00268892C0.175472 9.48821 3.32011 6.14613 8.93079 6.14613C9.77653 6.14614 10.7326 6.25781 11.8725 6.51853C13.152 6.78855 14.2702 6.89115 15.697 6.89115C19.7286 6.89112 21.3074 4.20914 22.0796 0H23.146V6.89115Z"></path>
-          <path d="M38.8367 6.14613C44.6383 6.14616 48.4971 9.86614 48.6497 15.6937H44.092C44.0101 10.6034 42.1785 7.97132 38.8367 7.97128C35.5308 7.97128 33.6998 10.6034 33.618 15.6937H29.0235C29.1761 9.86611 33.0351 6.14613 38.8367 6.14613Z"></path>
-          <path
-            fillRule="evenodd"
-            clipRule="evenodd"
-            d="M58.5142 19.14C59.5559 19.14 60.9024 19.5091 60.9532 22.5701H58.3236C57.7138 22.5701 57.3201 22.734 57.3709 23.3763C57.5233 25.2074 57.9934 25.385 58.6413 25.385C59.3145 25.385 59.937 25.18 60.2545 23.9229C60.28 23.8546 60.4706 23.8545 60.5468 23.8545C60.6103 23.8545 60.8389 23.8546 60.8135 23.9229C60.4197 25.6993 59.6702 26 58.6413 26C57.5996 26 55.9862 25.631 55.9862 22.5701C55.9862 19.4954 57.536 19.14 58.5142 19.14ZM58.5142 19.5773C57.9044 19.5773 57.4217 19.9736 57.3455 22.0917H59.5813C59.5051 19.9737 59.1367 19.5773 58.5142 19.5773Z"
-          ></path>
-          <path d="M63.258 19.2631C63.3215 19.2631 63.3342 19.4543 63.3342 19.509C63.3342 19.55 63.3216 19.7276 63.258 19.7276C62.6737 19.7276 62.7118 20.083 62.8262 20.5066C62.9913 21.1899 63.5121 22.9663 63.6137 23.4309C63.6391 23.5676 63.7662 23.5539 63.817 23.4309L65.0238 20.1786C65.0365 20.124 65.1763 20.124 65.2525 20.124C65.3287 20.124 65.4685 20.124 65.4939 20.1786L66.6625 23.4309C66.7006 23.5539 66.8404 23.5539 66.8658 23.4309L67.6661 20.5203C67.7931 20.083 67.8186 19.7276 67.2342 19.7276C67.1834 19.7276 67.1707 19.5773 67.1707 19.509C67.1707 19.427 67.1834 19.2631 67.2342 19.2631H68.9238C68.9746 19.2631 69 19.427 69 19.509C69 19.5773 68.9746 19.7276 68.9238 19.7276C68.3903 19.7276 68.2378 20.1239 68.1235 20.5339C67.9965 20.9438 66.5613 25.8484 66.5482 25.9043C66.5228 25.959 66.4339 25.959 66.3704 25.959C66.3069 25.959 66.2179 25.9317 66.2052 25.9043C66.1036 25.426 65.0619 22.6247 64.9222 22.1054C64.9095 21.9824 64.7443 21.9824 64.7062 22.1191C64.6554 22.2286 63.3347 25.8485 63.3216 25.9043C63.3089 25.959 63.2326 25.959 63.1564 25.959C63.0802 25.959 63.004 25.959 62.9786 25.9043L61.4033 20.5339C61.2763 20.0693 61.1111 19.7276 60.5649 19.7276C60.5268 19.7276 60.5014 19.591 60.5014 19.509C60.5014 19.4133 60.5268 19.2631 60.5649 19.2631H63.258Z"></path>
-          <path d="M53.2441 19.1264C54.0064 19.1264 55.2766 19.3724 55.2766 21.2718V24.5105C55.2766 24.9204 55.3275 25.3167 55.8991 25.3167C55.9499 25.3167 55.9627 25.4807 55.9627 25.549C55.9627 25.631 55.9499 25.795 55.8991 25.795H53.2823C53.2441 25.795 53.2187 25.6584 53.2187 25.5627C53.2187 25.4671 53.2314 25.3167 53.2823 25.3167C53.8666 25.3167 53.892 24.9204 53.892 24.5105V21.5178C53.892 19.9053 53.4347 19.8507 53.0536 19.8507C52.4184 19.8507 52.2024 20.3699 52.0119 20.7525V24.5105C52.0119 24.9341 52.0627 25.3167 52.6598 25.3167C52.7106 25.3167 52.7233 25.508 52.7233 25.549C52.7233 25.6037 52.6979 25.795 52.6598 25.795H49.8777C49.8269 25.795 49.8015 25.6583 49.8015 25.549C49.8015 25.4671 49.8269 25.3168 49.8777 25.3167C50.6526 25.3167 50.7034 24.9068 50.7034 24.5105V20.5476C50.7034 20.0693 50.5764 19.7413 49.8777 19.7413C49.8269 19.7413 49.8015 19.6047 49.8015 19.4954C49.8015 19.3861 49.8269 19.2631 49.8777 19.2631H51.6308C51.8213 19.2631 51.9611 19.3314 51.9992 19.673C52.0119 19.7687 52.0754 19.796 52.1389 19.7276C52.3422 19.4817 52.6598 19.1264 53.2441 19.1264Z"></path>
-          <path d="M48.0394 25.9621H46.8V24.629H48.0394V25.9621Z"></path>
-        </svg>
-        <div className="flex flex-col items-center text-center">
-          <h1 className="max-w-xs text-2xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            Ready for your first task
-          </h1>
+    <main className="app-shell" dir="rtl">
+      <aside className={`sidebar ${mobileNav ? "sidebar-open" : ""}`}>
+        <a className="brand" href="#home" onClick={() => setSection("overview")}>
+          <span className="brand-mark"><span>م</span><i /></span>
+          <span className="brand-copy"><strong>مِرصد</strong><small>من المصدر، لا من الصدى</small></span>
+        </a>
+        <div className="sidebar-label">مساحة العمل</div>
+        <nav className="main-nav" aria-label="التنقل الرئيسي">
+          {navigation.map((item) => <button key={item.id} className={section === item.id ? "nav-item active" : "nav-item"} onClick={() => { setSection(item.id); setMobileNav(false); }}><span className="nav-icon">{item.icon}</span>{item.label}{item.id === "fieldnotes" && notes.length > 0 && <b className="nav-count">{notes.length}</b>}</button>)}
+        </nav>
+        <div className="sidebar-rule" />
+        <div className="sidebar-label">مصادري المثبّتة <span>{savedSources.length}</span></div>
+        <div className="pinned-list">
+          {sources.filter((item) => savedSources.includes(item.id)).slice(0, 4).map((source) => <button key={source.id} className="pinned-item" onClick={() => { setSection("sources"); setSearch(source.name); setMobileNav(false); }}><i className={`source-dot ${source.live ? "live" : ""}`} /><span>{source.name}</span></button>)}
+          {savedSources.length === 0 && <p className="quiet-note">ثبّت مصادر لتظهر هنا.</p>}
         </div>
-      </main>
-    </div>
+        <div className="sidebar-bottom">
+          <div className="privacy-card"><span className="privacy-icon">⌁</span><div><strong>خصوصيتك أولًا</strong><p>ملاحظاتك محفوظة على جهازك فقط.</p></div></div>
+          <div className="profile-row"><span className="avatar">م</span><span><b>مساحة شخصية</b><small>لا حساب · لا تتبّع</small></span><span className="more">···</span></div>
+        </div>
+      </aside>
+
+      <section className="main-area">
+        <header className="topbar">
+          <button className="mobile-menu" aria-label="القائمة" onClick={() => setMobileNav(!mobileNav)}>☰</button>
+          <div className="breadcrumb"><span>مساحة الرصد</span><b>/</b><strong>{navigation.find((item) => item.id === section)?.label}</strong></div>
+          <div className="top-actions"><span className="local-badge"><i /> يعمل محليًا</span><button className="install-btn" onClick={installApp}><span>↓</span> تثبيت التطبيق</button></div>
+        </header>
+        <div className="content-wrap">
+          {section === "overview" && <>
+            <div className="welcome-row"><div><div className="eyebrow"><span className="eyebrow-line" /> لوحة الرصد الشخصي</div><h1>اعرف ما قيل.<br /><em>وتحقّق بنفسك.</em></h1><p className="welcome-copy">مصادر أولية، سياق واضح، ولا ادّعاء بمعرفة ما لا نعرفه.</p></div><div className="date-chip"><span className="calendar-icon">▦</span><div><small>التاريخ المحلي</small><strong>{new Intl.DateTimeFormat("ar-MA", { weekday: "long", day: "numeric", month: "long" }).format(new Date())}</strong></div></div></div>
+            <section className="truth-strip"><span className="truth-symbol">i</span><p><strong>مبدأ مِرصد</strong> — نعرض المصدر الأصلي ووقت التحديث. وجود معلومة هنا لا يعني التحقق من صحتها؛ افحص السياق وقارن الأدلة.</p><button onClick={() => setSection("sources")}>كيف يعمل؟ <span>←</span></button></section>
+
+            <div className="section-heading"><div><span className="section-kicker">إشارات قابلة للتحقق</span><h2>ماذا يحدث الآن؟</h2></div><span className="update-state"><i className={quakeState === "ready" ? "pulse-dot" : "pulse-dot muted"} />{quakeState === "ready" ? "تحديث تلقائي كل 5 دقائق" : quakeState === "error" ? "تعذّر الاتصال بالمصدر" : "جارٍ الاتصال بالمصدر المفتوح"}</span></div>
+            <div className="metrics-grid">
+              <article className="metric-card metric-featured"><div className="metric-top"><span className="metric-icon globe-icon">◎</span><span className="metric-label">رصد زلزالي · USGS</span><a href={sources.find((s) => s.id === "usgs")?.url} target="_blank" rel="noreferrer" aria-label="افتح المصدر الأصلي"><ExternalIcon /></a></div><div className="metric-main"><strong>{quakeState === "ready" ? quakes.length : "—"}</strong><span>أحداث معروضة<br />خلال آخر 24 ساعة</span></div><div className="metric-foot"><span>{quakeState === "ready" ? `أعلى مقدار: ${latestQuake ? latestQuake.magnitude.toFixed(1) : "—"}` : quakeState === "error" ? "البيانات غير متاحة الآن" : "بانتظار استجابة المصدر"}</span><span>{lastChecked ? lastChecked.toLocaleTimeString("ar-MA", { hour: "2-digit", minute: "2-digit" }) : "—"}</span></div></article>
+              <article className="metric-card"><div className="metric-top"><span className="metric-icon docs-icon">▤</span><span className="metric-label">مصادر أولية</span><button className="text-arrow" onClick={() => setSection("sources")}>عرض الكل <span>←</span></button></div><div className="metric-main"><strong>{sources.length}</strong><span>مصادر عامة<br />قابلة للفتح والتحقق</span></div><div className="metric-foot"><span>حكومية · دولية · علمية</span><span className="green-tag">مباشرة</span></div></article>
+              <article className="metric-card"><div className="metric-top"><span className="metric-icon note-icon">✎</span><span className="metric-label">دفتر التحقق</span><button className="text-arrow" onClick={() => setSection("fieldnotes")}>فتح الدفتر <span>←</span></button></div><div className="metric-main"><strong>{notes.length.toLocaleString("ar-MA")}</strong><span>ملاحظة محفوظة<br />على هذا الجهاز</span></div><div className="metric-foot"><span>لا مزامنة سحابية</span><span className="lock-mark">⌑ خاص</span></div></article>
+            </div>
+
+            <div className="dashboard-columns">
+              <section className="panel activity-panel"><div className="panel-heading"><div><span className="section-kicker">مصدر بيانات مفتوح</span><h3>آخر النشاط الزلزالي</h3></div><a className="source-link" href={sources.find((s) => s.id === "usgs")?.url} target="_blank" rel="noreferrer">USGS <ExternalIcon /></a></div><div className="earthquake-list">
+                {quakeState === "loading" && <div className="empty-state"><span className="spinner" /> جارٍ جلب بيانات المصدر…</div>}
+                {quakeState === "error" && <div className="empty-state error-state"><span>!</span><div><b>تعذر تحميل البيانات</b><small>قد يكون المصدر غير متاح أو الاتصال مقطوعًا. لا نعرض بيانات قديمة كأنها حيّة.</small><button onClick={() => window.location.reload()}>إعادة المحاولة</button></div></div>}
+                {quakeState === "ready" && quakes.length === 0 && <div className="empty-state">لا توجد أحداث في الخلاصة الحالية.</div>}
+                {quakeState === "ready" && quakes.slice(0, 5).map((quake) => <a className="quake-row" href={quake.url} target="_blank" rel="noreferrer" key={quake.id}><span className={`magnitude ${quake.magnitude >= 4.5 ? "high" : ""}`}>{quake.magnitude.toFixed(1)}</span><span className="quake-info"><b>{quake.place || "موقع غير محدد"}</b><small>عمق {Math.round(quake.depth)} كم · {formatAgo(quake.time)}</small></span><span className="row-open"><ExternalIcon /></span></a>)}
+              </div><div className="panel-foot"><span>البيانات من خدمة USGS العامة؛ تعرض الزلازل فقط.</span><span>{lastChecked ? `تحديث ${lastChecked.toLocaleTimeString("ar-MA", { hour: "2-digit", minute: "2-digit" })}` : ""}</span></div></section>
+
+              <section className="panel quick-panel"><div className="panel-heading"><div><span className="section-kicker">وصول مباشر</span><h3>مصادرك المثبّتة</h3></div><button className="add-round" aria-label="إضافة مصدر" onClick={() => setSection("sources")}>＋</button></div><div className="quick-sources">{sources.filter((source) => savedSources.includes(source.id)).slice(0, 4).map((source) => <a className="quick-source" key={source.id} href={source.url} target="_blank" rel="noreferrer"><span className={`quick-source-icon q-${source.id}`}>{source.id === "usgs" ? "⌁" : source.id === "maroc" ? "م" : source.id === "who" ? "+" : "◉"}</span><span className="quick-source-text"><b>{source.name}</b><small>{source.kind} · {source.region}</small></span><ExternalIcon /></a>)}{savedSources.length === 0 && <p className="empty-mini">اذهب إلى مكتبة المصادر وثبّت ما يهمك.</p>}</div><button className="all-sources-btn" onClick={() => setSection("sources")}>استكشف مكتبة المصادر <span>←</span></button></section>
+            </div>
+
+            <section className="prepared-card"><div className="prepared-art"><span className="orbit orbit-one"/><span className="orbit orbit-two"/><span className="prepared-core">⌖</span></div><div className="prepared-copy"><span className="section-kicker">استعداد بلا تهويل</span><h3>المعلومة المفيدة تبدأ بخطة واضحة.</h3><p>جهّز قائمة اتصال، دوّن نقاط الالتقاء، واحفظ إرشادات الطوارئ الرسمية محليًا. لا تنتظر تطبيقًا ليؤكد خطرًا آنيًا.</p></div><button onClick={() => { setSection("fieldnotes"); setShowNote(true); }}>دوّن خطة الاستعداد <span>←</span></button></section>
+            <footer className="page-footer"><span>مِرصد — أداة متابعة للمصادر العامة، وليست نظام إنذار رسميًا.</span><span>بياناتك تبقى على جهازك <i>◆</i></span></footer>
+          </>}
+
+          {section === "sources" && <>
+            <div className="page-title-row"><div><div className="eyebrow"><span className="eyebrow-line" /> مكتبة المصادر</div><h1 className="page-title">ابدأ من <em>الأصل.</em></h1><p className="welcome-copy">روابط مباشرة إلى جهات تنشر بياناتها علنًا. المصدر الأولي يبيّن ما قيل، ولا يثبت وحده صحته.</p></div><button className="install-btn" onClick={() => setShowNote(true)}>＋ أضف إلى دفتر التحقق</button></div>
+            <div className="source-tools"><label className="search-box"><span>⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="ابحث عن جهة أو موضوع…" /><kbd>⌘ K</kbd></label><div className="filter-row">{["الكل", "دولي", "المغرب", "بث مباشر", "بيانات حية"].map((item) => <button className={filter === item ? "filter-chip selected" : "filter-chip"} key={item} onClick={() => setFilter(item)}>{item}</button>)}</div></div>
+            <div className="source-grid">{filteredSources.map((source, index) => <article className="source-card" key={source.id}><div className="source-card-top"><span className={`source-emblem emblem-${index % 5}`}>{source.id === "maroc" ? "م" : source.id === "who" ? "+" : source.id === "usgs" ? "⌁" : source.id === "gdacs" ? "△" : "◉"}</span><span className="source-type">{source.kind}</span><button className={savedSources.includes(source.id) ? "bookmark saved" : "bookmark"} onClick={() => toggleSource(source.id)} title={savedSources.includes(source.id) ? "إزالة من المثبتة" : "تثبيت المصدر"}>{savedSources.includes(source.id) ? "◆" : "◇"}</button></div><h3>{source.name}</h3><p>{source.detail}</p><div className="source-card-bottom"><span><i className={source.live ? "source-dot live" : "source-dot"} />{source.region}{source.live ? " · خلاصة آلية" : " · صفحة عامة"}</span><a href={source.url} target="_blank" rel="noreferrer">فتح المصدر <ExternalIcon /></a></div></article>)}</div>
+            {filteredSources.length === 0 && <div className="empty-search"><span>⌕</span><b>لا توجد نتائج</b><small>جرّب كلمة بحث أخرى أو غيّر التصفية.</small></div>}
+            <div className="source-disclaimer"><span>ⓘ</span><p><b>تنبيه منهجي:</b> وجود الجهة في المكتبة لا يعني تزكية كل ما تنشره. احتفظ بالرابط والتاريخ، واقرأ المادة الأصلية كاملةً قبل الاستنتاج.</p></div>
+          </>}
+
+          {section === "fieldnotes" && <>
+            <div className="page-title-row"><div><div className="eyebrow"><span className="eyebrow-line" /> أدواتك الخاصة</div><h1 className="page-title">دفتر <em>التحقّق.</em></h1><p className="welcome-copy">سجّل ما شاهدته في المصدر، وافصل الاقتباس عن تفسيرك له.</p></div><button className="install-btn" onClick={() => setShowNote(true)}>＋ ملاحظة جديدة</button></div>
+            <div className="method-banner"><span>01</span><div><b>دوّن قبل أن تستنتج</b><p>من قال ماذا؟ متى؟ أين التسجيل الكامل؟ ما الذي لا نعرفه بعد؟ الملاحظات هنا خاصة بهذا الجهاز ولا تُرسل إلى خادم.</p></div><span className="method-stamp">محلي فقط · 🔒</span></div>
+            {notes.length === 0 ? <div className="empty-notes"><div className="empty-note-icon">✎</div><h3>دفترك يبدأ منك</h3><p>لا توجد ملاحظات محفوظة بعد. أضف رابطًا ومقتطفًا أو اكتب خطة استعداد شخصية.</p><button className="primary-btn" onClick={() => setShowNote(true)}>＋ أنشئ أول ملاحظة</button></div> : <div className="notes-list">{notes.map((note) => <article className="note-card" key={note.id}><div className="note-card-meta"><span>ملاحظة شخصية</span><span>{new Date(note.createdAt).toLocaleDateString("ar-MA", { day: "numeric", month: "long", year: "numeric" })}</span></div><h3>{note.title}</h3><p className="note-source">المصدر: {note.source}{note.url && <> · <a href={note.url} target="_blank" rel="noreferrer">فتح الرابط <ExternalIcon /></a></>}</p><blockquote>{note.text}</blockquote><button className="delete-note" onClick={() => setNotes((current) => current.filter((item) => item.id !== note.id))}>حذف الملاحظة</button></article>)}</div>}
+            <button className="export-btn" onClick={() => { const blob = new Blob([JSON.stringify(notes, null, 2)], { type: "application/json" }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "marsad-notes.json"; link.click(); URL.revokeObjectURL(link.href); }}>↓ تصدير نسخة احتياطية من ملاحظاتي</button>
+          </>}
+        </div>
+      </section>
+
+      {showNote && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowNote(false); }}><form className="note-modal" onSubmit={addNote}><div className="modal-head"><div><span className="section-kicker">دفتر خاص · على هذا الجهاز</span><h2>ملاحظة جديدة</h2></div><button type="button" className="modal-close" onClick={() => setShowNote(false)}>×</button></div><label>عنوان الملاحظة<input name="title" placeholder="مثال: تصريح في جلسة اليوم" required autoFocus /></label><label>الجهة أو المصدر<input name="source" placeholder="اسم الجهة أو المتحدث" /></label><label>رابط المصدر الأصلي <span className="optional">اختياري</span><input name="url" type="url" placeholder="https://…" /></label><label>ماذا شاهدت أو سمعت؟<textarea name="text" rows={5} placeholder="اكتب المقتطف كما ورد، ثم ميّز رأيك عنه…" required /></label><div className="modal-tip">ⓘ هذه الملاحظة لا تتحقق من صحة الادعاء، ولا تغادر هذا الجهاز.</div><div className="modal-actions"><button type="button" className="cancel-btn" onClick={() => setShowNote(false)}>إلغاء</button><button className="primary-btn" type="submit">حفظ الملاحظة</button></div></form></div>}
+      {toast && <div className="toast"><span>✓</span>{toast}</div>}
+    </main>
   );
 }
+
+type BeforeInstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: "accepted" | "dismissed" }> };
