@@ -219,9 +219,15 @@ async function requestText(url: string) {
     if (response.status < 200 || response.status >= 300) throw new Error(`HTTP ${response.status}`);
     return typeof response.data === "string" ? response.data : String(response.data ?? "");
   }
-  const response = await fetch(url, { cache: "no-store", headers: { Accept: "application/atom+xml, application/rss+xml, application/xml, text/html;q=0.9, */*;q=0.8" } });
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  return response.text();
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 18_000);
+  try {
+    const response = await fetch(url, { cache: "no-store", signal: controller.signal, headers: { Accept: "application/atom+xml, application/rss+xml, application/xml, text/html;q=0.9, */*;q=0.8" } });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return await response.text();
+  } finally {
+    window.clearTimeout(timeout);
+  }
 }
 
 export async function loadPublicFeed(feed: PublicFeed): Promise<FeedResult> {

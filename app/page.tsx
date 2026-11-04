@@ -193,13 +193,18 @@ export default function Home() {
     if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
       navigator.serviceWorker.register("/sw.js").catch(() => undefined);
     }
-    const initialRefreshTimer = window.setTimeout(() => { void refresh(); }, 0);
-    const interval = window.setInterval(refresh, refreshMinutes * 60 * 1000);
     return () => {
       window.removeEventListener("online", onlineHandler);
       window.removeEventListener("offline", offlineHandler);
       window.removeEventListener("beforeinstallprompt", installHandler);
       window.clearTimeout(restoreTimer);
+    };
+  }, []);
+
+  useEffect(() => {
+    const initialRefreshTimer = window.setTimeout(() => { void refresh(); }, 0);
+    const interval = window.setInterval(() => { void refresh(); }, refreshMinutes * 60 * 1000);
+    return () => {
       window.clearTimeout(initialRefreshTimer);
       window.clearInterval(interval);
     };
