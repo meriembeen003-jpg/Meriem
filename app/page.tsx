@@ -5,7 +5,7 @@ import { Browser } from "@capacitor/browser";
 import { Capacitor } from "@capacitor/core";
 import { loadPublicFeed, PUBLIC_FEEDS, type FeedFormat, type FeedResult, type PublicFeed, type PublicItem } from "./lib/feeds";
 
-type View = "briefing" | "saved" | "notes" | "sources" | "method";
+type View = "briefing" | "saved" | "notes" | "radar" | "sources" | "method";
 type Note = { id: string; title: string; source: string; url: string; text: string; createdAt: string };
 type InstallPromptEvent = Event & { prompt: () => Promise<void> };
 
@@ -13,6 +13,7 @@ const viewItems: { id: View; label: string; icon: string }[] = [
   { id: "briefing", label: "النشرة", icon: "▥" },
   { id: "saved", label: "المحفوظات", icon: "☆" },
   { id: "notes", label: "ملاحظاتي", icon: "✎" },
+  { id: "radar", label: "الرادار", icon: "◉" },
   { id: "sources", label: "المصادر", icon: "⌘" },
   { id: "method", label: "المنهجية", icon: "i" },
 ];
@@ -63,8 +64,30 @@ function stableSourceId(value: string) {
 }
 
 function safeHttpsUrl(value: string) {
-  try { const url = new URL(value); return url.protocol === "https:" ? url.href : ""; }
-  catch { return ""; }
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:") return "";
+    const hostname = url.hostname.toLowerCase();
+    const host = hostname.startsWith("[") ? hostname.slice(1, -1) : hostname;
+    const normalizedHost = host.endsWith(".") ? host.slice(0, -1) : host;
+    if (normalizedHost === "localhost" || normalizedHost.endsWith(".localhost") || normalizedHost.endsWith(".local") || normalizedHost.endsWith(".internal")) return "";
+    const octets = normalizedHost.split(".");
+    if (octets.length === 4 && octets.every((part) => part.length > 0 && Number.isInteger(Number(part)) && Number(part) <= 255)) {
+      const [a, b] = octets.map(Number);
+      if (a === 0 || a === 10 || a === 127 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127) || a >= 224) return "";
+    }
+    if (host.startsWith("::") || host.startsWith("fc") || host.startsWith("fd") || host.startsWith("fe80") || host.startsWith("ff")) return "";
+    return url.href;
+  } catch { return ""; }
+}
+
+function normalizeSearch(value: string) {
+  return value.normalize("NFD").replace(/\p{M}/gu, "").replace(/[أإآٱ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").replace(/ـ/g, "").toLocaleLowerCase();
+}
+
+function getMatchedTerms(item: PublicItem, terms: string[]) {
+  const body = normalizeSearch(`${item.title} ${item.excerpt}`);
+  return terms.filter((term) => body.includes(normalizeSearch(term)));
 }
 
 function isPublicItem(value: unknown): value is PublicItem {
@@ -89,6 +112,10 @@ export default function Home() {
   const [countryFilter, setCountryFilter] = useState("all");
   const [favorites, setFavorites] = useState<string[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
+  const [watchTerms, setWatchTerms] = useState<string[]>([]);
+  const [watchInput, setWatchInput] = useState("");
+  const [refreshMinutes, setRefreshMinutes] = useState(15);
+  const opmlPicker = useRef<HTMLInputElement>(null);
   const [preferencesReady, setPreferencesReady] = useState(false);
   const [selected, setSelected] = useState<PublicItem | null>(null);
   const [toast, setToast] = useState("");
@@ -128,6 +155,10 @@ export default function Home() {
         setFavorites(Array.isArray(storedFavorites) ? storedFavorites.filter((id): id is string => typeof id === "string").slice(0, 2000) : []);
         const storedNotes = JSON.parse(localStorage.getItem("marsad-notes-v2") || "[]") as unknown;
         setNotes(Array.isArray(storedNotes) ? storedNotes.filter((note): note is Note => !!note && typeof note === "object" && typeof note.id === "string" && typeof note.title === "string" && typeof note.text === "string" && typeof note.createdAt === "string").slice(0, 200) : []);
+        const storedWatchTerms = JSON.parse(localStorage.getItem("marsad-watch-terms-v1") || "[]") as unknown;
+        setWatchTerms(Array.isArray(storedWatchTerms) ? storedWatchTerms.filter((term): term is string => typeof term === "string" && term.trim().length > 0).slice(0, 30) : []);
+        const storedRefresh = Number(localStorage.getItem("marsad-refresh-minutes-v1"));
+        if ([5, 15, 30, 60].includes(storedRefresh)) setRefreshMinutes(storedRefresh);
         const storedCustom = JSON.parse(localStorage.getItem("marsad-custom-feeds-v1") || "[]") as unknown;
         const validCustom = Array.isArray(storedCustom) ? storedCustom.filter((value): value is PublicFeed => {
           if (!value || typeof value !== "object") return false;
@@ -163,7 +194,7 @@ export default function Home() {
       navigator.serviceWorker.register("/sw.js").catch(() => undefined);
     }
     const initialRefreshTimer = window.setTimeout(() => { void refresh(); }, 0);
-    const interval = window.setInterval(refresh, 15 * 60 * 1000);
+    const interval = window.setInterval(refresh, refreshMinutes * 60 * 1000);
     return () => {
       window.removeEventListener("online", onlineHandler);
       window.removeEventListener("offline", offlineHandler);
@@ -172,11 +203,13 @@ export default function Home() {
       window.clearTimeout(initialRefreshTimer);
       window.clearInterval(interval);
     };
-  }, [refresh]);
+  }, [refresh, refreshMinutes]);
 
   useEffect(() => { if (preferencesReady) { try { localStorage.setItem("marsad-favorites-v2", JSON.stringify(favorites)); } catch { /* storage can be disabled by the device */ } } }, [favorites, preferencesReady]);
   useEffect(() => { if (preferencesReady) { try { localStorage.setItem("marsad-notes-v2", JSON.stringify(notes)); } catch { /* storage can be full or disabled */ } } }, [notes, preferencesReady]);
   useEffect(() => { if (preferencesReady) { try { localStorage.setItem("marsad-custom-feeds-v1", JSON.stringify(customFeeds)); } catch { /* storage can be disabled by the device */ } } }, [customFeeds, preferencesReady]);
+  useEffect(() => { if (preferencesReady) { try { localStorage.setItem("marsad-watch-terms-v1", JSON.stringify(watchTerms)); } catch { /* storage can be disabled by the device */ } } }, [watchTerms, preferencesReady]);
+  useEffect(() => { if (preferencesReady) { try { localStorage.setItem("marsad-refresh-minutes-v1", String(refreshMinutes)); } catch { /* storage can be disabled */ } } }, [refreshMinutes, preferencesReady]);
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
@@ -214,11 +247,13 @@ export default function Home() {
     });
   }, [results]);
 
+  const watchedItems = useMemo(() => allItems.filter((item) => getMatchedTerms(item, watchTerms).length > 0), [allItems, watchTerms]);
+
   const visibleItems = useMemo(() => allItems.filter((item) => {
     const matchesCountry = countryFilter === "all" || item.feedId === countryFilter;
     const matchesSaved = view !== "saved" || favorites.includes(item.id);
-    const query = search.trim().toLocaleLowerCase();
-    const matchesSearch = !query || `${item.title} ${item.excerpt} ${item.organization} ${item.country}`.toLocaleLowerCase().includes(query);
+    const query = normalizeSearch(search.trim());
+    const matchesSearch = !query || normalizeSearch(`${item.title} ${item.excerpt} ${item.organization} ${item.country}`).includes(query);
     return matchesCountry && matchesSaved && matchesSearch;
   }), [allItems, countryFilter, favorites, search, view]);
 
@@ -264,6 +299,45 @@ export default function Home() {
     setInstallPrompt(null);
   };
 
+  const exportOpml = () => {
+    const escapeXml = (value: string) => value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const outlines = allFeeds.filter((feed) => feed.format !== "html").map((feed) => `    <outline text="${escapeXml(feed.organization)}" title="${escapeXml(feed.organization)}" type="${feed.format}" xmlUrl="${escapeXml(feed.feedUrl)}" htmlUrl="${escapeXml(feed.siteUrl)}"/>`).join("\n");
+    const content = `<?xml version="1.0" encoding="UTF-8"?>\n<opml version="2.0"><head><title>Subscriptions — Mirsad</title></head><body>\n${outlines}\n</body></opml>`;
+    const url = URL.createObjectURL(new Blob([content], { type: "application/xml;charset=utf-8" }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "mirsad-subscriptions.opml";
+    anchor.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const importOpml = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      if (file.size > 1_000_000) throw new Error("حجم ملف OPML أكبر من 1 ميغابايت.");
+      const document = new DOMParser().parseFromString(await file.text(), "application/xml");
+      if (document.querySelector("parsererror") || document.documentElement.tagName.toLowerCase() !== "opml") throw new Error("الملف ليس OPML صالحًا.");
+      const knownUrls = new Set(allFeeds.map((feed) => feed.feedUrl));
+      const imported: PublicFeed[] = [];
+      for (const outline of Array.from(document.getElementsByTagName("outline"))) {
+        const feedUrl = safeHttpsUrl(outline.getAttribute("xmlUrl") || outline.getAttribute("xmlurl") || "");
+        if (!feedUrl || knownUrls.has(feedUrl) || imported.length >= 20 - customFeeds.length) continue;
+        const siteUrl = safeHttpsUrl(outline.getAttribute("htmlUrl") || outline.getAttribute("htmlurl") || "") || new URL(feedUrl).origin;
+        const title = (outline.getAttribute("title") || outline.getAttribute("text") || new URL(feedUrl).hostname).trim().slice(0, 100);
+        const type = `${outline.getAttribute("type") || ""} ${feedUrl}`.toLowerCase();
+        imported.push({ id: stableSourceId(feedUrl), country: "مستورد من OPML", countryCode: "CUSTOM", organization: title || new URL(feedUrl).hostname, description: "خلاصة مستوردة محليًا من ملف OPML؛ تحقق من هوية الناشر.", language: "لغة المصدر", format: type.includes("atom") ? "atom" : "rss", feedUrl, siteUrl, tone: "amber" });
+        knownUrls.add(feedUrl);
+      }
+      setCustomFeeds((current) => [...current, ...imported].slice(0, 20 + PUBLIC_FEEDS.length));
+      notify(imported.length ? `استوردت ${imported.length} خلاصة` : "لم يُعثر على خلاصات HTTPS جديدة ضمن حدّ 20 مصدرًا");
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "تعذّر استيراد ملف OPML");
+    } finally {
+      event.target.value = "";
+    }
+  };
+
   const addCustomSource = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -276,7 +350,7 @@ export default function Home() {
     try {
       const feedUrl = new URL(rawFeedUrl);
       const siteUrl = new URL(rawSiteUrl);
-      if (feedUrl.protocol !== "https:" || siteUrl.protocol !== "https:") throw new Error("https");
+      if (feedUrl.protocol !== "https:" || siteUrl.protocol !== "https:" || !safeHttpsUrl(feedUrl.href) || !safeHttpsUrl(siteUrl.href)) throw new Error("https");
       const id = stableSourceId(feedUrl.href);
       if (allFeeds.some((feed) => feed.id === id || feed.feedUrl === feedUrl.href)) { notify("هذا المصدر مضاف بالفعل"); return; }
       if (customFeeds.length >= 20) { notify("وصلت إلى الحد الأقصى: 20 مصدرًا مخصصًا"); return; }
@@ -291,9 +365,23 @@ export default function Home() {
       event.currentTarget.reset();
       notify("أُضيف المصدر. جارٍ فحصه؛ قد لا تسمح بعض المواقع بالاتصال المباشر.");
     } catch {
-      notify("تحقق من الروابط: يجب أن تبدأ بـ https://");
+      notify("استخدم روابط HTTPS عامة؛ عناوين الشبكة المحلية غير مسموحة");
     }
   };
+
+  const addWatchTerm = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const term = watchInput.trim().slice(0, 80);
+    const normalized = normalizeSearch(term);
+    if (normalized.length < 2) { notify("اكتب كلمة أو عبارة من حرفين على الأقل"); return; }
+    if (watchTerms.some((saved) => normalizeSearch(saved) === normalized)) { notify("هذه العبارة موجودة في الرادار"); return; }
+    if (watchTerms.length >= 30) { notify("وصلت إلى الحد الأقصى: 30 عبارة مراقبة"); return; }
+    setWatchTerms((current) => [...current, term]);
+    setWatchInput("");
+    notify("أُضيفت العبارة؛ طابِق المواد المنشورة معها محليًا");
+  };
+
+  const removeWatchTerm = (term: string) => setWatchTerms((current) => current.filter((saved) => normalizeSearch(saved) !== normalizeSearch(term)));
 
   const removeCustomSource = (feedId: string) => {
     setCustomFeeds((current) => current.filter((feed) => feed.id !== feedId));
@@ -318,7 +406,7 @@ export default function Home() {
         <div className="rail-brand"><RadarMark /><span><strong>مِرصد</strong><small>المصادر العلنية كما هي</small></span></div>
         <div className="rail-caption">مساحة الرصد</div>
         <nav className="rail-nav" aria-label="التنقل">
-          {viewItems.map((item) => <button key={item.id} className={view === item.id ? "rail-link current" : "rail-link"} onClick={() => { setView(item.id); if (item.id === "saved") setCountryFilter("all"); setMenuOpen(false); }}><span className="rail-glyph">{item.icon}</span><span>{item.label}</span>{item.id === "saved" && favorites.length > 0 && <b>{favorites.length}</b>}</button>)}
+          {viewItems.map((item) => <button key={item.id} className={view === item.id ? "rail-link current" : "rail-link"} onClick={() => { setView(item.id); if (item.id === "saved") setCountryFilter("all"); setMenuOpen(false); }}><span className="rail-glyph">{item.icon}</span><span>{item.label}</span>{item.id === "saved" && favorites.length > 0 && <b>{favorites.length}</b>}{item.id === "radar" && watchedItems.length > 0 && <b>{watchedItems.length}</b>}</button>)}
         </nav>
         <div className="rail-divider" />
         <div className="rail-caption rail-caption-row"><span>تدفقات مفعّلة</span><span className="rail-count">{successfulFeeds}/{totalFeeds}</span></div>
@@ -349,7 +437,7 @@ export default function Home() {
               <div className="intro-actions"><button className="primary-action" onClick={() => { setView("briefing"); document.querySelector(".feed-controls")?.scrollIntoView({ behavior: "smooth", block: "center" }); }}>استكشف النشرة <span>←</span></button><button className="quiet-action" onClick={() => setView("sources")}>تعرّف على المصادر</button></div>
             </div>
             <div className="signal-art" aria-hidden="true"><div className="signal-grid"/><div className="signal-orbit orbit-a"/><div className="signal-orbit orbit-b"/><div className="signal-orbit orbit-c"/><div className="signal-center"><RadarMark /></div><span className="signal-point point-a"/><span className="signal-point point-b"/><span className="signal-point point-c"/><span className="signal-readout readout-a">SOURCE / OPEN</span><span className="signal-readout readout-b">NO SYNTHESIS</span></div>
-            <div className="intro-foot"><span><b>{successfulFeeds.toLocaleString("ar-MA")}</b> مصادر متاحة الآن</span><i /><span>تحديث تلقائي كل 15 دقيقة</span><i /><span>{lastUpdated ? `آخر فحص ${new Intl.DateTimeFormat("ar-MA", { hour: "2-digit", minute: "2-digit" }).format(new Date(lastUpdated))}` : "بانتظار أول تحديث"}</span></div>
+            <div className="intro-foot"><span><b>{successfulFeeds.toLocaleString("ar-MA")}</b> مصادر متاحة الآن</span><i /><span>{`تحديث تلقائي كل ${refreshMinutes} دقيقة`}</span><i /><span>{lastUpdated ? `آخر فحص ${new Intl.DateTimeFormat("ar-MA", { hour: "2-digit", minute: "2-digit" }).format(new Date(lastUpdated))}` : "بانتظار أول تحديث"}</span></div>
           </section>
 
           {view === "briefing" && <>
@@ -373,9 +461,10 @@ export default function Home() {
                     const feed = allFeeds.find((source) => source.id === item.feedId)!;
                     const isSaved = favorites.includes(item.id);
                     const originalUrl = safeHttpsUrl(item.url);
+                    const matchedTerms = getMatchedTerms(item, watchTerms);
                     return <article className={`story-card ${selected?.id === item.id ? "story-selected" : ""}`} key={item.id}>
                       <div className="story-rail"><CountrySeal code={item.countryCode} tone={feed.tone}/><span /></div>
-                      <div className="story-body"><div className="story-meta"><span className="story-source">{item.organization}</span><span className="source-class">{getSourceLabel(item)}</span><span className="story-dot">·</span><time>{formatDate(item.publishedAt, true)}</time></div><button className="story-title" dir="auto" onClick={(event) => { event.stopPropagation(); setSelected(item); }}>{item.title}</button>{item.excerpt && <p className="story-excerpt" dir="auto">{item.excerpt}</p>}<div className="story-bottom"><span className="language-tag">{item.language}</span>{originalUrl && <a href={originalUrl} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>النص الأصلي <OpenIcon small /></a>}<div className="story-quick"><button title={isSaved ? "إزالة من المحفوظات" : "حفظ"} onClick={(event) => { event.stopPropagation(); toggleFavorite(item.id); notify(isSaved ? "أزيلت المادة من المحفوظات" : "حُفظت المادة على الجهاز"); }}>{isSaved ? "★" : "☆"}</button><button title="عرض التفاصيل" onClick={(event) => { event.stopPropagation(); setSelected(item); }}>⋯</button></div></div></div>
+                      <div className="story-body"><div className="story-meta"><span className="story-source">{item.organization}</span><span className="source-class">{getSourceLabel(item)}</span>{matchedTerms.length > 0 && <span className="watch-match">رادار: {matchedTerms.slice(0, 2).join("، ")}</span>}<span className="story-dot">·</span><time>{formatDate(item.publishedAt, true)}</time></div><button className="story-title" dir="auto" onClick={(event) => { event.stopPropagation(); setSelected(item); }}>{item.title}</button>{item.excerpt && <p className="story-excerpt" dir="auto">{item.excerpt}</p>}<div className="story-bottom"><span className="language-tag">{item.language}</span>{originalUrl && <a href={originalUrl} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>النص الأصلي <OpenIcon small /></a>}<div className="story-quick"><button title={isSaved ? "إزالة من المحفوظات" : "حفظ"} onClick={(event) => { event.stopPropagation(); toggleFavorite(item.id); notify(isSaved ? "أزيلت المادة من المحفوظات" : "حُفظت المادة على الجهاز"); }}>{isSaved ? "★" : "☆"}</button><button title="عرض التفاصيل" onClick={(event) => { event.stopPropagation(); setSelected(item); }}>⋯</button></div></div></div>
                     </article>;
                   })}</div>}
                   {loadState === "ready" && visibleItems.length === 0 && <div className="empty-feed"><span>⌕</span><strong>{search ? "لا نتائج لهذا البحث" : "لا توجد مواد من هذا المصدر الآن"}</strong><p>{search ? "جرّب كلمات أخرى أو اختر مصدرًا مختلفًا." : "اضغط تحديث لإعادة فحص الخلاصة، أو افتح المصدر الرسمي مباشرة."}</p><button onClick={refresh}>إعادة الفحص <span>↻</span></button></div>}
@@ -395,7 +484,9 @@ export default function Home() {
 
           {view === "notes" && <section className="secondary-view"><div className="secondary-heading"><div><div className="eyebrow"><span className="eyebrow-dash"/> دفتر خاص على هذا الجهاز</div><h2>ملاحظاتي</h2><p>ملاحظاتك لا تُرسل إلى أي خادم. اكتب ما تريد مراجعته أو مقارنته لاحقًا.</p></div><button className="refresh-button" onClick={() => openNoteFor(null)}>＋ ملاحظة جديدة</button></div>{notes.length > 0 ? <div className="notes-list">{notes.map((note) => <article className="note-card" key={note.id}><div className="note-card-head"><span>{note.source || "مصدر عام"}</span><time>{formatDate(note.createdAt, true)}</time></div><h3>{note.title}</h3><p>{note.text}</p><div className="note-card-actions">{safeHttpsUrl(note.url) && <a href={safeHttpsUrl(note.url)} target="_blank" rel="noreferrer">فتح الرابط المرتبط <OpenIcon small/></a>}<button onClick={() => { deleteNote(note.id); notify("حُذفت الملاحظة"); }}>حذف الملاحظة</button></div></article>)}</div> : <div className="empty-feed"><span>✎</span><strong>لا توجد ملاحظات بعد</strong><p>أنشئ ملاحظة مستقلة أو افتح مادة من النشرة ثم أضف ما تريد حفظه.</p><button onClick={() => openNoteFor(null)}>أضف أول ملاحظة <span>＋</span></button></div>}</section>}
 
-          {view === "sources" && <section className="secondary-view"><div className="secondary-heading"><div><div className="eyebrow"><span className="eyebrow-dash"/> دليل التتبّع</div><h2>مصادر الرصد</h2><p>كل بطاقة تفتح جهة النشر نفسها؛ حالة الوصول تتغير بحسب الشبكة وقيود الموقع.</p></div><div className="source-heading-actions"><button className="refresh-button" onClick={refresh} disabled={loadState === "loading"}><span className="refresh-icon">↻</span> فحص المصادر</button><button className="refresh-button add-source-button" onClick={() => setSourceFormOpen((open) => !open)}>＋ أضف خلاصة</button></div></div>{sourceFormOpen && <form className="source-form" onSubmit={addCustomSource}><div><b>أضف مصدرًا رسميًا تتابعه</b><p>أدخل رابط RSS أو Atom من موقع الجهة نفسه. لا نتحقق من هوية الموقع بدلًا عنك؛ افحص النطاق قبل الحفظ.</p></div><div className="source-form-grid"><label>اسم الجهة<input name="organization" required maxLength={100} placeholder="مثال: وزارة أو هيئة رسمية"/></label><label>البلد أو التصنيف<input name="country" maxLength={60} placeholder="مثال: المغرب"/></label><label>اللغة<input name="language" maxLength={40} placeholder="مثال: العربية"/></label><label>نوع الخلاصة<select name="format" defaultValue="rss"><option value="rss">RSS</option><option value="atom">Atom</option></select></label><label className="source-form-wide">رابط RSS أو Atom<input name="feedUrl" type="url" required placeholder="https://example.gov/feed.xml"/></label><label className="source-form-wide">رابط موقع الناشر<input name="siteUrl" type="url" placeholder="https://example.gov/"/></label></div><div className="source-form-actions"><span>HTTPS فقط · حتى 20 مصدرًا · التخزين محلي</span><button className="primary-action" type="submit">حفظ المصدر</button></div></form>}<div className="source-directory">{allFeeds.map((feed) => { const result = results.find((entry) => entry.feed.id === feed.id); return <article className="directory-card" key={feed.id}><div className="directory-top"><CountrySeal code={feed.countryCode} tone={feed.tone}/><span className={result?.error ? "directory-state unavailable" : result?.stale ? "directory-state stale" : result ? "directory-state active" : "directory-state"}><i/>{result?.error ? "تعذّر التحديث" : result?.stale ? "نسخة محفوظة" : result ? "اتصال ناجح" : "بانتظار الفحص"}</span></div><span className="directory-country">{feed.country} · {feed.language}</span><h3>{feed.organization}</h3><p>{feed.description}</p><div className="directory-type"><span>{feed.format === "html" ? "صفحة أصلية" : feed.format.toUpperCase()}</span><span>يُفحص كل 15 دقيقة</span></div>{safeHttpsUrl(feed.siteUrl) && <a className="directory-open" href={safeHttpsUrl(feed.siteUrl)} target="_blank" rel="noreferrer">فتح موقع الناشر <OpenIcon small /></a>}{feed.id.startsWith("custom-") && <button className="remove-source" onClick={() => removeCustomSource(feed.id)}>إزالة من قائمتي</button>}</article>; })}</div><div className="broadcast-directory"><div><span className="eyebrow"><span className="eyebrow-dash"/> بث ومواد مرئية</span><h3>استمع وشاهد من الناشر نفسه</h3><p>لا نتوسط في البث ولا نعيد رفعه؛ الرابط يقود إلى صفحة الجهة العلنية.</p></div>{publicBroadcasts.map((item) => <a key={item.title} href={item.url} target="_blank" rel="noreferrer"><span className={`broadcast-seal tone-${item.tone}`}>{item.symbol}</span><span><b>{item.title}</b><small>{item.subtitle}</small></span><OpenIcon small /></a>)}</div></section>}
+          {view === "radar" && <section className="secondary-view radar-view"><div className="secondary-heading"><div><div className="eyebrow"><span className="eyebrow-dash"/> مراقبة محلية قابلة للتفسير</div><h2>رادار الكلمات</h2><p>أضف أسماء أو مواضيع. يطابقها التطبيق مع العناوين والمقتطفات بعد تطبيع اختلافات التشكيل والألف، دون إرسالها لأي جهة.</p></div><span className="secondary-count">{watchedItems.length.toLocaleString("ar-MA")} <small>مطابقة</small></span></div><div className="radar-settings"><div><b>وتيرة تحديث المصادر</b><small>الفحص التلقائي ما دام التطبيق مفتوحًا</small></div><label><span>كل</span><select value={refreshMinutes} onChange={(event) => setRefreshMinutes(Number(event.target.value))}><option value={5}>5 دقائق</option><option value={15}>15 دقيقة</option><option value={30}>30 دقيقة</option><option value={60}>ساعة</option></select></label></div><form className="watch-form" onSubmit={addWatchTerm}><label htmlFor="watch-term">عبارة للمراقبة</label><div><input id="watch-term" value={watchInput} onChange={(event) => setWatchInput(event.target.value)} maxLength={80} placeholder="مثال: الطاقة، اجتماع وزاري، اسم جهة…"/><button className="primary-action" type="submit">＋ أضف للرادار</button></div><small>حتى 30 عبارة · مطابقة نصية محلية وليست تنبؤًا أو تحققًا</small></form>{watchTerms.length > 0 ? <><div className="watch-term-list"><span className="watch-list-label">قائمة المراقبة</span>{watchTerms.map((term) => <button className="watch-chip" key={term} onClick={() => removeWatchTerm(term)} title={`إزالة ${term}`}><span>{term}</span><b>×</b></button>)}</div><div className="radar-results-head"><h3>المواد المطابقة</h3><span>{watchedItems.length} نتيجة من المواد المحمّلة حاليًا</span></div>{watchedItems.length > 0 ? <div className="radar-results">{watchedItems.map((item) => { const matches = getMatchedTerms(item, watchTerms); const link = safeHttpsUrl(item.url); return <article className="radar-result" key={item.id}><div className="radar-result-meta"><CountrySeal code={item.countryCode} tone={getFeedTone(item.feedId, allFeeds)}/><span><b>{item.organization}</b><small>{item.country} · {formatDate(item.publishedAt, true)}</small></span></div><button className="radar-result-title" onClick={() => setSelected(item)} dir="auto">{item.title}</button><div className="radar-result-matches">{matches.map((term) => <span key={term}>{term}</span>)}</div><div className="radar-result-foot"><span>مطابقة في نص الناشر</span>{link && <a href={link} target="_blank" rel="noreferrer">النص الأصلي <OpenIcon small/></a>}</div></article>; })}</div> : <div className="empty-feed"><span>◉</span><strong>لا تطابق العبارات مواد محمّلة حاليًا</strong><p>جرّب عبارة أوسع أو حدّث المصادر. غياب التطابق لا يعني غياب الخبر عن الجهة.</p><button onClick={refresh} disabled={loadState === "loading"}>فحص المصادر <span>↻</span></button></div>}</> : <div className="empty-feed"><span>⌕</span><strong>أنشئ رادارك الخاص</strong><p>أضف أسماء أو قضايا تريد ملاحظتها. المطابقة حتمية وواضحة، بلا ادعاء ذكاء اصطناعي.</p><button onClick={() => document.getElementById("watch-term")?.focus()}>أضف أول عبارة <span>＋</span></button></div>}<div className="radar-disclaimer">الرادار يبحث فقط في المواد التي نجح التطبيق في تحميلها. لا يمسح الإنترنت كله ولا يتنبأ بالأحداث ولا يثبت صحة الادعاءات.</div></section>}
+
+          {view === "sources" && <section className="secondary-view"><div className="secondary-heading"><div><div className="eyebrow"><span className="eyebrow-dash"/> دليل التتبّع</div><h2>مصادر الرصد</h2><p>كل بطاقة تفتح جهة النشر نفسها؛ استورد أو صدّر خلاصات RSS/Atom بصيغة OPML. صفحة HTML لا تدخل في ملف الاشتراكات.</p></div><div className="source-heading-actions"><button className="refresh-button" onClick={refresh} disabled={loadState === "loading"}><span className="refresh-icon">↻</span> فحص المصادر</button><button className="refresh-button" onClick={() => opmlPicker.current?.click()}>استيراد OPML</button><button className="refresh-button" onClick={exportOpml}>تصدير OPML</button><button className="refresh-button add-source-button" onClick={() => setSourceFormOpen((open) => !open)}>＋ أضف خلاصة</button><input ref={opmlPicker} type="file" accept=".opml,.xml,text/xml,application/xml" hidden onChange={importOpml}/></div></div>{sourceFormOpen && <form className="source-form" onSubmit={addCustomSource}><div><b>أضف مصدرًا رسميًا تتابعه</b><p>أدخل رابط RSS أو Atom من موقع الجهة نفسه. لا نتحقق من هوية الموقع بدلًا عنك؛ افحص النطاق قبل الحفظ.</p></div><div className="source-form-grid"><label>اسم الجهة<input name="organization" required maxLength={100} placeholder="مثال: وزارة أو هيئة رسمية"/></label><label>البلد أو التصنيف<input name="country" maxLength={60} placeholder="مثال: المغرب"/></label><label>اللغة<input name="language" maxLength={40} placeholder="مثال: العربية"/></label><label>نوع الخلاصة<select name="format" defaultValue="rss"><option value="rss">RSS</option><option value="atom">Atom</option></select></label><label className="source-form-wide">رابط RSS أو Atom<input name="feedUrl" type="url" required placeholder="https://example.gov/feed.xml"/></label><label className="source-form-wide">رابط موقع الناشر<input name="siteUrl" type="url" placeholder="https://example.gov/"/></label></div><div className="source-form-actions"><span>HTTPS فقط · حتى 20 مصدرًا · التخزين محلي</span><button className="primary-action" type="submit">حفظ المصدر</button></div></form>}<div className="source-directory">{allFeeds.map((feed) => { const result = results.find((entry) => entry.feed.id === feed.id); return <article className="directory-card" key={feed.id}><div className="directory-top"><CountrySeal code={feed.countryCode} tone={feed.tone}/><span className={result?.error ? "directory-state unavailable" : result?.stale ? "directory-state stale" : result ? "directory-state active" : "directory-state"}><i/>{result?.error ? "تعذّر التحديث" : result?.stale ? "نسخة محفوظة" : result ? "اتصال ناجح" : "بانتظار الفحص"}</span></div><span className="directory-country">{feed.country} · {feed.language}</span><h3>{feed.organization}</h3><p>{feed.description}</p><div className="directory-type"><span>{feed.format === "html" ? "صفحة أصلية" : feed.format.toUpperCase()}</span><span>{`يفحص كل ${refreshMinutes} دقيقة`}</span></div>{safeHttpsUrl(feed.siteUrl) && <a className="directory-open" href={safeHttpsUrl(feed.siteUrl)} target="_blank" rel="noreferrer">فتح موقع الناشر <OpenIcon small /></a>}{feed.id.startsWith("custom-") && <button className="remove-source" onClick={() => removeCustomSource(feed.id)}>إزالة من قائمتي</button>}</article>; })}</div><div className="broadcast-directory"><div><span className="eyebrow"><span className="eyebrow-dash"/> بث ومواد مرئية</span><h3>استمع وشاهد من الناشر نفسه</h3><p>لا نتوسط في البث ولا نعيد رفعه؛ الرابط يقود إلى صفحة الجهة العلنية.</p></div>{publicBroadcasts.map((item) => <a key={item.title} href={item.url} target="_blank" rel="noreferrer"><span className={`broadcast-seal tone-${item.tone}`}>{item.symbol}</span><span><b>{item.title}</b><small>{item.subtitle}</small></span><OpenIcon small /></a>)}</div></section>}
 
           {view === "method" && <section className="secondary-view method-view"><div className="secondary-heading"><div><div className="eyebrow"><span className="eyebrow-dash"/> شفافية وحدود واضحة</div><h2>ما الذي يفعله مِرصد؟</h2><p>أداة لتقريب المصادر الأولية العامة، لا محركًا لإثبات الحقيقة ولا نظام إنذار.</p></div></div><div className="method-grid"><article><span className="method-number">01</span><h3>المصدر قبل التعليق</h3><p>نجلب العناوين والمقتطفات من خلاصات أو صفحات منشورة علنًا، ونربط كل مادة بصفحتها الأصلية. لا ننشئ اقتباسات ولا نكتب ملخصات من عندنا.</p></article><article><span className="method-number">02</span><h3>الحالة لا تُخفى</h3><p>عند فشل اتصال أي جهة نظهر ذلك ونحددها. عدم ظهور مادة لا يعني عدم وجود حدث، وتأخر التحديث لا يعني عدم وقوعه.</p></article><article><span className="method-number">03</span><h3>قولٌ منشور، لا حقيقة محققة</h3><p>المصدر الأولي يثبت ما نشرته الجهة، لكنه لا يثبت وحده صحة الادعاء أو اكتمال السياق. المقارنة والتحقق مسؤولية القارئ.</p></article><article><span className="method-number">04</span><h3>خصوصية الجهاز</h3><p>المحفوظات والملاحظات تبقى في التخزين المحلي للتطبيق. لا يوجد تسجيل دخول أو رفع تلقائي لملاحظاتك.</p></article></div><div className="limits-panel"><span>!</span><div><b>حدود تقنية مهمة</b><p>مِرصد لا يلتقط ترددات الراديو، ولا يعترض الاتصالات الخاصة أو المشفرة، ولا يعمل كنظام طوارئ. البثوث المتاحة هنا منشورة للعامة من الجهات نفسها.</p></div></div></section>}
 
