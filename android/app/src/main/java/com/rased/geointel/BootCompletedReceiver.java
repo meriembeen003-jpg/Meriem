@@ -18,11 +18,11 @@ public class BootCompletedReceiver extends BroadcastReceiver {
             Context.MODE_PRIVATE
         );
         String savedUrl = prefs.getString(SentinelForegroundService.KEY_SERVER_URL, "");
+        Intent svcIntent = new Intent(context, SentinelForegroundService.class);
         if (savedUrl != null && !savedUrl.isEmpty()) {
-            Intent svcIntent = new Intent(context, SentinelForegroundService.class);
             svcIntent.putExtra("serverUrl", savedUrl);
-            svcIntent.putExtra("pollSeconds", 30);
-            ContextCompat.startForegroundService(context, svcIntent);
         }
+        svcIntent.putExtra("pollSeconds", 45);
+        ContextCompat.startForegroundService(context, svcIntent);
     }
 }
