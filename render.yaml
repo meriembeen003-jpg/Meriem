@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: rased-geointel-sentinel
+    runtime: docker
+    plan: starter
+    healthCheckPath: /api/state
+    envVars:
+      - key: NODE_ENV
+        value: production

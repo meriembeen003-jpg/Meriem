@@ -1,0 +1,12 @@
+{
+  "name": "راصد الجيوسياسي | RASED GeoIntel",
+  "short_name": "راصد",
+  "description": "منظومة الإنذار المبكر والرصد الجيوسياسي والعسكري من المصادر الأم فقط بالعربية",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#060911",
+  "theme_color": "#060911",
+  "orientation": "portrait-primary"
+}

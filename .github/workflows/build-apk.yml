@@ -1,0 +1,67 @@
+name: Build Rased Android APK
+
+on:
+  push:
+    branches:
+      - main
+      - "arena/**"
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      cloud_server_url:
+        description: "رابط الخادم السحابي الدائم (اختياري — يمكن ضبطه من داخل التطبيق أيضًا)"
+        required: false
+        default: ""
+
+jobs:
+  build-android-apk:
+    name: Compile Android APK (JDK 21 + SDK 36)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Setup Java JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+          cache: "gradle"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK Platform 36 & Build Tools
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;35.0.0" "platform-tools"
+
+      - name: Install NPM Dependencies & Sync Capacitor Android
+        env:
+          CAPACITOR_CLOUD_SERVER_URL: ${{ github.event.inputs.cloud_server_url || vars.CAPACITOR_CLOUD_SERVER_URL || '' }}
+        run: |
+          npm ci
+          node scripts/prepare-apk-assets.mjs
+          npx cap sync android
+
+      - name: Build Installable Android APK via Gradle
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk ../Rased-GeoIntel-APK.apk
+
+      - name: Upload Ready-to-Install Android APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rased-GeoIntel-APK
+          path: Rased-GeoIntel-APK.apk
+          if-no-files-found: error
+          retention-days: 90
