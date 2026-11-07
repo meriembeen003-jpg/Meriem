@@ -1,0 +1,9 @@
+
+# large archive working data (re-downloadable with archive/fetch.py)
+archive/raw/
+archive/upload/
+
+# build artifacts
+node_modules/
+tsconfig.tsbuildinfo
+.next/
