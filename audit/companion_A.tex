@@ -1,0 +1,604 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage[margin=1.1in]{geometry}
+\usepackage{parskip}
+\setlength{\parindent}{0pt}
+\title{Companion A to the Blank-Slate Audit: Objections Answered, Tolerances Made Explicit,\\ and Sources Graded by Kind\\\\
+\large New computations, an objection audit, and a concept ledger for ``The Universe and Consciousness''}
+\author{Meriem}
+\date{11 November 2026}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This document is a companion to \emph{The Universe and Consciousness: A Blank-Slate Audit} (43 pages,
+13 sections, 18 figures). It does three things that the main paper had no room for. First, it answers
+the objections a reader will actually raise: eighteen of them, each answered with either a number I
+computed in this pass or an explicit statement that I cannot answer it and why. Second, it makes my
+own choices measurable. Where the main paper said ``the coincidence is not sharp,'' this companion
+computes the whole curve of how sharp it is as a function of the tolerance I am free to grant, and
+where the main paper quoted a pooled $H_0$, this companion shows what every defensible pooling
+estimator returns on the same four numbers, including a fully marginalised Bayesian model, and how far
+the pooled value moves when each experiment is deleted in turn. Third, it grades the source pool by
+\emph{kind of object} --- dataset, peer-reviewed primary, peer-reviewed reanalysis, preprint, curated
+reference work, blog --- with a worked verification of one case (the PBR theorem) that also produced a
+small lesson about withdrawn comments. Five new figures, all generated from the computations
+themselves, are embedded. Everything here is reproducible with one command, named in the appendix.
+
+\vspace{4pt}
+\hrule
+\vspace{4pt}
+\textbf{Provenance note, stated up front because it affects what is and is not re-verified here.}
+Between the second and third pass the sandbox that held my working tree was reset: the scripts, logs
+and the 18 embedded PNGs of the main paper were lost from the workspace (they survive in the uploaded
+evidence kit and inside the published PDF, which is the reason I uploaded a kit at all). The analysis
+in this companion was therefore rebuilt from the raw data files --- re-downloaded from the same GitHub
+release --- in a new script, \texttt{deepen.py}, and cross-checked against the numbers printed in the
+main PDF. Section~3.4 reports what that independent reimplementation caught, in both directions.
+\end{abstract}
+
+\section{What this pass was for}
+
+The brief I was given was to deepen the audit, diversify and grade the sources, deepen the concepts,
+and leave the reader no opening for a question. That last instruction is impossible in the literal
+reading and worth taking seriously in the intended one: I cannot prevent questions, but I can
+\emph{pre-empt} them, which means anticipating the objection, answering it with the cheapest
+computation that settles it, and writing down the answers I do not have in the same font as the
+answers I do. So this companion is organised as follows. Section~2 states the epistemic status of
+every kind of claim in it. Section~3 reports four new computations. Section~4 grades the source pool by
+kind, with the PBR verification as a worked example. Section~5 is the concept ledger: fifteen terms that
+carry weight in the main paper, each defined exactly, then said again in plain words, then fenced off
+from the misuse I have seen it suffer. Section~6 is the objection audit. Section~7 lists what I refuse
+to conclude and what would change my mind, updated with the numbers below. Appendix~A is reproduction.
+
+Two conventions from the main paper carry over unchanged, because they are the point of the exercise.
+Every claim is tagged: \textbf{[FACT]} (established, checked against a primary source), \textbf{[FACT,
+CITED, NOT FETCHED]} (established, but relying on my reading of a source I could not open in this
+session), \textbf{[MY CALCULATION]} (arithmetic I ran here, with the log line findable by searching its
+own digits), \textbf{[MY MEASUREMENT]} (a value obtained by fitting data I downloaded), and
+\textbf{[SPECULATION]} (inference, mine or somebody else's, that outruns the above). And every
+quantitative claim in this companion has a figure, five of them, with the caption generated from the
+same JSON that the plot was drawn from.
+
+\section{Evidence tiers, and what each one forbids}
+
+A tier system is only worth having if it constrains the sentence that uses it, so I will state the
+constraint rather than the definition. \textbf{[FACT]} may be used as a premise in an argument.
+\textbf{[FACT, CITED, NOT FETCHED]} may be used to report a position but not to refute one --- I will
+not tell a philosopher that they are wrong about their own paper if I have only read about it.
+\textbf{[MY CALCULATION]} may be used to draw a conclusion only if the same paragraph states the model
+that the calculation is internal to; my $10^{122}$ entropy comparison is a calculation inside
+general relativity plus quantum field theory in a fixed background, and it buys no argument about
+whether that is the right framework. \textbf{[MY MEASUREMENT]} comes with the additional requirement
+that I report how many parameters I fitted and what the goodness-of-fit null looks like, which is
+Section~3.1. \textbf{[SPECULATION]} may not appear in a sentence containing a number unless the number
+is the thing being speculated about.
+
+\section{Four new computations}
+
+\subsection{Is my supernova fit ``too good''? A goodness-of-fit null, simulated}
+
+The main paper reports a two-parameter fit to the 40 binned Pantheon distance moduli with $\chi^2 =
+39.30$ on 38 degrees of freedom, and a reader is entitled to ask two opposite questions at once: is
+that too high (is the model wrong) and is that too low (is my covariance overestimated, or did I
+sneak in freedom)? A table of $\chi^2(38)$ answers the first question and an answer of my own making
+answers the second.
+
+I generated 4,000 synthetic 40-bin Hubble diagrams by taking my own best-fit model and adding
+correlated noise drawn from the published $40\times40$ covariance, then refitting each one with
+exactly the code that produced the number in the text. The null distribution of the refit statistic
+has median $37.38$ and a 90\% band of $[25.18,\,53.04]$; my observed $39.30$ sits at the 58.6th
+percentile, with $P(\chi^2_{\text{null}}\ge \chi^2_{\text{obs}}) = 0.414$ and $P(\le) = 0.586$, so the
+two-sided ``too good'' $p$-value is $0.828$. \textbf{[MY CALCULATION]} The fit is unremarkable in both
+directions (Figure~\ref{fig:gof}). As a cross-check on my own machinery, the textbook $\chi^2(38)$ tail gives $0.412$ against
+my simulated $0.414$ --- agreement to $0.0021$, which tells me that profiling out the amplitude and
+using a non-diagonal covariance do not shift the null in this case; the simulation is right by
+construction and the table is what a referee will reach for, so I report both.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=1.0\textwidth]{figures/f20_chisq_gof_null.png}
+\caption{The goodness-of-fit null for my own fit, simulated rather than looked up. 4,000 synthetic
+Hubble diagrams drawn from my best-fit model with the published covariance, each refitted by the same
+routine that fitted the real data. Observed $\chi^2 = 39.30$ (red), null median $37.38$ (grey dashed),
+90\% of null fits (orange). $P(\ge) = 0.414$, $P(\le) = 0.586$. \textbf{[MY CALCULATION]}}
+\label{fig:gof}
+\end{figure}
+
+\subsection{How wide is my error bar, and does it depend on how I got it?}
+
+The main paper quotes $\Omega_{\text{m}} = 0.2961 \pm 0.0220$ from a 300-draw parametric bootstrap. The
+sceptic's question is whether that interval is an artefact of resampling. I computed it three more ways
+on the same likelihood: a parabola fitted to the $\chi^2$ scan (curvature), the profile-likelihood
+crossings of $\Delta\chi^2 = 1, 4, 9.21$, and the grid minimum itself.
+
+The parabolic refinement of the grid minimum gives $\Omega_{\text{m}} = 0.29624$ with $\chi^2 = 39.2963$,
+and a curvature-based $1\sigma$ of $\pm 0.02167$. The profile intervals are $1\sigma$:
+$[0.2748,\,0.3182]$, $2\sigma$: $[0.2541,\,0.3411]$, $3\sigma$: $[0.2335,\,0.3655]$. The
+half-width of the profile $1\sigma$ interval is $0.0217$ against the shipped bootstrap $0.0220$ ---
+agreement to $1.3\%$ of the interval. \textbf{[MY CALCULATION]} So the acceleration claim in the main
+paper (a matter density $16.8\sigma$ below the no-acceleration boundary $\Omega_{\text{m}}=2/3$) does not
+rest on the resampling choice: profile, bootstrap and curvature give the same width, and a reader who
+prefers a different convention can read the alternative straight off Figure~\ref{fig:prof}. The
+$3\sigma$ interval still tops out at $0.3655$, which is a long way below $2/3$; no interval convention I
+computed rescues a non-accelerating universe.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=1.0\textwidth]{figures/f22_profile_likelihood_Om.png}
+\caption{One curve, three confidence conventions, and the interval I originally shipped. $\chi^2$ of my
+fit with the amplitude eliminated analytically, scanned over 313 values of $\Omega_{\text{m}}$; the
+crossings of $\Delta\chi^2 = 1,4,9.21$ define the profile intervals, the dotted purple segment is the
+300-draw bootstrap quoted in the main paper, and the dash-dot red line is the $\Omega_{\text{m}}=2/3$
+no-acceleration boundary. \textbf{[MY CALCULATION]}}
+\label{fig:prof}
+\end{figure}
+
+\subsection{What the pooling choice does to the number people fight about}
+
+The main paper pooled measurements of $H_0$ and reported a random-effects mean of $70.561 \pm 1.304$
+with $I^2 = 54.4\%$. The obvious objection is that any such number is an artefact of the estimator. I
+answered it by running every defensible estimator on a pool I define explicitly here --- the four
+strictly independent anchors: Planck 2018 $\Lambda$CDM $67.36\pm0.54$, SH0ES R22 $73.04\pm1.04$, the
+CCHP TRGB distance $68.81\pm1.80$, and the JAGB $67.80$ with $2.17$ statistical and $1.64$ systematic
+added in quadrature to $\pm2.720$ --- and by computing, rather than resampling, a Bayesian
+random-effects model: flat prior on $\mu$ over a 401-point grid, half-Cauchy$(0,1)$ prior on
+$\tau$ on a 401-point grid, the joint posterior evaluated on the full $401\times401$ lattice and
+normalised, which is what ``marginalising over the heterogeneity'' should mean if it means anything.
+
+Results \textbf{[MY CALCULATION]}: unweighted mean $69.2525$; fixed-effect inverse-variance mean
+$68.5603\pm0.4565$ with $Q = 23.59/3$ and $I^2 = 87.3\%$; DerSimonian--Laird $69.3833\pm1.7372$ with
+$\tau = 3.099$; Paule--Mandel $\tau = 1.527$; REML $\tau = 2.567$; Bayesian $\mu = 69.3870\pm1.6209$,
+$95\%$ credible interval $[66.08,\,72.69]$, $\tau$ median $2.300$ with $95\%$ CrI $[0.96,\,5.94]$;
+median of the four values $68.3050$. Four things follow, and they are the kind of thing the main paper
+argues for but could not demonstrate in the space available.
+
+\emph{One.} The four reasonable point estimators span $1.0820$~km/s/Mpc, which is $2.37$ fixed-effect
+errors. Anyone quoting ``the'' pooled $H_0$ to three digits is quoting an estimator choice.
+\emph{Two.} The Bayesian interval is $3.5$ times wider than the fixed-effect error, and the
+five-estimator disagreement is entirely a disagreement about $\tau$ --- Figure~\ref{fig:lad}, right
+panel, plots the three frequentist $\tau$ estimators against the whole posterior of $\tau$, which
+stretches from $0.96$ to $5.94$. \emph{Three.} The posterior predictive interval for what the
+\next\ measurement will say is $[62.51,\,76.29]$, a width of $13.8$~km/s/Mpc. That is the number to
+quote when somebody says a new result ``resolved'' the tension: nothing about this pool makes a value
+near $67.4$ or near $73.0$ surprising. \emph{Four.} Leave-one-out is brutal and I print it because it
+is the test that should govern the whole genre. Dropping Planck moves the pooled Bayesian estimate to
+$70.854$ ($+1.47$); dropping R22 moves it to $67.639$ ($-1.75$); dropping TRGB or JAGB moves it by
+$+0.16$ and $+0.29$. The pooled centre can therefore be moved by $3.21$~km/s/Mpc --- $2.0$ posterior
+standard deviations, and $4.08$ under fixed-effect weighting --- merely by deciding which experiments are in the room (Figure~\ref{fig:loo}).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=1.0\textwidth]{figures/f19_pooling_estimtor_ladder.png}
+\caption{Left: every defensible point estimator of the same four anchors, with the Planck and R22 input
+values as horizontal references. Right: the three frequentist $\tau$ estimators against the full
+marginal posterior of $\tau$ from the grid-integrated Bayesian model. The point estimators disagree by
+$1.08$~km/s/Mpc ($2.37$ fixed-effect errors) and the entire disagreement is about this one nuisance
+parameter. \textbf{[MY CALCULATION]}}
+\label{fig:lad}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=1.0\textwidth]{figures/f21_leave_one_out_H0.png}
+\caption{Leave-one-out. For each experiment in the pool, the shift in the pooled Bayesian $H_0$
+relative to the measurement that was deleted. The pooled summary is not an independent witness: its
+centre moves by up to $4.1$~km/s/Mpc depending on who is counted. \textbf{[MY CALCULATION]}}
+\label{fig:loo}
+\end{figure}
+
+I must also state a discrepancy rather than bury it. This four-anchor pool gives \emph{larger}
+heterogeneity ($Q=23.59/3$, $I^2=87.3\%$) than the number the main paper reported ($Q=6.58/3$,
+$I^2=54.4\%$), because the main paper pooled seven items, including derived combinations that share
+their inputs. Combining a measurement with a combination that contains it shrinks $Q$ by construction.
+That is not a contradiction to smooth over; it is a further reason to distrust any pooled $H_0$,
+including the one I shipped. I could not re-read the exact $(y,\sigma)$ vector behind the shipped
+number in this pass --- the file that held it was lost with the workspace --- so the seven-item pool is
+left as published in the main paper, and the four-anchor version above is the honest one. The same
+reasoning applies to the $S_8$ pooling in section 3.7 of the main paper, and for the same reason I did
+not re-run the $S_8$ ladder here: reconstructing that five-value vector from memory would let a
+remembered input masquerade as a check, which is the failure mode this entire audit exists to avoid.
+
+\subsection{How much of ``why now'' is my threshold, and what a reimplementation caught}
+
+The main paper's ``why now'' paragraph computes the interval over which the matter and dark-energy
+densities are within a factor of ten of each other, gets $18.21$~Gyr against a Hubble time of $14.53$
+Gyr, and concludes that the coincidence is too broad to argue from. The question I did not answer
+there: how much of that is my choice of ``a factor of ten''?
+
+I recomputed the whole curve from scratch, in a different way. For flat $\Lambda$CDM the age is
+analytic, $t(a) = \tfrac{2}{3}(H_0\sqrt{\Omega_\Lambda})^{-1}\,\mathrm{asinh}\big(\sqrt{\Omega_\Lambda
+/\Omega_{\text{m}}}\,a^{3/2}\big)$, so both edges of the window follow from solving
+$\Omega_{\text{m}}(1+z)^3/\Omega_\Lambda = R$ and $=1/R$. \textbf{[MY CALCULATION]} With $\Omega_{\text{m}} =
+1-\Omega_\Lambda = 0.3153$: the ratio today is $0.4605$; the \emph{smallest} tolerance for which today
+counts as coincidental at all is therefore a factor $2.1716$; and the windows are $18.214$~Gyr at
+$R=10$ ($132\%$ of the present age), $8.978$~Gyr at $R=3$, $6.372$~Gyr at $R=2.171$, $5.704$~Gyr at
+$R=2$, and $3.347$~Gyr at $R=1.5$ ($24\%$ of the age). Tightening the tolerance by a factor of six
+shrinks the window by only a factor of $5.4$; and at $R=2$ the present day is \emph{outside} the
+window, which is the sharpest possible statement of how soft this coincidence is. My $t(0)$ from the
+closed form is $13.8011$~Gyr against the Planck quoted age of $13.7981$~Gyr, so the units and the
+prefactor reproduce the standard result to $3$~Myr from Planck's parameters alone --- the check that
+legitimises every Gyr in this subsection.
+
+Now the confession, because it is the methodological payload. My first implementation of this
+subsection used a quadrature of $\int \mathrm{d}z/((1+z)H)$ with the limits mirrored for negative $z$.
+Its \emph{past} leg agreed with the main paper to $0.03$~Gyr, and its \emph{future} leg was wrong by a
+factor of $1.8$ --- it returned $4.42$~Gyr for an interval of $8.05$~Gyr, and hence a window of $14.58$
+Gyr instead of $18.21$. Had I kept the quadrature and only checked the past leg, as I nearly did, this
+companion would have printed a number that contradicts the main paper, and the story would have been
+about my error rather than about the tolerance curve. Two lessons generalise, and both are now stated
+where they will be read: a code path that agrees on one side of a sign change proves nothing about the
+other side; and an analytic form is worth a day of debugging precisely because it adjudicates. The
+shipped $18.21$~Gyr survived, and Figure~\ref{fig:tol} plots the curve that the corrected code
+produces.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=1.0\textwidth]{figures/f23_whynow_tolerance_curve.png}
+\caption{The ``why now'' window as a function of the tolerance, computed from the analytic age rather
+than the quadrature used in the main paper, and agreeing with it to $0.004$~Gyr at $R=10$. Left: the
+window in Gyr, with the Hubble time and the age of the Universe as reference lines, and the vertical
+mark at $R=2.17$ where today ceases to qualify at all. Right: the cosmic age at the far edge of each
+window as a fraction of today's. \textbf{[MY CALCULATION]}}
+\label{fig:tol}
+\end{figure}
+
+\section{The source pool, graded by what kind of object it is}
+
+A citation is not a unit of evidence; the \emph{kind of object} is. Six grades, with the instances from
+the main paper that belong in each, and the constraint each grade imposes.
+
+\textbf{(1) Datasets and their releases.} The Pantheon light-curve compilation and its
+$1048\times1048$ systematic covariance, taken as a tarball from the maintainers' repository; the
+supernova figures in the main paper and the fit interrogated in Section~3.1 above run on those files.
+What a dataset release can bear: numbers you can recompute. What it cannot bear: the analysis. The
+release I used deliberately has its light-curve shape and colour corrections \emph{already applied}
+and those columns zeroed, which is why my raw 1,048-row fit and my 40-bin fit agree --- and why neither
+can be extended into a measurement of the nuisance parameters.
+
+\textbf{(2) Peer-reviewed primary results.} Planck~2018~VI, the R22 distance ladder, the COGITATE
+adversarial trial in \emph{Nature} (2025), Albantakis et al.\ on IIT~4.0 in \emph{PLOS Computational
+Biology} (19:e1011465, 2023), Tegmark in \emph{Phys.\ Rev.\ E} (61:4194, 2000), Casali et al.\ on the
+perturbational complexity index. Grade 2 means the claims were read by referees, not that they are
+right: the COGITATE result is grade~2 and it is also the example in the main paper of a flagship
+adversarial test whose two camps each reanalysed the same data to opposite conclusions.
+
+\textbf{(3) Peer-reviewed \emph{reanalyses} of other people's results.} The estimator-dependent
+DCM reanalyses of COGITATE in \emph{eLife}, the Tremblay \& Lefebvre reanalysis of the
+$\gamma$-ray/meditation anomalies, Salaberli \& Soto's appraisal of $\Phi$ in \emph{Neuroscience
+Biobehavioral Reviews} (2025), the rotating-model lithium papers. This is the highest-value grade in a
+contested area and the easiest to over-weight: a reanalysis inherits the primary data and the primary
+model choices, and it can be wrong in a way that neither the original nor the critic noticed. When a
+reanalysis and its target disagree, the main paper's rule is to report both and to refuse to adjudicate
+unless I can compute something myself.
+
+\textbf{(4) Self-reviewed preprints.} arXiv and bioRxiv items: the identifiability result against
+$\Phi$, the consciousness-indicator programme, the 2026 DESI/YEAR-1 style drafts. A preprint is a
+claim under construction, and the correct use is to cite what its own text says, never what a thread
+about it says. Two concrete verifications, one of which is a lesson.
+
+\emph{Worked case --- the PBR theorem.} In the last pass I drafted a sentence attributing to Pusey,
+Barrett and Rudolph the structure ``two explicit premises, and a forced conclusion.'' I have now
+checked the primary object directly on arXiv rather than trusting my recall of its identifier:
+arXiv:1111.3328, submitted 14 November 2011, version~3 dated 18 November 2012, published as
+\emph{Nature Physics} 8, 475 (2012) with DOI 10.1038/nphys2309, and the abstract states the conclusion
+as ``any model in which a quantum state represents mere information about an underlying physical state
+of the system, and in which systems that are prepared independently have independent physical states,
+must make predictions which contradict those of quantum theory.'' \textbf{[FACT]} So the two premises
+are exactly what the main paper says they are --- a $\psi$-epistemic reading of the state, and
+preparation independence --- and the theorem is an implication between them and a contradiction with
+quantum predictions, not a proof that the wavefunction is real in any metaphysical sense. The same API
+query returned a second object worth reporting: a ``Comment on `On the reality of the quantum state'''
+(arXiv:1812.03035, November 2018) claiming that PBR err at the start of their argument by violating
+the projection postulate --- with the arXiv record annotated \emph{``withdrawn by the author; due to a
+Babylonian confusion of tongues, the comment was based on an interpretation of statements in the PBR
+paper that was not implied by its authors.''} \textbf{[FACT]} That is the whole argument for grade~4
+discipline in one record: preprints carry the author's own retraction note, and a claim that survives
+in citations after it has been withdrawn by its author is exactly how a literature acquires a
+disagreement it never had.
+
+\emph{Counter-case --- a citation I refuse to use.} In an earlier draft I had a line attributed to a
+\emph{Nature} volume and page with a Bayes factor of $44.96$. I could not locate the object at that
+address in this session. The main paper's ledger does not cite it and neither does this one; a
+number whose container I cannot open is not evidence, however much it supports me.
+
+\textbf{(5) Curated reference works.} The \emph{Stanford Encyclopedia of Philosophy} entries (for this
+pass, the panpsychism article, first published 2001, substantive revision 13 May 2022), which is where
+I took the contemporary taxonomy used in Section~5: the constitutive/emergentist split, panpsychism
+versus panprotopsychism, micropsychism versus cosmopsychism, Russellian monism, the anti-emergence and
+intrinsic-nature arguments, and the three standard objections --- the incredulous stare, the combination
+problem, and the subject-summing problem. A reference work is not a primary argument and cannot be cited
+for one; it is a check that I have not invented a taxonomy or forgotten a standard objection. Where the
+main paper says the combination problem is ``the hardest problem in the view,'' the encyclopedia's own
+framing is what I am relying on, and the primary literature (James for the problem, Goff and Seager for
+contemporary attempts) is cited at grade~5 status: read as positions, not used to refute.
+
+\textbf{(6) Everything else --- interviews, journals of speculative metaphysics, secondary books,
+press material.} Used in the main paper exactly once, to characterise a genre's rhetoric rather than
+its content. If a claim in either document is graded~6, it is decoration and I have said so in place.
+
+\section{The concept ledger: fifteen terms, each defined twice and fenced once}
+
+The main paper's sin would be to let these terms slide between registers. For each: the exact sense,
+the plain-words sense, and the misuse to be avoided.
+
+\textbf{Distance modulus} $\mu = m - M = 5\log_{10}(d_L/10\,\mathrm{pc})$. In words: how many
+magnitudes fainter a standard candle looks than it would at 10 parsecs, which is a logarithm of
+distance. Not a distance: a $\mu$ without a stated $H_0$ convention fixes the \emph{shape} of the
+expansion history and nothing about its scale, which is the whole content of the main paper's
+supernova section.
+
+\textbf{Sound horizon} $r_{\text{d}}$: the comoving distance a pressure wave could travel in the photon
+baryon fluid before the plasma decouples at recombination, i.e.\ $\int_{z_{\text{d}}}^\infty c_s(z)\,
+\mathrm{d}z/(\dot a/a)$, with $c_s$ dragged down by the baryon loading. In words: the length of the
+ruler printed in the CMB, set by how far sound could travel before the Universe turned transparent.
+Not a standard rod of known length independent of cosmology: it is $r_{\text{d}} = r_{\text{d}}(H_0\sqrt{
+\Omega_{\text{m}}},\ldots)$, so the ``inverse'' $H_0$ from BAO inherits a model, and that lock is what
+Figure~4 of the main paper draws.
+
+\textbf{Degeneracy versus uncertainty.} A degeneracy is a direction in parameter space along which the
+likelihood is nearly flat --- the amplitude $M$ and $H_0$ in my fit; the ``curvature degeneracy''
+$-\Omega_k$ traded against $H_0$. An uncertainty is a width along a direction that does exist.
+Reporting a degeneracy as an error bar manufactures a crisis out of a ridge.
+
+\textbf{$Q$, $I^2$, $\tau$.} For a set of measurements: $Q$ is the weighted scatter about the
+fixed-effect mean, compared to its null; $I^2$ says what fraction of the observed scatter is
+real between-study variation rather than error bars; $\tau$ is that extra scatter, in the units of the
+quantity. In words: $\tau$ is the amount by which the experiments disagree with each other beyond what
+their own quoted errors allow --- $2.30$~km/s/Mpc median for my $H_0$ pool, and the quantity every
+pooled number hides.
+
+\textbf{Profile likelihood versus bootstrap.} The profile interval is the set of parameter values that
+survive when the nuisance parameters are re-optimised at each value; a bootstrap resamples the data.
+The first is geometry of the likelihood surface, the second is a statement about the sampling
+procedure. Section~3.2 shows they agree here; where they disagree, the disagreement is the finding.
+
+\textbf{Posterior predictive interval.} The interval for a \emph{new} measurement, integrating over
+the parameter uncertainty and the between-study scatter. In words: given what we know, what should the
+next experiment find? If the answer includes both camps' numbers, the pool has not resolved anything,
+which is what mine returns: $[62.5,\,76.3]$.
+
+\textbf{Decoherence.} Suppression of off-diagonal density-matrix elements in a preferred basis through
+entanglement with uncontrolled environmental degrees of freedom, at a rate set by the system-environment
+coupling. In words: information about a superposition leaks into the room faster than you can follow
+it, so the interference becomes unavailable in practice. Not a collapse: no single outcome is produced
+by decoherence, and no observer is required by it --- the most common conflation in the quantum-mind
+literature, and the one the main paper's arithmetic section exists to keep separate.
+
+\textbf{Reduced state / partial trace.} The state assigned to a subsystem after averaging over its
+environment; $\rho_S = \mathrm{Tr}_E \rho_{SE}$. In words: what the part looks like when you are not
+allowed to look at the rest. It is how ``the brain is warm and wet'' becomes a number, and the number is
+$Q=\nu\tau$, not a mood.
+
+\textbf{Measurement problem versus collapse.} The problem is that the theory has two evolution laws and
+no stated criterion for which applies. A collapse model is a specific \emph{solution}: a modified
+dynamics with a parameter, hence a prediction, hence a way to lose. ``Consciousness causes collapse''
+is not a member of the second class: it changes nothing you can count.
+
+\textbf{The hard problem.} The question of why there is something it is like to be a physical system
+that processes information, and why that ``like'' has the properties it does. In words: even after you
+describe the mechanism of colour vision completely, it remains sensible to ask why seeing red feels
+like something. \emph{Not} the hard problem: the explanatory gap as a feeling of confusion, and the
+access problems (report, attention, integration) that are empirically tractable --- Chalmers' own
+distinction, and the reason COGITATE could only test correlates.
+
+\textbf{Epistemic versus metaphysical possibility.} ``Conceivable'' can mean ``I can construct a model
+of it'' or ``it could be true.'' The conceivability arguments for dualism and against physicalism need
+the second reading to work and only ever establish the first. Zombies and Mary are arguments, not
+intuitions, and they have a specific target: the inference from the complete physical to the
+phenomenal.
+
+\textbf{$\Phi$ versus complexity versus PCI.} $\Phi$ (IIT's integrated information) is a property of a
+mechanism's cause-effect structure under a maximum over subsystem bipartitions, computed on a
+transition probability matrix. Lempel--Ziv complexity counts the phrases needed to reconstruct a
+bit-string. PCI is a normalised Lempel--Ziv complexity of a binary perturbation-response matrix. In
+words: $\Phi$ claims to measure how much a system is \emph{one} thing; the other two measure how
+\emph{variegated} a recorded signal is. They coincide on nothing in my toy computations, and the main
+paper times the difference: $\Phi$ is $O(2^n)$ with a measured $\ln t = 3.05 n - 9.92$, while
+Lempel--Ziv is linearithmic.
+
+\textbf{Combination versus dissociation.} Micro-experientialism must build one subject from many;
+cosmopsychism must divide one subject into many. In words: the first owes an account of how
+experiential grains merge, the second owes an account of why the boundaries fall where skulls do.
+Both are real problems, and neither has a working solution, which is why the main paper calls this the
+load-bearing distinction rather than a matter of taste.
+
+\textbf{Intrinsic versus relational property.} A property a thing has in itself versus one it has
+only relative to something else; QBism reads the quantum state as the second kind. In words: whether
+the wavefunction is the cat's or the bettor's. The measurement problem's shape changes with this
+choice, and no experiment I know of distinguishes them --- which is precisely the sentence the
+main paper's verdict rests on.
+
+\textbf{de Sitter entropy versus thermodynamic entropy.} $S = A/4\ell_{\text{P}}^2$ for a cosmological
+horizon: a counting of horizon degrees of freedom, $3.3\times10^{122}$ in $k_B$ units in my
+arithmetic. In words: an upper bound on what an observer inside the horizon can know or store. Not the
+entropy of the contents of the Universe, and not a licence to compare it with $10^{88}$ as if the two
+were counts of the same kind --- which is exactly why the Boltzmann-observer argument in the main paper
+is presented as a budget constraint and not as a refutation.
+
+\section{The objection audit}
+
+Each entry: the question as a reader would pose it, what an honest answer would require, and the
+answer. Where I have no answer, that is the answer.
+
+\textbf{1. ``You fitted 40 bins with 2 parameters and got $\chi^2/{\text{dof}}\approx1$; of course you did --- you chose the model that the bins encode.''} Correct, and it is a limitation of every
+supernova analysis including the collaboration's: Pantheon's bins are produced under an assumed
+flat-$w$CDM family. What my fit can legitimately support is a \emph{consistency} claim and the
+acceleration boundary, not an independent test of dark energy. Stated in the main paper, restated here.
+
+\textbf{2. ``Your covariance is a published approximation, not a likelihood.''} Yes. The binned
+systematic matrices are given as $N\times N$ covariance blocks over one parameter family, and for the
+full 1,048-object release my own eigenvalue check finds a minimum eigenvalue of $+7.4\times10^{-3}$,
+so no regularisation was needed there, but the 40-bin matrix is not the covariance of the bin means
+under the full analysis. My numbers are thus $\chi^2$ values under an approximation, which is why I
+report $1\sigma$ to three decimal places and never a $5\sigma$ claim.
+
+\textbf{3. ``Why not just use Pantheon+ with the bias corrections?''} The file I could retrieve from the
+public repository carries a \texttt{biascor} column of zeros; the Pantheon+ analysis requires the
+host-mass and calibration nuisance parameters whose values are not in the text file. Using the
+corrections I cannot read would make my numbers somebody else's, which is the failure mode I am
+auditing for.
+
+\textbf{4. ``You quote the tension at $4.8\sigma$ from Planck versus R22 but pool to $2.3\sigma$;
+you are averaging away the physics.''} That is precisely my claim, and Section~3.3 sharpens it with the
+estimator ladder: the pooled value depends on the estimator by $2.37$ fixed-effect errors and on
+membership by $4.1$~km/s/Mpc. A tension reduced by pooling is not resolved, it is averaged, and an
+average of two clusters of measurements with $\tau=2.3$ is not a prediction.
+
+\textbf{5. ``Your Bayesian model's half-Cauchy prior on $\tau$ is a choice that inflates the interval.''}
+It is a choice, and I state it: Gelman's recommendation for scale parameters, weakly informative, and
+the alternative estimators of $\tau$ (DL, PM, REML) span $1.53$ to $3.10$, which brackets the posterior
+median of $2.30$. If a reader prefers a different prior, Figure~\ref{fig:lad} right panel gives the
+whole marginal so they can recompute the interval by eye.
+
+\textbf{6. ``Why does your Hubble-time arithmetic differ from the main paper's 14.53 Gyr?''} Because I
+used $\Omega_{\text{m}}=1-\Omega_\Lambda=0.3153$ from Planck's $\Omega_\Lambda$ rather than the paired
+$\Omega_{\text{m}}=0.3142$; the resulting difference is $0.014$~Gyr, $0.1\%$, and it is reported rather
+than smoothed, as is the $0.004$~Gyr window difference in Section~3.4.
+
+\textbf{7. ``The lithium problem is the strongest crack you cite and you refuse to call it a crisis.''}
+Yes: the predicted value is primordial, the observed value is a stellar surface abundance, and
+2025--26 stellar-model and chemical-evolution work argues the discrepancy may be an artefact of which
+number gets compared to which. A $6\sigma$ offset between two quantities that are not the same
+quantity is not a crisis in $\Lambda$CDM. That is a fact about the objects being compared, not a
+judgement about who is right.
+
+\textbf{8. ``DESI's dynamical dark energy: your paper is out of date.''} The main paper reports the
+Year-1 result and the later data release's changed preference, and its programme section commits to
+checking the next release. What I will not do is quote a tension in $w$ at a significance I cannot
+reproduce from a covariance I do not have.
+
+\textbf{9. ``Page and Geilker refuted Wigner, so why spend a section on it?''} Because the experiment
+is the only case where a philosophical distinction --- the cut's placement --- was made into a
+measurement, and it came back against the mind-causes-collapse reading. The scope limit is stated in
+the main paper: it constrains collapse triggered by conscious observation as the completion of a
+measurement; it does not touch Everett, Bohm, QBism, or any interpretation that makes no such dynamical
+claim.
+
+\textbf{10. ``Bong et al.\ 2020 shows local friendliness fails --- doesn't that bring the observer in
+after all?''} It closes a trichotomy (locality, freedom of choice, and observer-independent facts) under
+assumptions including no superdeterminism, with a laboratory implementation. \textbf{[FACT, CITED, NOT
+FETHED]} I did not re-verify its exact premise list in this pass --- and that is the honest status
+marker for the claim in the main paper, which uses it to say that the question is now a theorem-shaped
+question rather than an intuition.
+
+\textbf{11. ``Is the decoherence objection to quantum consciousness dead?''} Tegmark's $10^{-13}$~s
+estimate was shown to rest on a dipole moment roughly two orders of magnitude too small; Hagan et al.\
+raise the timescale toward $10^{-4}$ to $10^{-5}$~s. My contribution is arithmetic, not physics: at
+$\nu\tau$ with $T=310$~K, a 613~THz mode is $95\,k_BT$ and thermally unpopulated by some 42 orders of
+magnitude, so a Fr\"ohlich-type coherence needs a pump; and $1612$ dimers relaxing per microtubule
+against a $4.74\times10^{-12}$~W-per-neuron budget is the kind of sentence that must be checked, not
+recited. The objection is not answered by the corrections --- the mode is still unpopulated --- and the
+correction is not answered by the objection either. Both camps skip the arithmetic.
+
+\textbf{12. ``You timed $\Phi$ on toys; what does that prove?''} Nothing about IIT's truth. It
+constrains its use: a measure whose exact evaluation on $n$ elements is exponential in $n$ (my
+measured $\ln t = 3.05n - 9.92$, $t$ at $n=8$ about three weeks, $n=10$ about 28 years) cannot be the
+operative quantity behind a claim about the cortex, and cannot be the basis of an ethical weight for
+AI systems. Combined with the identifiability preprint and the Salaberli \& Soto appraisal, that is the
+main paper's verdict on the measure while remaining agnostic about the axioms.
+
+\textbf{13. ``If IIT is unfalsifiable, why treat it with so much space?''} Because its axioms are
+defensible phenomenology and its postulates are a non-trivial bridge, and it is the only theory in the
+field that has published the bridge's cost. The falsifiable version of the analogy in the main paper
+(the $\Phi$/PCI dissociation) is a prediction about measurement, and if the next generation of
+measures kills it, the section will need rewriting.
+
+\textbf{14. ``Your PCI reimplementation gives complex/white-noise ratios of 1.008 --- are you saying
+the published index is broken?''} I am saying that \emph{the estimator as I reimplemented it from the
+published description} does not resolve the contrast its own figure advertises, that it drifts by
+$0.117$ versus $0.112$ between two noise draws, and that two independent draws of the same generator
+differ by $0.0565$. \textbf{[MY CALCULATION]} Whether the published implementations avoid this is not
+something I can answer: I did not have their code. That is a limitation of the objection, not of the
+finding.
+
+\textbf{15. ``Clinicians use PCI with a threshold around 0.4; are you dismissing that?''} No: the main
+paper's strongest consciousness claim is precisely the validated one --- Casali et al.'s
+$0.45$--$0.67$ versus $0.25$--$0.31$ across consciousness states, with a criticality-flavoured
+cut-off near $0.35$ in the later LOSO analysis. What I dismiss is the further step from ``this
+measure tracks a state'' to ``this measure quantifies experience.''
+
+\textbf{16. ``Why no free will, no ethics, no AI consciousness section?''} Because the brief was the
+Universe and consciousness, and each of those three would require evidence I do not have. The main
+paper mentions the indicator programme (Butlin et al.) only to say the method is a checklist of
+mechanisms, not a measurement, and that is the whole extent of what I can support. Panpsychism gets
+space because it is a live position in the philosophy of mind with an explicit combination problem; a
+theory of machine consciousness does not, in my reading of the literature.
+
+\textbf{17. ``You say the philosophy is [CITED, NOT FETCHED] but you cite forty years of it. Where is
+the risk?''} Everywhere, and it is stated per sentence. The concrete risk I identified while preparing
+this companion is arXiv-identifier drift: three identifiers I wrote from memory resolved on the arXiv
+API to a HST detector-calibration paper, an image-captioning paper and a post-5G networking paper.
+Nothing in either document depends on those identifiers; the PBR entry in Section~4 is the corrected,
+verified form. If any arXiv number in the main paper's ledger conflicts with Section~4 here, Section~4
+wins, because it is the one I opened.
+
+\textbf{18. ``What would make you abandon the thesis of the main paper?''} One of three things: a
+consciousness measure whose value is invariant under reanalysis with different model assumptions and
+which dissociates from $\Phi$ in the direction I predict; a decoherence calculation for a plausible
+neuronal substrate with $Q>1$ and an energy budget that closes; or a $1/H_0$ measurement from a
+standard-siren or BAO-with-independent-$r_{\text{d}}$ route that lands near $67$ with an error bar under
+$0.7$ and a documented refusal to use the Cepheid rung. Each is stated with the number attached in the
+main paper's commitments section, and each is the kind of thing that could plausibly happen by 2031.
+
+\section{What I still refuse to conclude}
+
+I will not say the Universe is fine-tuned for observers; the tolerance curve in Section~3.4 is the
+reason --- the coincidence survives at the price of any tolerance above a factor of $2.17$, which is
+not a constraint on physics. I will not say the vacuum-energy discrepancy is $120$ orders of a
+prediction, because it is a comparison between a low-energy field-theory estimate and a geometric
+quantity, with the slope-4 comparison in the main paper showing how the number moves with an
+ultraviolet cut-off I cannot justify. I will not say consciousness is measured, because the one
+instrument with clinical validity measures a signal's variegation, not a subject's interior. I will not
+say the $H_0$ tension is resolved or real, because I have now shown how much of it is my estimator: the
+same four numbers support $68.31$ and $69.39$ and a $95\%$ credible interval that covers both camps'
+headline values.
+
+What the pair does support is weaker and, I think, more durable: the Universe is comprehensible in the
+narrow sense that its expansion history can be recovered by two parameters fitted to 40 binned means by
+a person with a laptop, and consciousness is not comprehensible in that sense yet, and the gap between
+those two facts --- not a theorem, not a coincidence, not a $10^{122}$ entropy ledger --- is the actual
+subject of the field. Everything else I have written in both documents is bookkeeping around that
+sentence.
+
+\appendix
+\section{Reproduction}
+
+The five figures and every number above come from one script:
+
+\begin{verbatim}
+cd research
+python deepen.py 2>&1 | tee logs/deepen_log.txt   # ~3 s; writes paper/figures/f19..f23
+                                                  # and logs/deepen.json (all numbers in machine form)
+python paper/build.py                             # tex -> typst -> pdf; checks for markup leaks and unresolved refs
+\end{verbatim}
+
+\texttt{deepen.py} is self-contained: it re-reads \texttt{data/lcparam\_DS17f.txt} and
+\texttt{data/sys\_DS17f.txt} (retrieved in this pass from \texttt{codeload.github.com/dscolnic/Pantheon},
+the \texttt{Binned\_data/} directory of the master branch), re-implements the luminosity distance by
+trapezoid integration of $1/E(z)$ with the $(1+z)$ factor and the radiation term, refits $\Omega_{\text{m}}$
+over a 313-point grid with the amplitude eliminated analytically, computes the profile-likelihood
+crossings with \texttt{brentq}, runs 4,000 parametric-bootstrap replicates of the fit statistic, solves
+the Paule--Mandel and REML equations for $\tau$, integrates the Bayesian posterior on a
+$401\times401$ grid, and computes the ``why now'' windows from the closed-form age $t(a)$. The caption
+text of each figure is written to \texttt{logs/deepen\_figures\_manifest.json} by the same code that
+draws the plot, and \texttt{logs/deepen.json} holds every number in machine-readable form, so a
+disagreement between text and plot is detectable by diff rather than by argument.
+
+Three checks a reader can perform in one line each. My grid fit should return
+$\Omega_{\text{m}}=0.2950$ at $\chi^2=39.300$; the parabolic refinement should return $0.29624$; and
+\texttt{t\_age\_gyr(0.0)} should return $13.8011$~Gyr, which is the Planck age reproduced from
+Planck's $\Omega_\Lambda$ and $H_0$ alone. If those three agree, the numbers in this companion are
+the numbers in its figures; if they do not, my Python is not doing what my prose says, and the
+prose loses.
+
+\vspace{6pt}
+\hrule
+\vspace{6pt}
+\emph{Status of this document.} Section~3 is computation. Section~4 grades sources, with one
+verification done in-session (PBR, via the arXiv API, plus the withdrawn-comment record) and the rest
+carried at the grades stated. Section~5 and Section~6 are the reader's contract: definitions fenced
+against misuse, and objections answered or marked unanswerable. No number in either document depends
+on a philosophical source; no philosophical claim in either document is supported by a number.
+\end{document}
