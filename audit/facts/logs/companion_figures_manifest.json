@@ -1,0 +1,82 @@
+{
+ "g01_hubble_raw.png": {
+  "file": "paper/figures/g01_hubble_raw.png",
+  "caption": "What the evidence actually looks like before anyone turns it into a conclusion. Every grey dot is one type Ia supernova as delivered in the public file (1048 of them, redshift 0.01 to 2.26); the red squares are the same data averaged into 40 bins, and those 40 numbers are what I fitted. My curve (blue) has exactly two adjustable numbers and no more: the matter density, $\\Omega_m=0.2962$, and one brightness offset shared by all 40 points. The dashed orange line is what a universe with no dark energy would look like: it bends over too early and the far supernovae sit visibly above it. The lower panel is my fit's remaining error per bin against its own quoted uncertainty --- nothing systematic left, which is the whole claim.",
+  "numbers": {
+   "Om": 0.2962355256451589,
+   "err": 0.021666192591992917,
+   "chi2": 39.29959364413039,
+   "dof": 38
+  }
+ },
+ "g05_what_a_fit_is.png": {
+  "file": "paper/figures/g05_what_a_fit_is.png",
+  "caption": "Fitting, demystified, on my own numbers. Left: three different universes drawn through the same 40 measurements, each with its brightness offset chosen to help it as much as possible, and each with the score it earns. The score is chi-squared: for every bin I take the distance between the measurement and the curve, divide by that bin's own error bar, square it, and add up --- so a bin that misses by one error bar contributes 1, and by three contributes 9. It is a penalty for surprise, nothing more mysterious. Right: I do not guess three universes; I try 313 of them and plot the whole penalty curve. The bottom of the valley is my answer, $\\Omega_m=0.2962$, and the width of the valley is my error bar: I read off where the penalty has grown by 1, which gives about $\\pm0.0217$. This is why I never report a measurement without its valley: a number with a narrow valley and a number with a wide valley are different claims even when the number is identical.",
+  "numbers": {
+   "chi2_005": 250.91739976240194,
+   "chi2_best": 39.29959364413039,
+   "chi2_075": 293.72810038228005
+  }
+ },
+ "g02_ruler.png": {
+  "file": "paper/figures/g02_ruler.png",
+  "caption": "The other half of the cosmology story: the standard ruler. Left is my own integration of how far a pressure wave could travel in the hot plasma before the Universe became transparent, computed from Planck's density numbers alone --- no data, just physics with the arithmetic shown. It lands on the published 144.44 Mpc when the fog clears at z = 1014.1; at the accepted drag redshift 1089.92 this two-term model gives {rd1090:.2f} Mpc, {dev:.2f} percent off the published number - the gap is the physics this truncation omits (diffusion drag, helium ionisation, neutrino perturbations), not a bug in LambdaCDM. Right is the trap that makes the whole field argue: the length of that ruler is set by the expansion rate at the same time as the ruler is used to measure the expansion rate today, so $r_d$ and $H_0$ slide along a hyperbola. Any claim that the early Universe 'knows' $H_0$ is really a claim that the model ties these two together; break the model and the tension is not a measurement of anything.",
+  "numbers": {
+   "z_cross": 1014.0522669566619,
+   "rd_min": 132.99241105793664,
+   "rd_max": 161.46749973503745,
+   "rd_at_1089_92": 137.80359609710393,
+   "rd_at_cross": 144.43999998512749,
+   "z_range": [
+    850.0,
+    1150.0
+   ],
+   "dev_percent": -4.59457484276936
+  }
+ },
+ "g03_vacuum_entropy.png": {
+  "file": "paper/figures/g03_vacuum_entropy.png",
+  "caption": "Two numbers that get quoted with far more drama than they can carry, drawn as what they are. Left: how many powers of ten separate the density the simplest quantum-field estimate assigns to empty space from the density the accelerating Universe requires: 122.946 decades comparing energy densities, 122.946 as a fourth power of the unreduced Planck mass, 120.145 with the reduced one. The spread between those three is a convention about hbar and about where a cut-off sits, not physics. Neither is a prediction: the 'prediction' side is a dimensional estimate with no cut-off I can derive, and calling it 120 orders of magnitude wrong is a statement about units, not about a theory. Right: the entropy of the cosmological horizon, horizon, about 10^88. The gap is the honest content of the Boltzmann-brain argument: ordinary observers are a 3.0e-35 share of what the horizon allows. That is a budget constraint on a cosmology, not a proof that Boltzmann brains exist, and it is worth saying which of the two it is.",
+  "numbers": {
+   "S_dS": 3.312592810935059e+122,
+   "log10_S": 122.52016805500895,
+   "ratio": 3.018783343062699e-35,
+   "d_rho": 122.94613001618659,
+   "d_planck": 122.94614642032234,
+   "d_reduced": 120.14542190758644,
+   "rho_lam_jm3": 5.244934382842033e-10,
+   "E_lam_geV": 2.2394609226750376e-12,
+   "horizon_m": 1.6596594096589023e+26
+  }
+ },
+ "g04_whynow_shading.png": {
+  "file": "paper/figures/g04_whynow_shading.png",
+  "caption": "The 'why now' coincidence, drawn so that nothing is hidden. Matter dilutes as the volume grows; the dark-energy density does not dilute at all. So the two curves cross exactly once, and the question 'why are we alive near the crossing?' becomes answerable only once you say how close counts as close. The shaded bands are three answers to that: within a factor 10, within a factor 2.17 (the tightest band that still contains today), and within a factor 2 --- which, as the picture shows, today is already outside. Every one of these bands is measured in billions of years on the previous figure's curve, and none of them is narrow compared with the age of the Universe. A coincidence that needs me to choose a generous threshold to be a coincidence is a way of talking, not a measurement.",
+  "numbers": {
+   "ratio_today": 0.4604936468526362,
+   "tightest_R": 2.1715826197272436
+  }
+ },
+ "g06_complexity.png": {
+  "file": "paper/figures/g06_complexity.png",
+  "caption": "Two ways to ask 'is this pattern complicated?', plotted side by side because their difference is the point. Left: Lempel-Ziv complexity, which counts how many pieces you need to rebuild a string by copying what you have already seen --- the way a zip archive works. My implementation on truly random bit-strings returns 289 phrases at length 3200, against the textbook prediction 275, i.e. 1.050 --- it works, which is the only reason I was entitled to use it as a sanity check on the brain index in the main paper, and it costs almost nothing to compute. Right: integrated information, Phi, which asks what a system's parts cause and constrain in each other and takes the worst bipartition. Its cost grows like 2 to the number of parts: the straight line here is the timing law I measured myself with the reference implementation (log of seconds against element count, slope 3.05), and it is what turns a philosophical proposal into a computational impossibility for anything brain-sized. That is not a refutation of the idea; it is a statement about what can be measured, and the distinction is the whole subject of this essay.",
+  "numbers": {
+   "mine": [
+    29.333333333333332,
+    50.666666666666664,
+    88.66666666666667,
+    160.0,
+    288.6666666666667
+   ],
+   "theo": [
+    26.164804129562555,
+    46.27564263195183,
+    82.954368486771,
+    150.32145976728606,
+    274.823043830629
+   ],
+   "slope": 3.052,
+   "intercept": -9.921
+  }
+ }
+}
