@@ -17,6 +17,7 @@ import content_c as C
 import content_d as D
 import content_e as E
 import content_f as F
+import content_g as G
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 pdfmetrics.registerFont(TTFont("Amiri", os.path.join(HERE, "fonts", "Amiri-Regular.ttf")))
@@ -382,8 +383,9 @@ def ordered_sections():
     A5 = list(A.SECTIONS_A)
     B5 = list(B.SECTIONS_B)
     return ([A5[0], E.E_SECTIONS[0], E.E_SECTIONS[1], E.E_SECTIONS[2], E.E_SECTIONS[3],
-             A5[3], E.E_SECTIONS[4], E.E_SECTIONS[5], A5[1], E.E_SECTIONS[6], A5[4],
-             B5[0], B5[1], B5[2], B5[3]]
+             A5[3], E.E_SECTIONS[4], E.E_SECTIONS[5], A5[1], E.E_SECTIONS[6], A5[4]]
+            + list(G.G_SECTIONS)
+            + [B5[0], B5[1], B5[2], B5[3]]
             + list(F.F_SECTIONS) + [B5[4], B5[5]])
 
 
@@ -416,11 +418,7 @@ def write_body(b):
 
 
 EXTRAS = {
-    "أول ثانية: الحساء والبلازما والنِّسَب": [(
-        "images/alice-detector-lead-ion-collision-quark--1.jpg",
-        "مقطعٌ في كاشف ALICE بمنظمة CERN: حيث تُعاد صناعة «الحساء» الكواركي باصطدام أيونات الرصاص بسرعة ٩٩٫٩٩٩٪ من سرعة الضوء.",
-        "CERN / ALICE Collaboration",
-    )],
+    
     "النجوم الأولى: حين أضاء الظلام": [(
         "images/jwst-pillars-of-creation-carina-nebula-i-2.jpg",
         "النسخة التي التقطها هابل عام ٢٠٠٩ لسديم القاعدة: المقارنة مع صورة ويب تُظهر تقدُّم أدواتنا بقدر ما تُظهر ثبات المشهد.",
