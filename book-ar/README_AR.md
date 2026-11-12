@@ -4,11 +4,11 @@
 
 | الملف | الوصف |
 |---|---|
-| `book_ar.pdf` | الكتاب النهائي، ٣٤ صفحة، عربي بالكامل، من اليمين إلى اليسار، ١٨ صورة. |
+| `book_ar.pdf` | الكتاب، ٤٧ صفحة، ١٣ فصلاً، عربي بالكامل، من اليمين إلى اليسار، ١٨ صورة. |
 | `main.tex` | مصدر LaTeX حقيقي (XeLaTeX + polyglossia/bidi + خطّ Amiri)، يطابق مضمون PDF. |
 | `fonts/` | خطّا Amiri (Regular/Bold) — رخصة OFL. |
 | `images/` | الصور الثماني عشرة كما نُزّلت من أرشيفات الجهات الأصلية. |
-| `content_a.py … content_d.py` | نصوص الفصول والفقرات الإضافية (مصدر المحتوى). |
+| `content_a.py … content_f.py` | نصوص الفصول والفقرات الإضافية (مصدر المحتوى). |
 | `render.py` | مُصيِّر PDF العربي (ReportLab + arabic_reshaper + python-bidi). |
 | `gen_tex.py` | مولّد `main.tex` من نفس المحتوى. |
 

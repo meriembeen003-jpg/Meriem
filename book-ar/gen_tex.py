@@ -81,12 +81,6 @@ w(r"""% !TEX program = xelatex
 \vspace{0.6cm}
 \rule{8cm}{0.6pt}\par
 \vspace{0.9cm}
-{\large """ + esc(A.EDITION) + r"""\par}
-\vspace{0.4cm}
-{\normalsize نسخة عربية كاملة · مصوّرة · مبنية على النسخة الإنجليزية المنقّحة\par}
-{\normalsize تصحيح علمي موثّق في ٥٥ موضعاً · ١٨ صورةً من أرشيفات الوكالات الأصلية\par}
-\vfill
-{\footnotesize صُفّت حروفه بخطّ أميري · ١٤٤٧هـ / ٢٠٢٦م\par}
 \end{titlepage}
 
 \tableofcontents
@@ -101,7 +95,7 @@ for p in A.INTRO["paras"]:
     w(esc(p) + "\n\n")
 
 n = 0
-for sec in list(A.SECTIONS_A) + list(B.SECTIONS_B):
+for sec in R.ordered_sections():
     n += 1
     w(r"\chapter*{" + esc(sec["title"]) + "}\n")
     w(r"\addcontentsline{toc}{chapter}{" + esc(sec["title"]) + "}\n")

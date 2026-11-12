@@ -15,6 +15,8 @@ import content_a as A
 import content_b as B
 import content_c as C
 import content_d as D
+import content_e as E
+import content_f as F
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 pdfmetrics.registerFont(TTFont("Amiri", os.path.join(HERE, "fonts", "Amiri-Regular.ttf")))
@@ -323,22 +325,12 @@ class Book:
         self.c.setFont("AmiriBold", 42)
         self.c.drawCentredString(W / 2, H - 16.8 * cm, ar(A.TITLE))
         self.c.setFont("Amiri", 16.5)
-        self.c.setFillColor(HexColor("#dbc9b0"))
+        self.c.setFillColor(HexColor("#4a4238"))
         self.c.drawCentredString(W / 2, H - 19.0 * cm, ar(A.SUBTITLE))
 
         self.c.setStrokeColor(HexColor("#8a5a2b"))
         self.c.setLineWidth(1.2)
         self.c.line(W / 2 - 3.2 * cm, H - 20.0 * cm, W / 2 + 3.2 * cm, H - 20.0 * cm)
-
-        self.c.setFillColor(HexColor("#33333a"))
-        self.c.setFont("Amiri", 14)
-        self.c.drawCentredString(W / 2, H - 22.0 * cm, ar(A.EDITION))
-        self.c.setFont("Amiri", 11.6)
-        self.c.setFillColor(GREY)
-        self.c.drawCentredString(W / 2, H - 23.4 * cm, ar("نسخة عربية كاملة · مصوّرة · مبنية على النسخة الإنجليزية المنقّحة"))
-        self.c.drawCentredString(W / 2, H - 24.2 * cm, ar("تصحيح علمي موثّق في ٥٥ موضعاً · ٩٨ صورةً من أرشيفات الوكالات الأصلية"))
-        self.c.setFont("Amiri", 9.8)
-        self.c.drawCentredString(W / 2, M * 1.5, ar("صُفّت حروفه بخطّ أميري · ١٤٤٧هـ / ٢٠٢٦م"))
 
     def toc(self, entries):
         if not self.dry:
@@ -386,16 +378,26 @@ CREDITS_LIST = [
     ("CERN / ALICE", "كاشف ALICE · تصادمات أيونات الرصاص"),
 ]
 
+def ordered_sections():
+    A5 = list(A.SECTIONS_A)
+    B5 = list(B.SECTIONS_B)
+    return ([A5[0], E.E_SECTIONS[0], E.E_SECTIONS[1], E.E_SECTIONS[2], E.E_SECTIONS[3],
+             A5[3], E.E_SECTIONS[4], E.E_SECTIONS[5], A5[1], E.E_SECTIONS[6], A5[4],
+             B5[0], B5[1], B5[2], B5[3]]
+            + list(F.F_SECTIONS) + [B5[4], B5[5]])
+
+
 def write_body(b):
     b.heading("", A.INTRO["title"], size=22)
     for p in A.INTRO["paras"]:
         b.para(p)
-    for k, sec in enumerate(list(A.SECTIONS_A) + list(B.SECTIONS_B)):
+    order = ordered_sections()
+    for k, sec in enumerate(order):
         if b.y < M + 0.45 * (H - 2 * M):
             b.footer()
             b.new_page()
         b.chapters.append((sec["title"], b.page))
-        b.heading(sec["num"], sec["title"])
+        b.heading(str(k + 1).translate(AR_DIGITS), sec["title"])
         paras = (list(sec["paras"]) + list(C.EXTRA_PARAS.get(sec["title"], []))
                  + list(D.EXTRA2.get(sec["title"], [])))
         b.quote(paras[0])
