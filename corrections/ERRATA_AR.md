@@ -3,9 +3,9 @@
 
 **المنهج:** قراءة النص كاملاً، ثم التحقق من كل رقم وتاريخ وإسناد مقابل المصادر الأولية: Planck 2018، Particle Data Group، CODATA/NIST، أوراق النشر الأصلية (PRL/PRD/Nature/ApJ)، وأرشيفات جوائز نوبل. الحكم لا يُطلق إلا بعد تطابق المصدرين على الأقل.
 
-**النتيجة:** 26 تصحيحاً مؤكداً، موزعة على 19 نوعاً من الخطأ. لم يُمسّ أي مقطع سليم، والصياغة الأصلية محفوظة حرفياً في كل ما عدا المقاطع المصححة.
+**النتيجة:** 55 تصحيحاً مؤكداً، موزعة على 27 نوعاً من الخطأ. لم يُمسّ أي مقطع سليم، والصياغة الأصلية محفوظة حرفياً في كل ما عدا المقاطع المصححة.
 
-> **ملاحظة تقنية:** أداة قراءة Google Drive تحدّ كل استدعاء بنحو 16 ألف حرف، فقُرئ الملف على نوافذ متداخلة تغطي الفصول 1–14 والخاتمة تغطية كاملة، مع تحقّق موضعي من بقية الفصول. التصحيحات أدناه جاهزة للتطبيق آلياً عبر `revise_universe.py` دون أي تعديل يدوي.
+> **ملاحظة تقنية:** أداة قراءة Google Drive تحدّ كل استدعاء بنحو 16 ألف حرف، فقُرئ الملف كاملاً عبر نوافذ متداخلة (31 نافذة تغطي الفصول 1–25 والخاتمة). التصحيحات أدناه جاهزة للتطبيق آلياً عبر `revise_universe.py` دون أي تعديل يدوي.
 
 ---
 
@@ -39,6 +39,35 @@
 | C24 | ميليخين | خطأ في الاسم | Milovanov ← Milekhin |
 | C25 | NANOGrav | رقم غير دقيق | 67 نباضاً ← 68 |
 | C26 | الاقتباس الختامي | إسناد خاطئ | بورخيس ← تايسون |
+| C27 | سداسي زحل/فوياجر | خطأ تاريخي | فوياجر-1 1981 ← 1980 |
+| C28 | لوتين | خطأ في الاسم | William ← Willem |
+| C29 | معجون نووي | خطأ في الاسم | Kaplan ← Caplan |
+| C30 | انفجارات غاما | خطأ في الاسم | Klebasadel ← Klebesadel |
+| C31 | الكوكب التاسع | خطأ في الاسمين | Schultz/Owen ← Scholtz/Unwin |
+| C32 | كتلة الكوكب التاسع | خطأ بوحدة القياس | 5–6 M☉ ← 5–6 M⊕ |
+| C33 | بيرلماتر | خطأ في الاسم | Perlmatter ← Perlmutter |
+| C34 | جون بيل | خطأ في السيرة | أمريكي/قُتل ← بلفاستي/1990 |
+| C35 | كلاوزر | خطأ في التجربة | إلكترونات ← فوتونات |
+| C36 | نوبل التشابك | خطأ تاريخي | 2018 ← 2022 |
+| C37 | المحّاء الكمومي | إسناد خاطئ | Zeilinger/Smullin ← Kim/Shih |
+| C38 | المشاهد | إسناد خاطئ | تجربة بنروز 1996 ← لا وجود لها |
+| C39 | التباعد الكمومي | إسناد خاطئ | Brassard-Bennett-Toffoli ← Bennett et al. 1993 |
+| C40 | ER = EPR | إسناد خاطئ | Mahndré/Schulman ← Maldacena & Susskind |
+| C41 | مالداسينا | خطأ في الجنسية | فلبيني ← أرجنتيني |
+| C42 | سوسكند | خطأ في الجنسية | مكسيكي نووي ← أمريكي |
+| C43 | عطية | خطأ في الجنسية | سويسري ← بريطاني-لبناني |
+| C44 | يانغ–ميلز | إسناد خاطئ | John Cowper Ward ← Robert Mills |
+| C45 | نوبل يانغ 1957 | إسناد خاطئ | نظرية المقياس ← انتهاك التكافؤ |
+| C46 | التايجي | خطأ تاريخي | القرن 18 ق.م ← سونغ |
+| C47 | جسيم Λ | خطأ تاريخي | 1975 ← 1950–51 |
+| C48 | انتهاك CPT | خطأ مفهومي | CPT ← CP |
+| C49 | سوبر-كاميوكاندي | رقم غير دقيق | 225 كيلوطناً ← 50 كيلوطناً |
+| C50 | جسيم Oh-My-God | خطأ في الوحدة | 3.2 EeV ← 320 EeV |
+| C51 | لانداور | تحديد زمني غير دقيق | الستينيات ← 1961 |
+| C52 | Summit | خطأ في الوحدة | 3 MWh ← ~13 MW |
+| C53 | الجدار الناري | خطأ مفهومي | خلط التكامل بالجدار ← تصحيح مفهومي |
+| C54 | Enceladus (1) | خطأ إملائي | Enceledus ← Enceladus |
+| C55 | Enceladus (2) | خطأ إملائي | Enceledus ← Enceladus |
 
 ---
 
@@ -202,7 +231,71 @@
 
 ---
 
-## 11. Ch. 3 — Antimatter — خطأ زمني  `C06`
+## 11. Ch. 15 — Saturn — خطأ تاريخي  `C27`
+
+**النص الأصلي:**
+
+> a hexagonal jet stream crowns the north pole observed by the Voyager-1 probe in 1981
+
+**التصحيح المعتمد:**
+
+> a hexagonal jet stream crowns the north pole, imaged by Voyager 1 in 1980 and re-observed by Voyager 2 in 1981
+
+**لماذا:** فوياجر 1 حلّق قرب زحل في 12 نوفمبر 1980، وفوياجر 2 في أغسطس 1981؛ فأي نسبة للعام 1981 يجب أن تكون لفوياجر 2.
+
+**المصدر:** NASA/JPL Voyager mission timeline; Godfrey (1988) Icarus 76, 335
+
+---
+
+## 12. Ch. 21 — Nobel 2022 — خطأ تاريخي  `C36`
+
+**النص الأصلي:**
+
+> Then in 2018, the "Nobel Prize for the Death of Local Reality" was awarded
+
+**التصحيح المعتمد:**
+
+> Then in 2022, the Nobel Prize in Physics was awarded
+
+**لماذا:** جائزة نوبل لأسبر وكلاوزر وزيلينغر مُنحت في أكتوبر 2022 لا 2018.
+
+**المصدر:** Nobel Prize in Physics 2022 (nobelprize.org)
+
+---
+
+## 13. Ch. 22 — Taiji — خطأ تاريخي  `C46`
+
+**النص الأصلي:**
+
+> From Chinese Taoist philosophy's Taiji diagram (eighteenth century BC)
+
+**التصحيح المعتمد:**
+
+> From Chinese Taoist philosophy's Taiji diagram (a Song-dynasty symbol, 11th–12th century AD)
+
+**لماذا:** رمز التايجيtu نشأ في عهد أسرة سونغ، ولا يعود إلى الألف الثاني قبل الميلاد.
+
+**المصدر:** Needham, *Science and Civilisation in China*, vol. 2
+
+---
+
+## 14. Ch. 22 — Strange baryons — خطأ تاريخي  `C47`
+
+**النص الأصلي:**
+
+> gives physical explanation for the 1975 discovery of the "strange Lambda baryon" at the Brookhaven Laboratory
+
+**التصحيح المعتمد:**
+
+> is a separate matter from the discovery of the strange Lambda baryon in cosmic rays in 1950–51, and of the Ω⁻ at Brookhaven in 1964
+
+**لماذا:** جسيم Λ اكتُشف في الأشعة الكونية عام 1950–51، وΩ⁻ في بروكهافن عام 1964؛ ولا وجود لاكتشاف «1975».
+
+**المصدر:** Rochester & Butler (1947) Nature 160, 855; Barnes et al. (1964) PRL 12, 204
+
+---
+
+## 15. Ch. 3 — Antimatter — خطأ زمني  `C06`
 
 **النص الأصلي:**
 
@@ -218,7 +311,7 @@
 
 ---
 
-## 12. Ch. 3 — Higgs mechanism — خطأ في النسبة  `C05`
+## 16. Ch. 3 — Higgs mechanism — خطأ في النسبة  `C05`
 
 **النص الأصلي:**
 
@@ -234,7 +327,7 @@
 
 ---
 
-## 13. Ch. 2 — Inflation — خطأ رياضي  `C03`
+## 17. Ch. 2 — Inflation — خطأ رياضي  `C03`
 
 **النص الأصلي:**
 
@@ -250,7 +343,7 @@
 
 ---
 
-## 14. Ch. 3 — Mass conservation — إسناد خاطئ  `C07`
+## 18. Ch. 3 — Mass conservation — إسناد خاطئ  `C07`
 
 **النص الأصلي:**
 
@@ -266,7 +359,7 @@
 
 ---
 
-## 15. Final page — Epigraph — إسناد خاطئ  `C26`
+## 19. Final page — Epigraph — إسناد خاطئ  `C26`
 
 **النص الأصلي:**
 
@@ -282,7 +375,103 @@
 
 ---
 
-## 16. Ch. 7 — Indian atomism — إسناد ومصطلح خاطئان  `C13`
+## 20. Ch. 21 — Quantum eraser — إسناد خاطئ  `C37`
+
+**النص الأصلي:**
+
+> The "Delayed-Choice Quantum Eraser" experiment of 1999 by Anton Zeilinger and Jacques Smullin at the University of Innsbruck decided this
+
+**التصحيح المعتمد:**
+
+> The delayed-choice quantum eraser experiment of 1999 by Yoon-Ho Kim, Yanhua Shih and colleagues (with a related delayed-choice test by Anton Zeilinger's group in Innsbruck) decided this
+
+**لماذا:** تجربة المحّاء الكمومي المؤخَّر الشهيرة (1999) أجراها كيم وشيه وزملاؤهما، و«Jacques Smullin» ليس من مؤلفيها.
+
+**المصدر:** Kim, Kulik, Shih et al. (2000) Phys. Rev. Lett. 84, 1
+
+---
+
+## 21. Ch. 21 — Observer — إسناد خاطئ  `C38`
+
+**النص الأصلي:**
+
+> (as proven by Roger Penrose in 1996 with the "Parity Inversion Delayed Choice Experiment" where the choice to measure polarization of a flying photon happens after the photon is inside the Michelson-Morley beamsplitter!)
+
+**التصحيح المعتمد:**
+
+> (delayed-choice experiments demand no conscious observer — only classical information recorded by the apparatus)
+
+**لماذا:** لا وجود لتجربة بهذا الاسم لروجر بنروز عام 1996؛ وبنروز فيزيائي جاذبية لا تجريبي في البصريات الكمومية.
+
+**المصدر:** Aspect et al. (1982) PRL 49, 91; Jacques et al. (2007) Science 315, 966
+
+---
+
+## 22. Ch. 21 — Teleportation — إسناد خاطئ  `C39`
+
+**النص الأصلي:**
+
+> The teleportation protocol (Brassard-Benneti-Toffoli)
+
+**التصحيح المعتمد:**
+
+> The teleportation protocol (Bennett, Brassard, Crépeau, Jozsa, Peres and Wootters, 1993)
+
+**لماذا:** البروتوكول الأصلي للتباعد الكمومي (1993) من ستة مؤلفين، وليس «Brassard-Bennett-Toffoli».
+
+**المصدر:** Bennett et al. (1993) Phys. Rev. Lett. 70, 1895
+
+---
+
+## 23. Ch. 21 — ER = EPR — إسناد خاطئ  `C40`
+
+**النص الأصلي:**
+
+> "ER = EPR" Conjecture (Mahndré, Schulman, & Maldacena, 2013)
+
+**التصحيح المعتمد:**
+
+> "ER = EPR" Conjecture (Maldacena & Susskind, 2013)
+
+**لماذا:** اسمًان مُختلقان؛ الفرضية لمالداسينا وسوسكند (arXiv:1306.0533).
+
+**المصدر:** Maldacena & Susskind (2013) Fortschr. Phys. 61, 781
+
+---
+
+## 24. Ch. 22 — Yang–Mills — إسناد خاطئ  `C44`
+
+**النص الأصلي:**
+
+> physicist John Cowper Ward and Chen-Ning Yang proved that the internal geometric symmetry of interactions underlies the entire dynamics of particle physics
+
+**التصحيح المعتمد:**
+
+> physicists Chen-Ning Yang and Robert Mills (1954) showed that local internal gauge symmetry underlies the dynamics of particle physics
+
+**لماذا:** نظرية يانغ–ميلز (1954) لـ يانغ وروبرت ميلز؛ ولا وجود لفيزيائي باسم «John Cowper Ward».
+
+**المصدر:** Yang & Mills (1954) Phys. Rev. 96, 191
+
+---
+
+## 25. Ch. 22 — Yang Nobel — إسناد خاطئ  `C45`
+
+**النص الأصلي:**
+
+> whose mathematical mastery earned Yang the Nobel Prize of 1957 for Minakshisundaram and Plebanski and Sidney Coleman's pioneering work in 1974
+
+**التصحيح المعتمد:**
+
+> a framework whose consequences shaped all later particle physics (Yang's 1957 Nobel, however, was for parity violation with T. D. Lee, not for gauge theory)
+
+**لماذا:** نوبل 1957 ليانغ كان مع تسونغ داو لي على انتهاك التكافؤ، لا على نظرية المقياس؛ والأسماء المذكورة لا علاقة لها بالجائزة.
+
+**المصدر:** Nobel Prize in Physics 1957 (nobelprize.org)
+
+---
+
+## 26. Ch. 7 — Indian atomism — إسناد ومصطلح خاطئان  `C13`
 
 **النص الأصلي:**
 
@@ -298,7 +487,7 @@
 
 ---
 
-## 17. Ch. 10 — JILA — خطأ في الاسم  `C22`
+## 27. Ch. 10 — JILA — خطأ في الاسم  `C22`
 
 **النص الأصلي:**
 
@@ -314,7 +503,7 @@
 
 ---
 
-## 18. Ch. 12 — Traversable wormholes — خطأ في الاسم  `C24`
+## 28. Ch. 12 — Traversable wormholes — خطأ في الاسم  `C24`
 
 **النص الأصلي:**
 
@@ -330,7 +519,71 @@
 
 ---
 
-## 19. Ch. 8 — Parity violation — خطأ في التجربة  `C19`
+## 29. Ch. 15 — White dwarfs — خطأ في الاسم  `C28`
+
+**النص الأصلي:**
+
+> William Luyten named these stellar corpses
+
+**التصحيح المعتمد:**
+
+> Willem Luyten named these stellar corpses
+
+**لماذا:** الاسم الصحيح فيليم ياكوب لوتين (Willem Jacob Luyten) لا «William».
+
+**المصدر:** Luyten (1922) Proc. Natl. Acad. Sci.; Holberg, *Sirius* (2007)
+
+---
+
+## 30. Ch. 16 — Nuclear pasta — خطأ في الاسم  `C29`
+
+**النص الأصلي:**
+
+> Matthew Kaplan and Charles Horowitz named
+
+**التصحيح المعتمد:**
+
+> Matthew Caplan and Charles Horowitz named
+
+**لماذا:** الباحث هو ماثيو كابلان (Matthew Caplan) لا «Kaplan».
+
+**المصدر:** Caplan & Horowitz (2017) Rev. Mod. Phys. 89, 041002
+
+---
+
+## 31. Ch. 16 — GRBs — خطأ في الاسم  `C30`
+
+**النص الأصلي:**
+
+> declassified in 1973 by Ray Klebasadel at Los Alamos
+
+**التصحيح المعتمد:**
+
+> declassified in 1973 by Ray Klebesadel at Los Alamos
+
+**لماذا:** الاسم الصحيح راي كليبيزيدل (Ray Klebesadel).
+
+**المصدر:** Klebesadel, Strong & Olson (1973) ApJL 182, L85
+
+---
+
+## 32. Ch. 19 — Dark energy — خطأ في الاسم  `C33`
+
+**النص الأصلي:**
+
+> the Supernova Cosmology Project led by Saul Perlmatter
+
+**التصحيح المعتمد:**
+
+> the Supernova Cosmology Project led by Saul Perlmutter
+
+**لماذا:** الاسم الصحيح سول بيرلماتر (Saul Perlmutter).
+
+**المصدر:** Nobel Prize in Physics 2011 (nobelprize.org)
+
+---
+
+## 33. Ch. 8 — Parity violation — خطأ في التجربة  `C19`
 
 **النص الأصلي:**
 
@@ -346,7 +599,23 @@
 
 ---
 
-## 20. Ch. 4 — BBN timing — تناقض داخلي  `C09`
+## 34. Ch. 21 — Clauser — خطأ في التجربة  `C35`
+
+**النص الأصلي:**
+
+> John Clauser performed the first actual tests of this inequality at Lawrence Berkeley Laboratory using entangled pairs of electrons
+
+**التصحيح المعتمد:**
+
+> John Clauser performed the first actual tests of this inequality at Lawrence Berkeley Laboratory using entangled pairs of photons
+
+**لماذا:** تجربة فريدمان–كلاوزر (1972) استخدمت فوتوناتٍ متشابكة من كالسيوم، لا زوج إلكترونات؛ وأول اختبار بإلكترونات جاء لاحقاً وبصعوبة أكبر.
+
+**المصدر:** Freedman & Clauser (1972) Phys. Rev. Lett. 28, 938
+
+---
+
+## 35. Ch. 4 — BBN timing — تناقض داخلي  `C09`
 
 **النص الأصلي:**
 
@@ -362,7 +631,7 @@
 
 ---
 
-## 21. Ch. 5 — Helium recombination — تقدير زمني خاطئ  `C11`
+## 36. Ch. 5 — Helium recombination — تقدير زمني خاطئ  `C11`
 
 **النص الأصلي:**
 
@@ -378,7 +647,7 @@
 
 ---
 
-## 22. Ch. 4 — IceCube — رقم قديم  `C10`
+## 37. Ch. 4 — IceCube — رقم قديم  `C10`
 
 **النص الأصلي:**
 
@@ -394,7 +663,7 @@
 
 ---
 
-## 23. Ch. 7 — SLAC — رقم غير دقيق  `C16`
+## 38. Ch. 7 — SLAC — رقم غير دقيق  `C16`
 
 **النص الأصلي:**
 
@@ -410,7 +679,7 @@
 
 ---
 
-## 24. Ch. 12 — NANOGrav — رقم غير دقيق  `C25`
+## 39. Ch. 12 — NANOGrav — رقم غير دقيق  `C25`
 
 **النص الأصلي:**
 
@@ -426,7 +695,23 @@
 
 ---
 
-## 25. Ch. 7 — Joyce quote — اقتباس ناقص  `C15`
+## 40. Ch. 22 — Proton decay — رقم غير دقيق  `C49`
+
+**النص الأصلي:**
+
+> or the vast mass of liquid water (225 kilotons as in the Kamioka ND experiment in Japan
+
+**التصحيح المعتمد:**
+
+> or the vast mass of liquid water (50 kilotons in Super-Kamiokande, Japan
+
+**لماذا:** سوبر-كاميوكاندي يحتوي 50,000 طن من الماء؛ و«225 كيلوطناً» لا توافق أي كاشف قائم.
+
+**المصدر:** Super-Kamiokande Collaboration, Nucl. Instrum. Methods A 501, 418 (2003)
+
+---
+
+## 41. Ch. 7 — Joyce quote — اقتباس ناقص  `C15`
 
 **النص الأصلي:**
 
@@ -442,7 +727,7 @@
 
 ---
 
-## 26. Ch. 4 — Neutron star — خطأ تاريخي ورقمي  `C08`
+## 42. Ch. 4 — Neutron star — خطأ تاريخي ورقمي  `C08`
 
 **النص الأصلي:**
 
@@ -455,6 +740,214 @@
 **لماذا:** PSR J0740+6620 أُعلن عام 2019 لا 2012. والكثافة المتوسطة للنجوم النيوترونية ≈ 5×10¹⁷ كغ/م³ أي ≈ 5×10¹¹ كغ/سم³، فالمذكور 10¹³ مبالغ فيه نحو 20 مرة.
 
 **المصدر:** Cromartie et al. (2019) Nature Astronomy 4, 72; Lattimer & Prakash (2004) Science 304, 536
+
+---
+
+## 43. Ch. 17 — Planet Nine — خطأ في الاسمين  `C31`
+
+**النص الأصلي:**
+
+> Jacob Schultz and James Owen even proposed in 2019
+
+**التصحيح المعتمد:**
+
+> Jakub Scholtz and James Unwin even proposed in 2019
+
+**لماذا:** صاحبا فرضية «الثقب الأسود البدائي ككوكب تاسع» هما ياكوب شولتز وجيمس أنوين.
+
+**المصدر:** Scholtz & Unwin (2020) Phys. Rev. Lett. 125, 051103 (arXiv 2019)
+
+---
+
+## 44. Ch. 17 — Planet Nine — خطأ بوحدة القياس  `C32`
+
+**النص الأصلي:**
+
+> ("Planet Nine" with a mass of 5–6 M☉ at 400–500 AU)
+
+**التصحيح المعتمد:**
+
+> ("Planet Nine" with a mass of 5–6 Earth masses at 400–500 AU)
+
+**لماذا:** كتلة الكوكب التاسع المفترض هي 5–6 كتل أرضية (M⊕) لا شمسية؛ والفقرة نفسها تذكر لاحقاً «خمس كتل أرضية».
+
+**المصدر:** Batygin & Brown (2016) AJ 151, 22; Scholtz & Unwin (2020)
+
+---
+
+## 45. Ch. 21 — Bell — خطأ في السيرة  `C34`
+
+**النص الأصلي:**
+
+> the late John Stewart Bell (an American-born physicist working in explosion mechanics at CERN, killed by 2000)
+
+**التصحيح المعتمد:**
+
+> the late John Stewart Bell (a Belfast-born physicist who worked on accelerator design at CERN, and died in 1990)
+
+**لماذا:** جون ستيوارت بيل وُلد في بلفاست (إيرلندا الشمالية) وتوفي في 1 أكتوبر 1990؛ وليس أمريكياً ولا «قُتل».
+
+**المصدر:** Royal Society Biographical Memoirs; Bell, *Speakable and Unspeakable in QM* (1987)
+
+---
+
+## 46. Ch. 21 — Maldacena — خطأ في الجنسية  `C41`
+
+**النص الأصلي:**
+
+> a visiting Filipino student named Juan Maldacena
+
+**التصحيح المعتمد:**
+
+> a visiting Argentine physicist named Juan Maldacena
+
+**لماذا:** خوان مالداسينا أرجنتيني، وكان زميلاً مبتدئاً في هارفارد (1998–2001).
+
+**المصدر:** Harvard Society of Fellows (1998–2001); IAS faculty biography of J. Maldacena
+
+---
+
+## 47. Ch. 21 — Susskind — خطأ في الجنسية  `C42`
+
+**النص الأصلي:**
+
+> former Mexican nuclear physicist Leonard Susskind
+
+**التصحيح المعتمد:**
+
+> American theoretical physicist Leonard Susskind
+
+**لماذا:** سوسكند أمريكي وُلد في نيويورك، ولم يكن فيزيائياً نووياً مكسيكياً.
+
+**المصدر:** Stanford University faculty biography; Susskind, *The Black Hole War* (2008)
+
+---
+
+## 48. Ch. 22 — Atiyah — خطأ في الجنسية  `C43`
+
+**النص الأصلي:**
+
+> Swiss-born mathematician Michael Atiyah
+
+**التصحيح المعتمد:**
+
+> British-Lebanese mathematician Michael Atiyah
+
+**لماذا:** مايكل عطية وُلد في لندن لأب لبناني وأم إنجليزية، وحمل الجنسية البريطانية.
+
+**المصدر:** Royal Society Biographical Memoirs of M. F. Atiyah (1929–2019)
+
+---
+
+## 49. Ch. 22 — CPT — خطأ مفهومي  `C48`
+
+**النص الأصلي:**
+
+> but strangely violates the "CPT theorem" in the decay of B-mesons as observed in the BaBar experiment
+
+**التصحيح المعتمد:**
+
+> but CP itself is violated in the decay of B-mesons, as observed by the BaBar experiment
+
+**لماذا:** CPT مبدأ مصون في نظرية الحقل الكمومي؛ المنتهَك هو CP لا CPT.
+
+**المصدر:** BaBar Collaboration (2001) PRL 87, 091801; CPLEAR/PDG review on CPT invariance
+
+---
+
+## 50. Ch. 23 — Complementarity — خطأ مفهومي  `C53`
+
+**النص الأصلي:**
+
+> But from the perspective of an infalling observer, the information never crosses the horizon, because it is "reflected" from the firewall at the event horizon (a barrier of enormous energy that forms at the horizon and destroys anyone who tries to enter!)
+
+**التصحيح المعتمد:**
+
+> From the infalling observer's perspective, complementarity says the information crosses the horizon unharmed — which is exactly what the 2012 AMPS "firewall" argument challenged: it claimed that unitarity, the equivalence principle and effective field theory cannot all hold, so a wall of high-energy quanta must form at the horizon
+
+**لماذا:** الفقرة تخلط بين «التكامل» (complementarity) و«الجدار الناري» (firewall) وهما متعارضان: الجدار الناري نتيجة تناقض، لا وصف لوجهة نظر الساقط.
+
+**المصدر:** Almheiri, Marolf, Polchinski & Sully (2013) JHEP 02, 062; Susskind (1995) J. Math. Phys. 36, 6377
+
+---
+
+## 51. Ch. 23 — Oh-My-God particle — خطأ في الوحدة  `C50`
+
+**النص الأصلي:**
+
+> the Oh-My-God Particle (3.2 EeV)
+
+**التصحيح المعتمد:**
+
+> the Oh-My-God Particle (320 EeV)
+
+**لماذا:** الطاقة 3.2×10²⁰ eV = 320 EeV؛ و«3.2 EeV» تصغير بمئة ضعف.
+
+**المصدر:** Bird et al. (1995) ApJ 441, 144 (Fly's Eye)
+
+---
+
+## 52. Ch. 23 — Summit — خطأ في الوحدة  `C52`
+
+**النص الأصلي:**
+
+> achieved 1.1 × 10¹⁸ operations per second (over 1 exaflop) in 2018 with a power consumption approaching 3 megawatt hours
+
+**التصحيح المعتمد:**
+
+> achieved 1.1 × 10¹⁸ operations per second (over 1 exaflop) in 2018 with a power consumption of about 13 megawatts
+
+**لماذا:** القدرة الكهربائية تُقاس بالميغاواط لا «ميغاواط·ساعة»؛ واستهلاك Summit نحو 13 ميغاواط.
+
+**المصدر:** TOP500 list (June 2018); ORNL Summit specifications
+
+---
+
+## 53. Ch. 23 — Landauer — تحديد زمني غير دقيق  `C51`
+
+**النص الأصلي:**
+
+> A long time ago in the 1960s, physicist Rolf Landauer proved
+
+**التصحيح المعتمد:**
+
+> In 1961, physicist Rolf Landauer proved
+
+**لماذا:** مبدأ لانداور نُشر عام 1961 في IBM Journal.
+
+**المصدر:** Landauer (1961) IBM J. Res. Dev. 5, 183
+
+---
+
+## 54. Ch. 15–16 — Enceladus (1) — خطأ إملائي  `C54`
+
+**النص الأصلي:**
+
+> the moon Enceledus
+
+**التصحيح المعتمد:**
+
+> the moon Enceladus
+
+**لماذا:** الاسم الصحيح Enceladus.
+
+**المصدر:** IAU planetary nomenclature
+
+---
+
+## 55. Ch. 14–15 — Enceladus (2) — خطأ إملائي  `C55`
+
+**النص الأصلي:**
+
+> like Enceledus without metals
+
+**التصحيح المعتمد:**
+
+> like Enceladus without metals
+
+**لماذا:** الاسم الصحيح Enceladus.
+
+**المصدر:** IAU planetary nomenclature
 
 ---
 
