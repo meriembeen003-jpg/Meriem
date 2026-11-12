@@ -1,10 +1,7 @@
 name: fetch-md
 on:
-  workflow_dispatch:
-    inputs:
-      url:
-        description: "direct download url"
-        required: true
+  push:
+    branches: [ arena/d7259289-meriem ]
 permissions:
   contents: read
 jobs:
@@ -13,8 +10,9 @@ jobs:
     steps:
       - name: download
         run: |
-          curl -sSL --retry 3 "${{ inputs.url }}" -o book.md
+          curl -sSL --retry 3 "https://drive.usercontent.google.com/download?id=16PYVGwxxf_Z4Hc5a1f2ms5ni2U2qSkKH&export=download" -o book.md
           wc -c book.md
+          head -c 120 book.md
       - uses: actions/upload-artifact@v4
         with:
           name: book
