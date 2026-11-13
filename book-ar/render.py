@@ -187,8 +187,6 @@ class Book:
         self.c.setFont("Amiri", 9.5)
         self.c.setFillColor(GREY)
         self.c.drawCentredString(W / 2, M * 0.72, str(self.page).translate(AR_DIGITS))
-        self.c.setFont("Amiri", 7.6)
-        self.c.drawString(M, M * 0.72, "THE COMPLETE HISTORY OF THE UNIVERSE  ·  ARABIC")
         self.c.setFillColor(INK)
 
     # ------------------------- blocks -------------------------
@@ -386,10 +384,19 @@ CREDITS_PARAS = [
 CREDITS_LIST = [
     ("NASA", "أرشيف الصور العلمية · الشمس، شاندرا، هابل"),
     ("ESA / Hubble", "أرشيف هابل الأوروبي · أندروميدا، القاعدة، السرطان"),
-    ("NASA, ESA, CSA, STScI", "تلسكوب جيمس ويب · الحقول العميقة وأعمدة الخلق"),
+    ("NASA, ESA, CSA, STScI", "تلسكوب جيمس ويب · الحقول العميقة وأعمدة سديم القاعدة"),
     ("ESA / Planck", "خريطة الخلفية الميكروية · ٢٠١٣–٢٠١٨"),
     ("EHT Collaboration", "تلسكوب أفق الحدث · M87* وساجيتاريوس A*"),
     ("CERN / ALICE", "كاشف ALICE · تصادمات أيونات الرصاص"),
+]
+
+FINAL_REFLECTIONS = [
+    "حين تُسرّع الأدوات وصول الإجابة، تصبح جودة السؤال ومسؤولية استعمال الجواب أهم من السرعة.",
+    "لا تصير المعلومة معرفةً إلا حين نعرف مصدرها وحدودها، وما الدليل الذي قد يغيّرها.",
+    "الحرية في العصر الرقمي ليست كثرة الخيارات؛ بل فهم من يصوغها وما الذي قد تخفيه.",
+    "كلما اتسعت قدرتنا على التأثير في العالم، وجب أن تتسع معها مسؤوليتنا عن عواقبه.",
+    "الاعتراف بما لا نعرفه ليس ضعفاً؛ إنه بداية تفكيرٍ يقبل المراجعة والتصحيح.",
+    "المستقبل لا يصل إلينا جاهزاً؛ نشارك في صنع بعض ملامحه بما نختاره اليوم.",
 ]
 
 def ordered_sections():
@@ -469,7 +476,7 @@ GALLERY = [
     ("images/planck-cosmic-microwave-background-map-e-1.jpg", "شريطُ السماء: تباينات الخلفية الميكروية", "ESA / Planck Collaboration"),
     ("images/alice-detector-lead-ion-collision-quark--2.jpg", "ALICE: تصادم أيونات الرصاص", "CERN / ALICE"),
     ("images/alice-detector-lead-ion-collision-quark--1.jpg", "ALICE: مقطعٌ في الكاشف", "CERN / ALICE"),
-    ("images/jwst-pillars-of-creation-carina-nebula-i-1.jpg", "أعمدة الخلق — جيمس ويب", "NASA, ESA, CSA, STScI"),
+    ("images/jwst-pillars-of-creation-carina-nebula-i-1.jpg", "أعمدة سديم القاعدة — جيمس ويب", "NASA, ESA, CSA, STScI"),
     ("images/jwst-pillars-of-creation-carina-nebula-i-2.jpg", "القاعدة — هابل ٢٠٠٩", "NASA, ESA, Hubble Heritage"),
     ("images/crab-nebula-supernova-remnant-hubble-spa-2.jpg", "السرطان: بقايا مستعر ١٠٥٤", "NASA, ESA, J. Hester & A. Loll"),
     ("images/crab-nebula-supernova-remnant-hubble-spa-1.jpg", "السرطان بأطوال موجية متعددة", "NASA, ESA, G. Dubner"),
@@ -636,14 +643,11 @@ def run(out="book_ar.pdf"):
     b.c.showPage()
     b.page += 1
     b.bg()
-    b.y = H * 0.55
-    if not b.dry:
-        b.c.setFont("Amiri", 12)
-        b.c.setFillColor(GREY)
-        b.c.drawCentredString(W / 2, b.y, ar("تمّ بحمد الله"))
-        b.c.setFont("Amiri", 9.6)
-        b.c.drawCentredString(W / 2, b.y - 1.6 * cm, ar("النسخة العربية من «التاريخ الكامل للكون» · ١٤٤٧هـ / ٢٠٢٦م"))
-        b.c.setFillColor(INK)
+    b.y = H - M
+    b.heading("", "أقوال فلسفية معاصرة", size=22)
+    b.para("تأملات أصلية في المعرفة والتقنية والمسؤولية · ٢٠٢٦م", size=11.5, leading=20)
+    for reflection in FINAL_REFLECTIONS:
+        b.quote(reflection)
     b.footer()
     b.c.save()
     print("pages:", b.page)

@@ -55,7 +55,6 @@ w(r"""% !TEX program = xelatex
 \pagestyle{fancy}
 \fancyhf{}
 \fancyfoot[C]{\thepage}
-\fancyfoot[L]{\footnotesize THE COMPLETE HISTORY OF THE UNIVERSE · ARABIC}
 \renewcommand{\headrulewidth}{0pt}
 
 \setlength{\parindent}{1.2em}
@@ -150,7 +149,12 @@ w(r"\begin{description}" + "\n")
 for name, role in R.CREDITS_LIST:
     w(r"\item[" + esc(name) + r"] " + esc(role) + "\n")
 w(r"\end{description}" + "\n\n")
-w(r"\vfill\begin{center}\large تمّ بحمد الله\end{center}" + "\n\n")
+
+# ---------- الصفحة الأخيرة: أقوال فلسفية معاصرة ----------
+w(r"\clearpage\chapter*{أقوال فلسفية معاصرة}" + "\n")
+w(esc("تأملات أصلية في المعرفة والتقنية والمسؤولية · ٢٠٢٦م") + "\n\n")
+for reflection in R.FINAL_REFLECTIONS:
+    w(r"\begin{quote}" + "\n" + esc(reflection) + "\n" + r"\end{quote}" + "\n\n")
 w(r"\end{document}" + "\n")
 
 tex = "\n".join(out)
