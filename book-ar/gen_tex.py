@@ -101,10 +101,12 @@ for sec in R.ordered_sections():
     w(r"\addcontentsline{toc}{chapter}{" + esc(sec["title"]) + "}\n")
     w(r"\markboth{" + esc(sec["title"]) + "}{}\n\n")
     paras = paras_for(sec)
-    w(esc(paras[0]) + "\n\n")
-    for i, p in enumerate(paras[1:]):
+    subheads = sec.get("subheads", {})
+    for i, p in enumerate(paras):
+        if i in subheads:
+            w(r"\subsection*{" + esc(subheads[i]) + "}\n")
         w(esc(p) + "\n\n")
-        if i == 1 and sec.get("img"):
+        if i == 2 and sec.get("img"):
             w(r"\plate{" + sec["img"] + "}{" + esc(sec["cap"]) + "}{" + esc(sec["credit"]) + "}\n\n")
     if sec.get("img") and len(paras) <= 2:
         w(r"\plate{" + sec["img"] + "}{" + esc(sec["cap"]) + "}{" + esc(sec["credit"]) + "}\n\n")

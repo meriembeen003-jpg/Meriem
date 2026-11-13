@@ -20,6 +20,7 @@ import content_f as F
 import content_g as G
 import content_h as HC
 import content_i as CI
+import content_j as CJ
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 pdfmetrics.registerFont(TTFont("Amiri", os.path.join(HERE, "fonts", "Amiri-Regular.ttf")))
@@ -399,6 +400,7 @@ def ordered_sections():
             + list(G.G_SECTIONS)
             + list(HC.H_SECTIONS)
             + list(CI.I_SECTIONS)
+            + list(CJ.J_SECTIONS)
             + [B5[0], B5[1], B5[2], B5[3]]
             + list(F.F_SECTIONS) + [B5[4], B5[5]])
 
@@ -416,10 +418,15 @@ def write_body(b):
         b.heading(str(k + 1).translate(AR_DIGITS), sec["title"])
         paras = (list(sec["paras"]) + list(C.EXTRA_PARAS.get(sec["title"], []))
                  + list(D.EXTRA2.get(sec["title"], [])))
-        b.quote(paras[0])
-        for i, p in enumerate(paras[1:]):
-            b.para(p)
-            if i == 1 and sec.get("img"):
+        subheads = sec.get("subheads", {})
+        for i, p in enumerate(paras):
+            if i in subheads:
+                b.heading("", subheads[i], size=15.5)
+            if i == 0:
+                b.quote(p)
+            else:
+                b.para(p)
+            if i == 2 and sec.get("img"):
                 b.figure(sec["img"], sec["cap"], sec["credit"], max_h=9.8 * cm)
         if sec.get("img") and len(paras) <= 2:
             b.figure(sec["img"], sec["cap"], sec["credit"], max_h=9.8 * cm)
