@@ -4,7 +4,7 @@
 
 | الملف | الوصف |
 |---|---|
-| `Complete_History_of_the_Universe_AR.pdf` | الكتاب، ٩٤ صفحة، ٣١ فصلاً، عربي بالكامل، ١٨ صورة، وآخر صفحة للأقوال الفلسفية المعاصرة. |
+| `Complete_History_of_the_Universe_AR.pdf` | الكتاب، ٩٤ صفحة، ٣١ فصلاً، عربي بالكامل، ١٨ صورة، وآخر صفحة لتأملات فلسفية معاصرة أصلية. |
 | `main.tex` | مصدر LaTeX حقيقي (XeLaTeX + polyglossia/bidi + خطّ Amiri)، يطابق مضمون PDF. |
 | `fonts/` | خطّا Amiri (Regular/Bold) — رخصة OFL. |
 | `images/` | الصور الثماني عشرة كما نُزّلت من أرشيفات الجهات الأصلية. |
