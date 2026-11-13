@@ -19,6 +19,7 @@ import content_e as E
 import content_f as F
 import content_g as G
 import content_h as HC
+import content_i as CI
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 pdfmetrics.registerFont(TTFont("Amiri", os.path.join(HERE, "fonts", "Amiri-Regular.ttf")))
@@ -397,6 +398,7 @@ def ordered_sections():
              A5[3], E.E_SECTIONS[4], E.E_SECTIONS[5], A5[1], E.E_SECTIONS[6], A5[4]]
             + list(G.G_SECTIONS)
             + list(HC.H_SECTIONS)
+            + list(CI.I_SECTIONS)
             + [B5[0], B5[1], B5[2], B5[3]]
             + list(F.F_SECTIONS) + [B5[4], B5[5]])
 
