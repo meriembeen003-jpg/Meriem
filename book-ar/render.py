@@ -18,6 +18,7 @@ import content_d as D
 import content_e as E
 import content_f as F
 import content_g as G
+import content_h as HC
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 pdfmetrics.registerFont(TTFont("Amiri", os.path.join(HERE, "fonts", "Amiri-Regular.ttf")))
@@ -343,7 +344,17 @@ class Book:
             self.c.setLineWidth(0.8)
             self.c.line(M + 3.2 * cm, H - M - 36, W - M - 3.2 * cm, H - M - 36)
         self.y = H - M - 1.9 * cm
+        row = 0.93 * cm
         for title, pg in entries:
+            if self.y - row < M + 1.4 * cm:
+                self.footer()
+                self.new_page()
+                if not self.dry:
+                    self.c.setFont("AmiriBold", 15)
+                    self.c.setFillColor(GREY)
+                    self.c.drawCentredString(W / 2, H - M - 1.2 * cm, ar("الفهرس — تابع"))
+                    self.c.setFillColor(INK)
+                self.y = H - M - 1.9 * cm
             if not self.dry:
                 self.c.setFont("Amiri", 12.4)
                 self.c.drawRightString(W - M, self.y - 12.4, ar(title))
@@ -356,7 +367,7 @@ class Book:
                 self.c.setLineWidth(0.4)
                 self.c.line(M + 1.0 * cm, self.y - 16, max(M + 1.05 * cm, W - M - tw - 0.35 * cm), self.y - 16)
                 self.c.setStrokeColor(INK)
-            self.y -= 0.93 * cm
+            self.y -= row
 
 
 
@@ -385,6 +396,7 @@ def ordered_sections():
     return ([A5[0], E.E_SECTIONS[0], E.E_SECTIONS[1], E.E_SECTIONS[2], E.E_SECTIONS[3],
              A5[3], E.E_SECTIONS[4], E.E_SECTIONS[5], A5[1], E.E_SECTIONS[6], A5[4]]
             + list(G.G_SECTIONS)
+            + list(HC.H_SECTIONS)
             + [B5[0], B5[1], B5[2], B5[3]]
             + list(F.F_SECTIONS) + [B5[4], B5[5]])
 
@@ -559,22 +571,31 @@ def gallery(b):
 
 
 def run(out="book_ar.pdf"):
-    # المرور الأول: قياس
-    m = Book(os.path.join(HERE, "_measure.pdf"), dry=True)
-    m.page = 3
+    # المرور الأول: رسمٌ حقيقي (لضمان تطابق التخطيط تماماً) بفهرسٍ رموزه أصفار
+    titles = (["مقدمة: لماذا نسأل؟"] + [s["title"] for s in ordered_sections()]
+              + ["خاتمة المحقّق: ما صُحّح في هذه النسخة", "خطّ زمني للكون", "ألبوم الصور: ثماني عشرة صورة"])
+    m = Book(os.path.join(HERE, "_pass1.pdf"), dry=False)
+    m.cover()
+    m.new_page()
+    m.toc([(t, 0) for t in titles])
+    m.footer()
+    m.new_page()
+    intro_pg = m.page
     write_body(m)
     timeline(m)
     gallery(m)
+    m.footer()
+    m.c.save()
 
-    entries = [("مقدمة: لماذا نسأل؟", 3)] + [(t, p) for t, p in m.chapters]
+    entries = [("مقدمة: لماذا نسأل؟", intro_pg)] + [(t, p) for t, p in m.chapters]
 
-    # المرور الثاني: الرسم
+    # المرور الثاني: النسخة النهائية
     b = Book(os.path.join(HERE, out), dry=False)
     b.cover()
-    b.new_page()            # صفحة ٢
+    b.new_page()            # صفحة ٢ وما بعدها: الفهرس
     b.toc(entries)
     b.footer()
-    b.new_page()            # صفحة ٣
+    b.new_page()            # أول صفحة من المتن
     write_body(b)
     timeline(b)
     gallery(b)
